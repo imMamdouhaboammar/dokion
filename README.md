@@ -14,7 +14,11 @@ A user-directed hardening runtime for Claude Code, Codex, Gemini CLI, and ordina
 
 ## Current status
 
-Dokion is an executable Bun CLI with cross-agent packaging, adversarial repair validation, clean-install reproduction, package validation, and a protected Bun-only release pipeline.
+Runtime baseline: M0-M6 implemented.
+
+Production hardening backlog: in progress.
+
+Dokion is an executable Bun CLI with cross-agent packaging, adversarial repair validation, clean-install reproduction, package validation, and a protected Bun-only release pipeline. The audited baseline is recorded in [`docs/architecture/current-baseline.md`](docs/architecture/current-baseline.md), and the active production backlog is recorded in [the 100-commit implementation plan](docs/superpowers/plans/2026-07-25-production-grade-bounded-autopilot-backlog.md). This status does not assert general production readiness.
 
 Implemented:
 

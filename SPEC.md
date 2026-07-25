@@ -1,8 +1,12 @@
 # Dokion — Specification
 
-**Status:** spec-stage. This repository defines the system; it does not yet implement it.
-**Version:** 1.0.0
+**Status:** Runtime baseline M0-M6 implemented.
+**Specification version:** 1.0.0
 **Tagline:** Your rules. Your tools. Proven software.
+
+Production hardening backlog: in progress.
+
+The implemented baseline is recorded in [`docs/architecture/current-baseline.md`](docs/architecture/current-baseline.md). This status does not assert general production readiness for Dokion or for any repository evaluated by Dokion.
 
 Dokion executes a **user-authored** hardening process against a codebase and produces a
 readiness report that can be audited line-by-line against the process the user approved. It
@@ -745,19 +749,21 @@ two reports must be able to see that one had weaker enforcement than the other.
 
 ## 14. Build plan and test plan
 
-### 14.1 Milestones
+### 14.1 Implemented milestone baseline
 
-Each has a binary acceptance test. Do not proceed until it passes.
+Runtime baseline: M0-M6 implemented. Each milestone is limited to behavior covered by code and CI at the audited baseline in [`docs/architecture/current-baseline.md`](docs/architecture/current-baseline.md).
 
-| M | Scope | Acceptance |
-|---|---|---|
-| **M0** | Schemas + validation CI | All schemas and playbooks validate; CI fails on a malformed playbook; CI fails on `sha256:PLACEHOLDER` in an active playbook |
-| **M1** | Loader, digest pinning, enforcement hook | Mid-run playbook mutation aborts as `TAINTED` with expected vs observed recorded; hook blocks a direct write on Claude Code; hookless agents record `NO_HOOK_ENFORCEMENT` |
-| **M2** | Execution engine + journal writer | A three-step playbook runs in declared order; killing and resuming reproduces exact state from disk with nothing lost |
-| **M3** | Vertical slice: the security stage of `example.playbook.json` | Findings produced → normalized → approval-gated → repaired → verified → journaled, with BEFORE and AFTER artifacts |
-| **M4** | Validation policy + adversary | A faked fix (suppression over a real defect) is caught; the finding lands in `REJECTED_BY_VALIDATION`, never `VERIFIED` |
-| **M5** | Reference playbooks + adapters | Identical canonical `SKILL.md` files load in all three agents; each run reports its own degradations |
-| **M6** | Marketplace publish | `claude plugin validate --strict` passes; clean install reproduces M3 in a fresh checkout |
+| M | Scope | Status | Audited acceptance evidence |
+|---|---|---|---|
+| **M0** | Schemas and validation CI | Implemented | Schemas, reference playbooks, and catalog contracts validate; malformed active playbooks and unresolved digest placeholders are rejected |
+| **M1** | Loader, digest pinning, and enforcement guard | Implemented | Active playbook mutation is detected as `TAINTED`; Claude Code receives a fail-closed guard; weaker platforms record degradations |
+| **M2** | Execution engine and journal | Implemented | Declared stages and steps execute in order with disk state, events, evidence, reporting, and resume |
+| **M3** | Findings and remediation lifecycle | Implemented | Findings are normalized, approval-gated, repaired through declared commands, verified, and persisted with evidence |
+| **M4** | Adversarial repair validation and readiness gates | Implemented | Out-of-scope edits, suppression, deleted tests, missing regression evidence, and failed verification reject and roll back repairs |
+| **M5** | Cross-agent adapters | Implemented | One canonical hardening skill is packaged for Claude Code, Codex, and Gemini CLI with explicit platform degradations |
+| **M6** | Distribution and release | Implemented | Embedded assets, exact package inspection, clean Bun installation, Gemini extension validation, five compiled binaries, and protected tag release automation pass CI |
+
+Production hardening backlog: in progress. The next backlog adds missing CLI commands, stronger state integrity, capability provenance, bounded autopilot, module contracts, broader platform proof, and release attestations. This status does not assert general production readiness.
 
 ### 14.2 Testing with seeded defects
 
