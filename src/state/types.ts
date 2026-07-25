@@ -1,3 +1,5 @@
+import type { AgentPlatform, PlatformDegradation, PlatformProfile } from "../platform/types.ts";
+
 export type RunStatus = "RUNNING" | "AWAITING_USER" | "COMPLETED" | "STOPPED" | "BLOCKED" | "FAILED" | "TAINTED";
 
 export type ExecutionStatus =
@@ -76,11 +78,11 @@ export interface DokionState {
     started_at: string;
     ended_at?: string;
     status: RunStatus;
-    agent?: "claude_code" | "codex" | "gemini_cli" | "other";
+    agent?: AgentPlatform;
     agent_version?: string;
     model?: string;
     resumed_from?: string;
-    degradations?: Array<"NO_HOOK_ENFORCEMENT" | "NO_SUBAGENT_ISOLATION" | "NO_PARALLEL_WRITES" | "NO_WORKTREE_ISOLATION">;
+    degradations?: PlatformDegradation[];
   };
   playbook: {
     path: string;
@@ -101,7 +103,10 @@ export interface DokionState {
     worktree_clean?: boolean;
     captured_at?: string;
   };
-  profile?: Record<string, unknown>;
+  profile?: {
+    platform?: PlatformProfile;
+    [key: string]: unknown;
+  };
   capabilities?: Array<Record<string, unknown>>;
   stages: StageState[];
   findings_index?: Record<string, unknown>;
@@ -120,7 +125,8 @@ export interface StateInitialization {
   commitSha?: string;
   branch?: string;
   worktreeClean?: boolean;
-  agent?: DokionState["run"]["agent"];
+  platform?: PlatformProfile;
+  agent?: AgentPlatform;
   stages: Array<{
     id: string;
     steps: Array<{ id: string; mode?: string }>;
