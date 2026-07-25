@@ -20,7 +20,7 @@ interface RuntimeCommandDescriptor {
 interface RegistryRuntimeApi {
   renderCliHelp(version: string): string;
   resolveCliCommand(command: string): RuntimeCommandDescriptor | undefined;
-  manifestCliCommands(): readonly unknown[];
+  manifestCliCommands(): unknown[];
   geminiCommandsForFile(file: "run.toml" | "status.toml"): readonly RuntimeCommandDescriptor[];
 }
 

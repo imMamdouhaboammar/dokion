@@ -434,8 +434,10 @@ export function expectedGeminiCommandFiles(): readonly GeminiCommandFile[] {
 }
 
 export function geminiCommandsForFile(file: GeminiCommandFile): readonly CliCommandDescriptor[] {
-  return CLI_COMMAND_REGISTRY.filter((command) => command.geminiFiles.includes(file))
-    .sort((left, right) => {
+  return CLI_COMMAND_REGISTRY.filter((command) => {
+    const files: readonly GeminiCommandFile[] = command.geminiFiles;
+    return files.includes(file);
+  }).sort((left, right) => {
       const leftOrder = "geminiOrder" in left ? left.geminiOrder : Number.MAX_SAFE_INTEGER;
       const rightOrder = "geminiOrder" in right ? right.geminiOrder : Number.MAX_SAFE_INTEGER;
       return leftOrder - rightOrder;
