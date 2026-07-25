@@ -3,10 +3,12 @@
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
+import { recordApproval, type ApprovalSubjectType } from "./approvals/approval-store.ts";
 import { validateRepositoryContracts } from "./contracts/schema-validator.ts";
 import { DokionError } from "./core/errors.ts";
 import { readJson } from "./core/json.ts";
 import { ExecutionEngine } from "./engine/execution-engine.ts";
+import { listFindings } from "./findings/finding-store.ts";
 import { inspectProject } from "./inspect/project-inspector.ts";
 import { loadActivePlaybook } from "./playbook/load-playbook.ts";
 import { writeHardeningReport } from "./report/render-hardening.ts";
@@ -19,17 +21,17 @@ function print(value: unknown): void {
   console.log(JSON.stringify(value, null, 2));
 }
 
+function optionValue(name: string): string | undefined {
+  const index = args.indexOf(name);
+  return index >= 0 ? args[index + 1] : undefined;
+}
+
 function help(): void {
-  console.log(`Dokion 0.1.0\n\nUsage: dokion <command>\n\nObserve:\n  inspect\n  doctor\n  status\n  findings\n  report\n  tools list\n  skills list\n  plugins list\n  loops list\n\nConfigure:\n  init\n  validate [--catalog-only]\n\nExecute:\n  run\n  resume\n  verify\n\nDokion never installs, selects, substitutes, reorders, or enables capabilities.`);
+  console.log(`Dokion 0.2.0\n\nUsage: dokion <command>\n\nObserve:\n  inspect\n  doctor\n  status\n  findings\n  report\n  tools list\n  skills list\n  plugins list\n  loops list\n\nConfigure:\n  init\n  validate [--catalog-only]\n\nExecute:\n  run\n  resume\n  verify\n  approve <step:id|finding:id> --by <identity> [--notes <text>]\n  reject <step:id|finding:id> --by <identity> [--notes <text>]\n\nDokion never installs, selects, substitutes, reorders, or enables capabilities.`);
 }
 
 async function initialize(): Promise<void> {
-  for (const path of [
-    ".dokion/findings",
-    ".dokion/evidence",
-    ".dokion/reports",
-    ".dokion/runs"
-  ]) {
+  for (const path of [".dokion/findings", ".dokion/evidence", ".dokion/reports", ".dokion/runs"]) {
     await mkdir(join(root, path), { recursive: true });
   }
 
@@ -38,11 +40,7 @@ async function initialize(): Promise<void> {
   if (await store.exists()) {
     state = await store.load();
   } else {
-    state = await store.initialize({
-      playbookDigest: "unconfigured",
-      agent: "other",
-      stages: []
-    });
+    state = await store.initialize({ playbookDigest: "unconfigured", agent: "other", stages: [] });
     state = await store.update((current) => ({
       ...current,
       run: { ...current.run, status: "STOPPED", ended_at: new Date().toISOString() }
@@ -67,10 +65,7 @@ async function validate(catalogOnly: boolean): Promise<void> {
   }
 
   let activePlaybook;
-  if (!catalogOnly) {
-    activePlaybook = await loadActivePlaybook(root);
-  }
-
+  if (!catalogOnly) activePlaybook = await loadActivePlaybook(root);
   print({
     ...summary,
     ...(activePlaybook ? { active_playbook_digest: activePlaybook.digest } : {}),
@@ -79,23 +74,22 @@ async function validate(catalogOnly: boolean): Promise<void> {
 }
 
 async function status(): Promise<void> {
-  const store = new StateStore(root);
-  const state = await store.load();
+  const state = await new StateStore(root).load();
   print({
     run_id: state.run.id,
     status: state.run.status,
     playbook_digest: state.playbook.digest,
+    approvals: state.approvals ?? [],
     stages: state.stages.map((stage) => ({
       id: stage.id,
       status: stage.status,
-      steps: stage.steps.map((step) => ({ id: step.id, status: step.status }))
+      steps: stage.steps.map((step) => ({ id: step.id, status: step.status, findings: step.findings ?? [] }))
     }))
   });
 }
 
 async function report(): Promise<void> {
-  const store = new StateStore(root);
-  const state = await store.load();
+  const state = await new StateStore(root).load();
   await writeHardeningReport(root, state);
   print({ report: "HARDENING.md", run_id: state.run.id, status: state.run.status });
 }
@@ -106,9 +100,7 @@ interface DokionManifest {
     tools?: unknown[];
     plugins_and_adapters?: unknown[];
   };
-  loops?: {
-    definitions?: unknown[];
-  };
+  loops?: { definitions?: unknown[] };
 }
 
 async function listCatalog(kind: "skills" | "tools" | "plugins" | "loops"): Promise<void> {
@@ -132,12 +124,32 @@ async function doctor(): Promise<void> {
   print({ checks, healthy: Boolean(checks.git && checks.python3) });
 }
 
-async function findings(): Promise<void> {
-  const glob = new Bun.Glob(".dokion/findings/**/*.json");
-  const files: string[] = [];
-  for await (const path of glob.scan({ cwd: root, onlyFiles: true })) files.push(path);
-  const records = await Promise.all(files.sort().map((path) => readJson<unknown>(join(root, path))));
-  print(records);
+function inferSubjectType(subject: string): ApprovalSubjectType {
+  const prefix = subject.split(":", 1)[0];
+  const supported: ApprovalSubjectType[] = ["step", "finding", "fix", "commit", "install", "suggestion", "deferral"];
+  if (!supported.includes(prefix as ApprovalSubjectType)) {
+    throw new Error(`Unsupported approval subject: ${subject}`);
+  }
+  return prefix as ApprovalSubjectType;
+}
+
+async function decide(decision: "APPROVED" | "REJECTED"): Promise<void> {
+  const subject = args[0];
+  const by = optionValue("--by");
+  const notes = optionValue("--notes");
+  if (!subject || !by) {
+    throw new Error(`Usage: dokion ${decision === "APPROVED" ? "approve" : "reject"} <subject> --by <identity> [--notes <text>]`);
+  }
+  const record = await recordApproval(root, {
+    subject,
+    subjectType: inferSubjectType(subject),
+    decision,
+    by,
+    ...(notes ? { notes } : {})
+  });
+  const state = await new StateStore(root).load();
+  await writeHardeningReport(root, state);
+  print(record);
 }
 
 async function main(): Promise<void> {
@@ -168,6 +180,12 @@ async function main(): Promise<void> {
     case "verify":
       await validate(false);
       return;
+    case "approve":
+      await decide("APPROVED");
+      return;
+    case "reject":
+      await decide("REJECTED");
+      return;
     case "status":
       await status();
       return;
@@ -175,7 +193,7 @@ async function main(): Promise<void> {
       await report();
       return;
     case "findings":
-      await findings();
+      print(await listFindings(root));
       return;
     case "tools":
       if (args[0] !== "list") throw new Error("Usage: dokion tools list");

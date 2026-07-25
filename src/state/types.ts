@@ -18,6 +18,15 @@ export interface VerificationResult {
   ran_at?: string;
 }
 
+export interface ApprovalStateRecord {
+  at: string;
+  subject: string;
+  subject_type?: "step" | "finding" | "fix" | "commit" | "install" | "suggestion" | "deferral";
+  decision: "APPROVED" | "REJECTED" | "MODIFIED" | "DEFERRED";
+  by?: string;
+  notes?: string;
+}
+
 export interface StepState {
   id: string;
   status: ExecutionStatus;
@@ -96,7 +105,7 @@ export interface DokionState {
   capabilities?: Array<Record<string, unknown>>;
   stages: StageState[];
   findings_index?: Record<string, unknown>;
-  approvals?: Array<Record<string, unknown>>;
+  approvals?: ApprovalStateRecord[];
   release_gates?: Array<Record<string, unknown>>;
   suggestions?: Array<Record<string, unknown>>;
   completion?: Record<string, unknown>;
