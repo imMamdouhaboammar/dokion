@@ -52,7 +52,7 @@ export async function evaluateApplicability(input: {
   root: string;
   platform: DokionPlatform;
   profile: ProjectProfile | Record<string, unknown>;
-  applicability?: Applicability;
+  applicability: Applicability | undefined;
 }): Promise<ApplicabilityResult> {
   const applicability = input.applicability;
   if (!applicability) {
@@ -75,8 +75,9 @@ export async function evaluateApplicability(input: {
     return { applicable: false, reason: `platform ${input.platform} is not declared applicable` };
   }
 
+  const profileValues = input.profile as unknown as Record<string, unknown>;
   for (const [key, expected] of Object.entries(applicability.when_profile ?? {})) {
-    const actual = input.profile[key];
+    const actual = profileValues[key];
     if (!profileValueMatches(actual, expected)) {
       return { applicable: false, reason: `profile mismatch: ${key}` };
     }
