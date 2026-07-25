@@ -99,13 +99,23 @@ describe("state persistence", () => {
   test("state updates are atomic and readable after replacement", async () => {
     const root = await createFixtureRoot();
     const store = new StateStore(root);
-    const initial = await store.initialize({ playbookDigest: `sha256:${"b".repeat(64)}`, commitSha: "fixture-sha" });
+    const initial = await store.initialize({
+      playbookDigest: `sha256:${"b".repeat(64)}`,
+      commitSha: "abcdef1",
+      stages: [{ id: "runtime", steps: [{ id: "step-1", mode: "VERIFY_ONLY" }] }]
+    });
 
-    expect(initial.status).toBe("READY");
-    const updated = await store.update((state) => ({ ...state, status: "RUNNING", currentStepId: "step-1" }));
+    expect(initial.run.status).toBe("RUNNING");
+    const updated = await store.update((state) => ({
+      ...state,
+      stages: state.stages.map((stage) => ({
+        ...stage,
+        steps: stage.steps.map((step) => step.id === "step-1" ? { ...step, status: "IN_PROGRESS" } : step)
+      }))
+    }));
 
-    expect(updated.status).toBe("RUNNING");
-    expect((await store.load()).currentStepId).toBe("step-1");
+    expect(updated.stages[0]?.steps[0]?.status).toBe("IN_PROGRESS");
+    expect((await store.load()).stages[0]?.steps[0]?.status).toBe("IN_PROGRESS");
     await expect(access(join(root, ".dokion/state.json.tmp"))).rejects.toBeDefined();
   });
 });
@@ -121,12 +131,12 @@ describe("ordered execution and recovery", () => {
     const engine = new ExecutionEngine(root);
     const completed = await engine.run();
 
-    expect(completed.status).toBe("COMPLETED");
+    expect(completed.run.status).toBe("COMPLETED");
     expect(await readFile(join(root, ".dokion/order.log"), "utf8")).toBe("first\nsecond\n");
-    expect(completed.steps.map((step) => step.status)).toEqual(["SUCCEEDED", "SUCCEEDED"]);
+    expect(completed.stages.flatMap((stage) => stage.steps.map((step) => step.status))).toEqual(["SUCCEEDED", "SUCCEEDED"]);
 
     const resumed = await new ExecutionEngine(root).resume();
-    expect(resumed.status).toBe("COMPLETED");
+    expect(resumed.run.status).toBe("COMPLETED");
     expect(await readFile(join(root, ".dokion/order.log"), "utf8")).toBe("first\nsecond\n");
     await access(join(root, ".dokion/evidence/runtime/step-1/verification-1.json"));
     await access(join(root, ".dokion/evidence/runtime/step-2/verification-1.json"));
@@ -139,9 +149,9 @@ describe("ordered execution and recovery", () => {
 
     const state = await new ExecutionEngine(root).run();
 
-    expect(state.status).toBe("TAINTED");
-    expect(state.steps[0]?.status).toBe("SUCCEEDED");
-    expect(state.steps[1]?.status).toBe("PENDING");
+    expect(state.run.status).toBe("TAINTED");
+    expect(state.stages[0]?.steps[0]?.status).toBe("SUCCEEDED");
+    expect(state.stages[0]?.steps[1]?.status).toBe("PENDING");
     await expect(access(join(root, ".dokion/evidence/runtime/step-2/verification-1.json"))).rejects.toBeDefined();
   });
 });
