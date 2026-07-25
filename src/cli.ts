@@ -4,6 +4,7 @@ import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
 import { recordApproval, type ApprovalSubjectType } from "./approvals/approval-store.ts";
+import { builtinCatalog } from "./catalog/builtin-catalog.ts";
 import { validateRepositoryContracts } from "./contracts/schema-validator.ts";
 import { DokionError } from "./core/errors.ts";
 import { readJson } from "./core/json.ts";
@@ -13,6 +14,7 @@ import { inspectProject } from "./inspect/project-inspector.ts";
 import { detectAgentPlatform } from "./platform/platform-detector.ts";
 import { loadActivePlaybook } from "./playbook/load-playbook.ts";
 import { writeHardeningReport } from "./report/render-hardening.ts";
+import { DOKION_VERSION } from "./runtime/package-metadata.ts";
 import { StateStore } from "./state/state-store.ts";
 
 const root = process.cwd();
@@ -28,7 +30,7 @@ function optionValue(name: string): string | undefined {
 }
 
 function help(): void {
-  console.log(`Dokion 0.3.0\n\nUsage: dokion <command>\n\nObserve:\n  inspect\n  doctor\n  status\n  findings\n  report\n  tools list\n  skills list\n  plugins list\n  loops list\n\nConfigure:\n  init\n  validate [--catalog-only]\n\nExecute:\n  run\n  resume\n  verify\n  approve <step:id|finding:id> --by <identity> [--notes <text>]\n  reject <step:id|finding:id> --by <identity> [--notes <text>]\n\nDokion never installs, selects, substitutes, reorders, or enables capabilities.`);
+  console.log(`Dokion ${DOKION_VERSION}\n\nUsage: dokion <command>\n\nObserve:\n  inspect\n  doctor\n  status\n  findings\n  report\n  tools list\n  skills list\n  plugins list\n  loops list\n\nConfigure:\n  init\n  validate [--catalog-only]\n\nExecute:\n  run\n  resume\n  verify\n  approve <step:id|finding:id> --by <identity> [--notes <text>]\n  reject <step:id|finding:id> --by <identity> [--notes <text>]\n\nDokion never installs, selects, substitutes, reorders, or enables capabilities.`);
 }
 
 async function initialize(): Promise<void> {
@@ -51,6 +53,7 @@ async function initialize(): Promise<void> {
   print({
     initialized: true,
     active_playbook_created: false,
+    catalog: (await Bun.file(join(root, "dokion.json")).exists()) ? "project:dokion.json" : "builtin:dokion.json",
     state: ".dokion/state.json",
     report: "HARDENING.md",
     platform: state.profile?.platform,
@@ -107,8 +110,14 @@ interface DokionManifest {
   loops?: { definitions?: unknown[] };
 }
 
+async function projectCatalog(): Promise<DokionManifest> {
+  const path = join(root, "dokion.json");
+  if (await Bun.file(path).exists()) return readJson<DokionManifest>(path);
+  return builtinCatalog as DokionManifest;
+}
+
 async function listCatalog(kind: "skills" | "tools" | "plugins" | "loops"): Promise<void> {
-  const manifest = await readJson<DokionManifest>(join(root, "dokion.json"));
+  const manifest = await projectCatalog();
   if (kind === "loops") {
     print(manifest.loops?.definitions ?? []);
     return;
@@ -122,19 +131,18 @@ async function doctor(): Promise<void> {
   const checks = {
     bun: Bun.version,
     git: Bun.which("git") ?? null,
-    python3: Bun.which("python3") ?? null,
+    python3_optional: Bun.which("python3") ?? null,
     active_playbook: await Bun.file(join(root, ".dokion/playbook.json")).exists(),
-    state: await Bun.file(join(root, ".dokion/state.json")).exists()
+    state: await Bun.file(join(root, ".dokion/state.json")).exists(),
+    catalog: (await Bun.file(join(root, "dokion.json")).exists()) ? "project:dokion.json" : "builtin:dokion.json"
   };
-  print({ checks, platform, healthy: Boolean(checks.git && checks.python3) });
+  print({ checks, platform, healthy: Boolean(checks.git) });
 }
 
 function inferSubjectType(subject: string): ApprovalSubjectType {
   const prefix = subject.split(":", 1)[0];
   const supported: ApprovalSubjectType[] = ["step", "finding", "fix", "commit", "install", "suggestion", "deferral"];
-  if (!supported.includes(prefix as ApprovalSubjectType)) {
-    throw new Error(`Unsupported approval subject: ${subject}`);
-  }
+  if (!supported.includes(prefix as ApprovalSubjectType)) throw new Error(`Unsupported approval subject: ${subject}`);
   return prefix as ApprovalSubjectType;
 }
 
