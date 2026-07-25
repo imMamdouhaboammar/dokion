@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/imMamdouhaboammar/dokion/main/schemas/dokion-coverage-assignment.schema.json",
+  "title": "Dokion Coverage Lane Assignment",
+  "description": "A user-authored declaration that one exact playbook step covers a named hardening lane. Dokion never infers or adds these assignments.",
+  "type": "object",
+  "required": [
+    "lane",
+    "status"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "lane": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ASSIGNED",
+        "PARTIAL"
+      ]
+    }
+  }
+}
