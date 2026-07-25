@@ -1,0 +1,10 @@
+{
+  "name": "dokion",
+  "description": "Run user-authored Dokion hardening playbooks with immutable configuration, evidence, repair validation, and scoped readiness reports.",
+  "author": {
+    "name": "Mamdouh Aboammar"
+  },
+  "homepage": "https://github.com/imMamdouhaboammar/dokion",
+  "repository": "https://github.com/imMamdouhaboammar/dokion",
+  "license": "MIT"
+}

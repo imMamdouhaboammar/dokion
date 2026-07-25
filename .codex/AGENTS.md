@@ -1,26 +1,25 @@
-# ECC for Codex CLI
+# Dokion for Codex CLI
 
-This supplements the root `AGENTS.md` with a repo-local ECC baseline.
+The repository operating contract is `AGENTS.md`.
 
-## Repo Skill
+## Canonical skill
 
-- Repo-generated Codex skill: `.agents/skills/dokion/SKILL.md`
-- Claude-facing companion skill: `.claude/skills/dokion/SKILL.md`
-- Keep user-specific credentials and private MCPs in `~/.codex/config.toml`, not in this repo.
+- Source: `skills/dokion-hardening/SKILL.md`
+- Codex discovery wrapper: `.agents/skills/dokion-hardening/SKILL.md`
 
-## MCP Baseline
+The wrapper delegates to the canonical source. Do not create a second copy of the hardening workflow.
 
-Treat `.codex/config.toml` as the default ECC-safe baseline for work in this repository.
-The generated baseline enables GitHub, Context7, Exa, Memory, Playwright, and Sequential Thinking.
+## Authority
 
-## Multi-Agent Support
+`.dokion/playbook.json` is the only execution authority. Codex may run, resume, verify, journal, and report the declared workflow. It may not select, install, substitute, reorder, upgrade, or enable capabilities.
 
-- Explorer: read-only evidence gathering
-- Reviewer: correctness, security, and regression review
-- Docs researcher: API and release-note verification
+Keep credentials and private MCP configuration in user-level Codex settings, not in this repository.
 
-## Workflow Files
+## Verification
 
-- No dedicated workflow command files were generated for this repo.
-
-Use these workflow files as reusable task scaffolds when the detected repository workflows recur.
+```bash
+bun test
+bun run typecheck
+bun run validate:contracts
+bun run build
+```

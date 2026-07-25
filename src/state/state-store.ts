@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { validateStateData } from "../contracts/schema-validator.ts";
 import { DokionError } from "../core/errors.ts";
 import { readJson, writeJsonAtomic } from "../core/json.ts";
+import { detectAgentPlatform } from "../platform/platform-detector.ts";
 import type { DokionState, StateInitialization } from "./types.ts";
 
 export const STATE_PATH = ".dokion/state.json";
@@ -30,6 +31,7 @@ export class StateStore {
           captured_at: now
         }
       : undefined;
+    const platform = input.platform ?? detectAgentPlatform();
 
     const state: DokionState = {
       $schema: "../schemas/dokion-state.schema.json",
@@ -38,7 +40,10 @@ export class StateStore {
         id: `run-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
         started_at: now,
         status: "RUNNING",
-        ...(input.agent ? { agent: input.agent } : {})
+        agent: platform.agent,
+        ...(platform.version ? { agent_version: platform.version } : {}),
+        ...(platform.model ? { model: platform.model } : {}),
+        degradations: platform.degradations
       },
       playbook: {
         path: ".dokion/playbook.json",
@@ -47,6 +52,7 @@ export class StateStore {
         verified_at: now
       },
       ...(baseline ? { baseline } : {}),
+      profile: { platform },
       stages: input.stages.map((stage) => ({
         id: stage.id,
         status: "PENDING",
