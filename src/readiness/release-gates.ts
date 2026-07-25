@@ -97,9 +97,15 @@ export async function evaluateReleaseGates(input: {
   findings: NormalizedFinding[];
 }): Promise<ReleaseGateState[]> {
   const results: ReleaseGateState[] = [];
+  const existingById = new Map((input.state.release_gates ?? []).map((gate) => [gate.id, gate] as const));
 
   for (const gate of definitions(input.playbook)) {
     if (gate.command !== undefined) {
+      const existing = existingById.get(gate.id);
+      if (existing && existing.status === "PASS") {
+        results.push(existing);
+        continue;
+      }
       const commandResult = await runCommand(input.root, gate.command);
       const artifact = `.dokion/evidence/${input.state.run.id}/release-gates/${safeSegment(gate.id)}.json`;
       await writeJsonAtomic(join(input.root, artifact), {
