@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
 
 import { builtinCatalog } from "../../src/catalog/builtin-catalog.ts";
+import type { ManifestCliCommand } from "../../src/cli/command-registry.ts";
 
 type CommandStatus = "IMPLEMENTED" | "PLANNED";
 type ExecutionMode = "READ_ONLY" | "CONFIGURE" | "EXECUTE" | "DECIDE" | "VERIFY_ONLY" | "REPORT_ONLY";
@@ -20,7 +21,7 @@ interface RuntimeCommandDescriptor {
 interface RegistryRuntimeApi {
   renderCliHelp(version: string): string;
   resolveCliCommand(command: string): RuntimeCommandDescriptor | undefined;
-  manifestCliCommands(): unknown[];
+  manifestCliCommands(): ManifestCliCommand[];
   geminiCommandsForFile(file: "run.toml" | "status.toml"): readonly RuntimeCommandDescriptor[];
 }
 
@@ -127,7 +128,7 @@ Dokion never installs, selects, substitutes, reorders, or enables capabilities.`
   test("generates the built-in manifest command catalog", async () => {
     const registry = await registryApi();
     const manifest = JSON.parse(await Bun.file(join(root, "dokion.json")).text()) as {
-      dokion_cli: { commands: unknown[] };
+      dokion_cli: { commands: ManifestCliCommand[] };
     };
 
     expect(typeof registry.manifestCliCommands).toBe("function");
