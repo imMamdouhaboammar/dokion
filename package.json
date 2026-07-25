@@ -1,7 +1,7 @@
 {
   "name": "dokion",
-  "version": "0.1.0",
-  "description": "User-directed software hardening orchestrator",
+  "version": "0.3.0",
+  "description": "User-directed cross-agent software hardening runtime",
   "type": "module",
   "private": false,
   "license": "MIT",
