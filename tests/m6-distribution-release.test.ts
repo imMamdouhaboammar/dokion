@@ -85,8 +85,8 @@ describe("M6 packed-file policy", () => {
   });
 
   test("detects common secrets and private local paths in packed text", () => {
-    expect(detectSensitiveText("config.txt", "OPENAI_API_KEY=sk-proj-1234567890abcdef")).toContain("secret signature");
-    expect(detectSensitiveText("notes.txt", "/Users/mamdouh/private/project")).toContain("private local path");
+    expect(detectSensitiveText("config.txt", "OPENAI_API_KEY=sk-proj-1234567890abcdef").some((item) => item.startsWith("secret signature"))).toBe(true);
+    expect(detectSensitiveText("notes.txt", "/Users/mamdouh/private/project").some((item) => item.startsWith("private local path"))).toBe(true);
     expect(detectSensitiveText("README.md", "Install with bun add dokion")).toEqual([]);
   });
 });
