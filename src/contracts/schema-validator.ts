@@ -1,6 +1,6 @@
 import Ajv2020, { type AnySchema, type ErrorObject, type ValidateFunction } from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
-import { relative, join } from "node:path";
+import { join, relative, resolve } from "node:path";
 
 import { readJson } from "../core/json.ts";
 
@@ -33,7 +33,9 @@ const schemaNames = {
   capabilityLock: "capability-lock.schema.json"
 } as const;
 
-async function buildRegistry(root: string): Promise<SchemaRegistry> {
+const registryCache = new Map<string, Promise<SchemaRegistry>>();
+
+async function compileRegistry(root: string): Promise<SchemaRegistry> {
   const ajv = new Ajv2020({ allErrors: true, strict: false, allowUnionTypes: true });
   addFormats(ajv);
 
@@ -60,6 +62,29 @@ async function buildRegistry(root: string): Promise<SchemaRegistry> {
     finding: compile(schemaNames.finding),
     capabilityLock: compile(schemaNames.capabilityLock)
   };
+}
+
+async function buildRegistry(root: string): Promise<SchemaRegistry> {
+  const key = resolve(root);
+  const cached = registryCache.get(key);
+  if (cached) {
+    return cached;
+  }
+
+  const compiling = compileRegistry(key).catch((error) => {
+    registryCache.delete(key);
+    throw error;
+  });
+  registryCache.set(key, compiling);
+  return compiling;
+}
+
+export function clearSchemaRegistryCache(root?: string): void {
+  if (root) {
+    registryCache.delete(resolve(root));
+    return;
+  }
+  registryCache.clear();
 }
 
 function normalizeErrors(file: string, errors: ErrorObject[] | null | undefined): ValidationIssue[] {
