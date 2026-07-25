@@ -1,0 +1,128 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  verify-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout tagged commit
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Python contract dependency
+        run: python -m pip install --disable-pip-version-check jsonschema
+
+      - name: Install Bun dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Verify release versions
+        run: bun run scripts/check-release-version.ts "$GITHUB_REF_NAME"
+
+      - name: Run complete verification
+        run: |
+          bun test
+          bun run typecheck
+          bun run validate:contracts
+          bun run build
+          bun run validate:distribution
+          bun run smoke:package
+
+      - name: Validate Gemini CLI extension
+        run: bunx @google/gemini-cli@0.51.0 extensions validate .
+
+      - name: Build release binaries
+        run: bun run scripts/build-release.ts
+
+      - name: Pack registry tarball
+        run: bun pm pack --ignore-scripts --destination release
+
+      - name: Create checksums
+        shell: bash
+        run: |
+          cd release
+          sha256sum dokion-* > SHA256SUMS
+
+      - name: Verify source tree integrity
+        shell: bash
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+          test ! -e .env
+          test ! -e .dokion
+          test ! -e HARDENING.md
+
+      - name: Upload release bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: dokion-release-${{ github.ref_name }}
+          path: release/*
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    needs: verify-and-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: npm-release
+    permissions:
+      contents: write
+    steps:
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Download release bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: dokion-release-${{ github.ref_name }}
+          path: release
+
+      - name: Publish immutable package version with Bun
+        shell: bash
+        env:
+          NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "${NPM_CONFIG_TOKEN:-}" || {
+            echo "NPM_TOKEN is missing from the protected npm-release environment"
+            exit 1
+          }
+          VERSION="${GITHUB_REF_NAME#v}"
+          TARBALL="$(find release -maxdepth 1 -type f -name 'dokion-*.tgz' -print -quit)"
+          test -n "$TARBALL"
+          if bun info "dokion@$VERSION" version --json >/tmp/dokion-published.json 2>/dev/null; then
+            echo "dokion@$VERSION already exists in the registry; skipping immutable version publish"
+          else
+            bun publish "$TARBALL" --access public --registry https://registry.npmjs.org/
+          fi
+          unset NPM_CONFIG_TOKEN
+
+      - name: Create or update GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" release/* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" release/* --verify-tag --generate-notes --title "Dokion $GITHUB_REF_NAME"
+          fi
