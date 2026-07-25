@@ -54,6 +54,26 @@ describe("Claude playbook guard", () => {
     expect(result.expected).not.toBe(result.observed);
   });
 
+  test("blocks a missing playbook during an active run", async () => {
+    const { root } = await fixture();
+    await rm(join(root, ".dokion", "playbook.json"));
+
+    const result = await evaluatePlaybookGuard(root);
+
+    expect(result.allow).toBe(false);
+    expect(result.reason).toContain("missing");
+  });
+
+  test("blocks an invalid stored digest during an active run", async () => {
+    const { root } = await fixture();
+    await writeState(root, "RUNNING", ".dokion/playbook.json", "unconfigured");
+
+    const result = await evaluatePlaybookGuard(root);
+
+    expect(result.allow).toBe(false);
+    expect(result.reason).toContain("invalid playbook digest");
+  });
+
   test("rejects a noncanonical playbook path even when the digest matches", async () => {
     const { root, playbook } = await fixture();
     await writeFile(join(root, ".dokion", "alternate.json"), playbook);
