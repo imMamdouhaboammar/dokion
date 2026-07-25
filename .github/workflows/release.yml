@@ -47,8 +47,19 @@ jobs:
       - name: Validate Gemini CLI extension
         run: bunx @google/gemini-cli@0.51.0 extensions validate .
 
-      - name: Build release binaries
-        run: bun run scripts/build-release.ts
+      - name: Build and smoke-test release binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          bun run scripts/build-release.ts
+          test "$(find release -maxdepth 1 -type f -name 'dokion-*' | wc -l)" -eq 5
+          ./release/dokion-linux-x64 --help | grep -F "Dokion 0.3.0"
+          CLEAN_ROOT="$(mktemp -d)"
+          trap 'rm -rf "$CLEAN_ROOT"' EXIT
+          (
+            cd "$CLEAN_ROOT"
+            "$GITHUB_WORKSPACE/release/dokion-linux-x64" validate --catalog-only | grep -F 'builtin:dokion.json'
+          )
 
       - name: Pack registry tarball
         run: bun pm pack --ignore-scripts --destination release
