@@ -79,6 +79,9 @@ describe("canonical CLI command registry", () => {
   test("keeps the specification aware of every declared command", async () => {
     const specification = await read("SPEC.md");
 
+    expect(specification).toContain("| `dokion tools list` · `skills list` · `plugins list` · `loops list` |");
+    expect(specification).toContain("| `dokion approve` · `reject` · `skip` |");
+
     for (const descriptor of CLI_COMMAND_REGISTRY) {
       expect(specification).toContain(descriptor.specMarker);
     }
