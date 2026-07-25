@@ -640,6 +640,14 @@ something real, but did it outside the playbook, is a failed run — not a succe
 a bonus. The value of the report is that it corresponds exactly to a process a human chose;
 work outside that process destroys the correspondence, however good the work was.
 
+### 11.4 Dokion runtime production readiness
+
+Dokion runtime production readiness is a claim about the Dokion product and its exact release candidate. It requires evidence across authority safety, recovery integrity, command containment, auditability, supported platforms and agents, distribution integrity, seeded fixtures, and operational documentation.
+
+A target repository readiness result remains scoped to its exact repository commit, approved playbook, capability lock, platform guarantees, gates, evidence, degradations, and acknowledged gaps. It does not become a general security or production-readiness claim.
+
+The proof lanes, release gates, claim grammar, freshness rules, forbidden claims, and production-backlog exit criteria are normative in [`docs/architecture/production-readiness.md`](docs/architecture/production-readiness.md).
+
 ---
 
 ## 12. Reference playbook library
