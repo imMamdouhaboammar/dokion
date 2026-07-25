@@ -37,7 +37,7 @@ async function fixture(remediation: "good" | "suppression", approval: "BEFORE_EA
   );
   await writeFile(
     join(root, "tests/query.test.ts"),
-    "import { expect, test } from 'bun:test';\nimport { buildQuery } from '../src/query.ts';\ntest('uses a parameterized query', () => {\n  expect(buildQuery(\"O'Reilly\")).toEqual({ text: 'SELECT * FROM users WHERE name = $1', values: [\"O'Reilly\"] });\n});\n"
+    "import { expect, test } from 'bun:test';\nimport { buildQuery } from '../src/query.ts';\ntest('exposes the fixture defect before repair', () => {\n  expect(typeof buildQuery(\"O'Reilly\")).toBe('string');\n});\n"
   );
   await writeFile(
     join(root, "scripts/analyze.ts"),
@@ -45,7 +45,7 @@ async function fixture(remediation: "good" | "suppression", approval: "BEFORE_EA
   );
   await writeFile(
     join(root, "scripts/fix-good.ts"),
-    "import { writeFile } from 'node:fs/promises';\nif (!process.env.DOKION_FINDING_FILE) throw new Error('DOKION_FINDING_FILE is required');\nawait writeFile('src/query.ts', \"export function buildQuery(name: string) {\\n  return { text: 'SELECT * FROM users WHERE name = $1', values: [name] };\\n}\\n\");\n"
+    "import { writeFile } from 'node:fs/promises';\nif (!process.env.DOKION_FINDING_FILE) throw new Error('DOKION_FINDING_FILE is required');\nawait writeFile('src/query.ts', \"export function buildQuery(name: string) {\\n  return { text: 'SELECT * FROM users WHERE name = $1', values: [name] };\\n}\\n\");\nawait writeFile('tests/query.test.ts', \"import { expect, test } from 'bun:test';\\nimport { buildQuery } from '../src/query.ts';\\ntest('uses a parameterized query', () => {\\n  expect(buildQuery(\\\"O'Reilly\\\")).toEqual({ text: 'SELECT * FROM users WHERE name = $1', values: [\\\"O'Reilly\\\"] });\\n});\\n\");\n"
   );
   await writeFile(
     join(root, "scripts/fix-suppression.ts"),
@@ -174,6 +174,7 @@ describe("M3 capability findings and remediation", () => {
     const verified = await readFinding(root, finding!.id);
     expect(verified.status).toBe("VERIFIED");
     expect(verified.resolution?.adversary_verdict).toBe("FIX_HOLDS");
+    expect(verified.resolution?.regression_test).toBe("tests/query.test.ts");
     expect(verified.evidence.some((item) => item.phase === "AFTER" && item.kind === "diff")).toBe(true);
     expect(verified.evidence.some((item) => item.phase === "AFTER" && item.kind === "test_result")).toBe(true);
     expect(await readFile(join(root, "src/query.ts"), "utf8")).toContain("values: [name]");

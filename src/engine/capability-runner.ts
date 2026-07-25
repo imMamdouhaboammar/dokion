@@ -1,8 +1,7 @@
-import { mkdir, readFile, rm } from "node:fs/promises";
+import { mkdir, rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 import { isApproved } from "../approvals/approval-store.ts";
-import { sha256 } from "../core/digest.ts";
 import { DokionError } from "../core/errors.ts";
 import { readJson, writeJsonAtomic } from "../core/json.ts";
 import { writeCommandEvidence } from "../evidence/evidence-store.ts";
@@ -10,6 +9,12 @@ import { listFindings, normalizeFindingEnvelope, updateFinding } from "../findin
 import type { NormalizedFinding, RawFindingEnvelope } from "../findings/types.ts";
 import type { LoadedPlaybook, PlaybookStage, PlaybookStep } from "../playbook/types.ts";
 import type { DokionState, VerificationResult } from "../state/types.ts";
+import {
+  captureRepairSnapshot,
+  diffRepairSnapshots,
+  restoreRepairSnapshot,
+  type RepairSnapshot
+} from "../validation/repair-snapshot.ts";
 import { validateRepair } from "../validation/repair-validator.ts";
 import { runCommand, type CommandResult } from "./command-runner.ts";
 
@@ -80,29 +85,9 @@ async function writeNamedCommandEvidence(
   return relativePath;
 }
 
-async function rollbackTrackedChanges(root: string, paths: string[]): Promise<void> {
-  if (paths.length === 0) return;
-  const child = Bun.spawn(["git", "checkout", "--", ...paths], {
-    cwd: root,
-    stdout: "ignore",
-    stderr: "pipe",
-    stdin: "ignore"
-  });
-  const stderr = child.stderr ? new Response(child.stderr).text() : Promise.resolve("");
-  const exitCode = await child.exited;
-  if (exitCode !== 0) {
-    throw new Error(`Rollback failed: ${await stderr}`);
-  }
-}
-
-async function findRegressionTest(root: string): Promise<string | undefined> {
-  for (const pattern of ["**/*.test.*", "**/*.spec.*", "**/tests/**/*", "**/__tests__/**/*"]) {
-    const glob = new Bun.Glob(pattern);
-    for await (const path of glob.scan({ cwd: root, onlyFiles: true })) {
-      if (!path.startsWith("node_modules/") && !path.startsWith(".dokion/")) return path;
-    }
-  }
-  return undefined;
+async function restoreCurrentRepair(root: string, before: RepairSnapshot): Promise<void> {
+  const current = await captureRepairSnapshot(root);
+  await restoreRepairSnapshot(root, before, diffRepairSnapshots(before, current));
 }
 
 function approvalSubject(step: PlaybookStep, finding: NormalizedFinding): string | undefined {
@@ -207,10 +192,11 @@ export async function runRemediationCapability(input: {
 
     await updateFinding(input.root, finding.id, (current) => ({
       ...current,
-      status: subject ? "APPROVED_FOR_FIX" : current.status,
+      status: subject ? "APPROVED_FOR_FIX" : current.status
     }));
     await updateFinding(input.root, finding.id, (current) => ({ ...current, status: "FIXING" }));
 
+    const before = await captureRepairSnapshot(input.root);
     const findingFile = join(input.root, ".dokion", "findings", `${finding.id}.json`);
     const result = await runCommand(input.root, command, {
       timeoutSeconds: input.step.timeout_seconds ?? 300,
@@ -225,20 +211,29 @@ export async function runRemediationCapability(input: {
     });
     const remediationArtifact = `.dokion/evidence/${input.state.run.id}/findings/${finding.id}/remediation.json`;
     evidence.push(await writeNamedCommandEvidence(input.root, remediationArtifact, result, { finding_id: finding.id, phase: "REMEDIATION" }));
-    if (result.exitCode !== 0) {
-      await updateFinding(input.root, finding.id, (current) => ({ ...current, status: "BLOCKED" }));
-      return { status: "FAILED", reason: `Remediation command exited ${result.exitCode}`, findingIds: findings.map((item) => item.id), evidence, verificationResults };
-    }
 
     const validation = await validateRepair({
       root: input.root,
       runId: input.state.run.id,
       findingId: finding.id,
       writeScopes: input.step.permissions?.write ?? [],
-      policy: input.step.validation ?? input.loaded.data.defaults?.validation ?? {}
+      policy: input.step.validation ?? input.loaded.data.defaults?.validation ?? {},
+      before
     });
     evidence.push(validation.diffArtifact);
     const capturedAt = new Date().toISOString();
+
+    if (result.exitCode !== 0) {
+      await restoreCurrentRepair(input.root, before);
+      await updateFinding(input.root, finding.id, (current) => ({ ...current, status: "BLOCKED" }));
+      return {
+        status: "FAILED",
+        reason: `Remediation command exited ${result.exitCode}`,
+        findingIds: findings.map((item) => item.id),
+        evidence,
+        verificationResults
+      };
+    }
 
     if (validation.verdict !== "FIX_HOLDS") {
       await updateFinding(input.root, finding.id, (current) => ({
@@ -254,7 +249,7 @@ export async function runRemediationCapability(input: {
           resolved_at: capturedAt
         }
       }));
-      await rollbackTrackedChanges(input.root, validation.changedPaths);
+      await restoreRepairSnapshot(input.root, before, diffRepairSnapshots(before, validation.after));
       return {
         status: "FAILED",
         reason: validation.violations.join("; ") || "Adversarial validation rejected the repair",
@@ -282,7 +277,16 @@ export async function runRemediationCapability(input: {
       verificationResults.push({ command: verificationCommand, exit_code: verification.exitCode, artifact, ran_at: verification.endedAt });
       evidence.push(artifact);
       if (verification.exitCode !== 0) {
-        await updateFinding(input.root, finding.id, (current) => ({ ...current, status: "BLOCKED" }));
+        await restoreCurrentRepair(input.root, before);
+        await updateFinding(input.root, finding.id, (current) => ({
+          ...current,
+          status: "REPAIR_REJECTED",
+          resolution: {
+            diff_artifact: validation.diffArtifact,
+            adversary_verdict: "FIX_INCOMPLETE",
+            resolved_at: new Date().toISOString()
+          }
+        }));
         return {
           status: "FAILED",
           reason: `Verification command exited ${verification.exitCode}`,
@@ -293,19 +297,7 @@ export async function runRemediationCapability(input: {
       }
     }
 
-    const regressionTest = input.step.validation?.require_regression_test ? await findRegressionTest(input.root) : undefined;
-    if (input.step.validation?.require_regression_test && !regressionTest) {
-      await updateFinding(input.root, finding.id, (current) => ({ ...current, status: "REPAIR_REJECTED" }));
-      await rollbackTrackedChanges(input.root, validation.changedPaths);
-      return {
-        status: "FAILED",
-        reason: "No regression test was found for a repair that requires one",
-        findingIds: findings.map((item) => item.id),
-        evidence,
-        verificationResults
-      };
-    }
-
+    const regressionTest = input.step.validation?.require_regression_test ? validation.changedTestPaths[0] : undefined;
     await updateFinding(input.root, finding.id, (current) => ({
       ...current,
       status: "VERIFIED",
