@@ -31,10 +31,14 @@ export async function buildRelease(root = process.cwd(), outputDirectory = join(
     const outfile = join(outputDirectory, item.filename);
     const result = await Bun.build({
       entrypoints: [join(root, "src/cli.ts")],
-      compile: item.target,
+      compile: {
+        target: item.target,
+        outfile,
+        autoloadDotenv: false,
+        autoloadBunfig: false
+      },
       minify: true,
-      sourcemap: "none",
-      outfile
+      sourcemap: "none"
     });
     if (!result.success) {
       const messages = result.logs.map((log) => log.message).join("\n");
