@@ -47,6 +47,7 @@ export class StateStore {
         verified_at: now
       },
       ...(baseline ? { baseline } : {}),
+      ...(input.profile ? { profile: structuredClone(input.profile) } : {}),
       stages: input.stages.map((stage) => ({
         id: stage.id,
         status: "PENDING",
