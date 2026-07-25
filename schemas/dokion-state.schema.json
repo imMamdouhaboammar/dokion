@@ -1,0 +1,867 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/imMamdouhaboammar/dokion/main/schemas/dokion-state.schema.json",
+  "title": "Dokion Run State",
+  "description": "Machine-readable run state at `.dokion/state.json`. Written by the orchestrator only. Together with HARDENING.md this is the sole source of truth: any session, agent, or model resumes from it. Agent context is expendable; this file is not.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "run",
+    "playbook",
+    "stages"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "run": {
+      "type": "object",
+      "required": [
+        "id",
+        "started_at",
+        "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Stable run identifier, also the directory name under .dokion/runs/."
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ended_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "RUNNING",
+            "AWAITING_USER",
+            "COMPLETED",
+            "STOPPED",
+            "BLOCKED",
+            "FAILED",
+            "TAINTED"
+          ],
+          "description": "TAINTED is terminal and unrecoverable within the run: it means the playbook changed mid-run, so nothing after the change can be trusted."
+        },
+        "agent": {
+          "type": "string",
+          "enum": [
+            "claude_code",
+            "codex",
+            "gemini_cli",
+            "other"
+          ]
+        },
+        "agent_version": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "resumed_from": {
+          "type": "string",
+          "description": "Prior run id, when this run continues an interrupted one."
+        },
+        "degradations": {
+          "type": "array",
+          "description": "Guarantees unavailable on this agent, recorded so the report never implies parity.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "NO_HOOK_ENFORCEMENT",
+              "NO_SUBAGENT_ISOLATION",
+              "NO_PARALLEL_WRITES",
+              "NO_WORKTREE_ISOLATION"
+            ]
+          }
+        }
+      }
+    },
+    "playbook": {
+      "type": "object",
+      "description": "Immutability record. The digest is captured before the first step and re-verified before every subsequent step.",
+      "required": [
+        "path",
+        "digest",
+        "verified_at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "default": ".dokion/playbook.json"
+        },
+        "digest_algorithm": {
+          "type": "string",
+          "enum": [
+            "sha256",
+            "sha512"
+          ],
+          "default": "sha256"
+        },
+        "digest": {
+          "type": "string"
+        },
+        "verified_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_verified_before_step": {
+          "type": "string"
+        },
+        "tainted": {
+          "type": "object",
+          "required": [
+            "expected",
+            "observed",
+            "detected_at"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "expected": {
+              "type": "string"
+            },
+            "observed": {
+              "type": "string"
+            },
+            "detected_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "detected_before_step": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "commit": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{7,40}$"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "worktree_clean": {
+          "type": "boolean"
+        },
+        "captured_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "profile": {
+      "type": "object",
+      "description": "Detected project characteristics. Used ONLY to evaluate applicability of declared steps. It may never introduce a capability or a step.",
+      "additionalProperties": true,
+      "properties": {
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "frameworks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "package_managers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "has_frontend": {
+          "type": "boolean"
+        },
+        "has_api": {
+          "type": "boolean"
+        },
+        "has_database": {
+          "type": "boolean"
+        },
+        "has_llm": {
+          "type": "boolean"
+        },
+        "has_infrastructure": {
+          "type": "boolean"
+        },
+        "is_monorepo": {
+          "type": "boolean"
+        },
+        "test_command": {
+          "type": "string"
+        },
+        "build_command": {
+          "type": "string"
+        },
+        "detected_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "description": "Resolution result for every capability the playbook declares. Nothing may appear here that the playbook does not declare.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "declared_in_steps",
+          "resolution"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "declared_in_steps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "requested_version": {
+            "type": "string"
+          },
+          "resolved_version": {
+            "type": "string"
+          },
+          "expected_digest": {
+            "type": "string"
+          },
+          "observed_digest": {
+            "type": "string"
+          },
+          "resolution": {
+            "type": "string",
+            "enum": [
+              "VERIFIED",
+              "AVAILABLE_UNVERIFIED",
+              "NOT_INSTALLED",
+              "INCOMPATIBLE_PLATFORM",
+              "VERSION_MISMATCH",
+              "DIGEST_MISMATCH",
+              "BLOCKED_BY_REGISTRY",
+              "PERMISSIONS_EXCEED_STEP",
+              "DEPENDENCY_MISSING"
+            ],
+            "description": "Anything other than VERIFIED stops the dependent steps with this exact reason. Substitution is never permitted."
+          },
+          "resolution_detail": {
+            "type": "string"
+          },
+          "permission_excess": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Permissions the capability requires beyond what its step grants."
+          }
+        }
+      }
+    },
+    "stages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "steps"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/$defs/executionStatus"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ended_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "status"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "status": {
+                  "$ref": "#/$defs/executionStatus"
+                },
+                "mode": {
+                  "type": "string"
+                },
+                "attempts": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "iterations": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "started_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "ended_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "approval": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "policy": {
+                      "type": "string"
+                    },
+                    "granted": {
+                      "type": "boolean"
+                    },
+                    "granted_by": {
+                      "type": "string"
+                    },
+                    "granted_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "scope": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "findings": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Finding ids produced by this step."
+                },
+                "verification_results": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "command",
+                      "exit_code"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "command": {
+                        "type": "string"
+                      },
+                      "exit_code": {
+                        "type": "integer"
+                      },
+                      "artifact": {
+                        "type": "string"
+                      },
+                      "ran_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                },
+                "success_conditions_met": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "success_conditions_unmet": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "evidence": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "commits": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "scope_violations": {
+                  "type": "array",
+                  "description": "Attempts to act outside the step's declared permissions. Any entry here is a hard failure.",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "attempted",
+                      "declared_scope"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "attempted": {
+                        "type": "string"
+                      },
+                      "declared_scope": {
+                        "type": "string"
+                      },
+                      "blocked": {
+                        "type": "boolean"
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                },
+                "failure_reason": {
+                  "type": "string"
+                },
+                "applied_failure_policy": {
+                  "type": "string"
+                },
+                "skip_reason": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "findings_index": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "open": {
+          "$ref": "#/$defs/severityCounts"
+        },
+        "verified_fixed": {
+          "$ref": "#/$defs/severityCounts"
+        },
+        "deferred": {
+          "$ref": "#/$defs/severityCounts"
+        },
+        "accepted_risk": {
+          "$ref": "#/$defs/severityCounts"
+        },
+        "rejected_by_validation": {
+          "$ref": "#/$defs/severityCounts"
+        }
+      }
+    },
+    "approvals": {
+      "type": "array",
+      "description": "Append-only record of every human decision. Required by the completion definition.",
+      "items": {
+        "type": "object",
+        "required": [
+          "at",
+          "subject",
+          "decision"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "subject_type": {
+            "type": "string",
+            "enum": [
+              "step",
+              "finding",
+              "fix",
+              "commit",
+              "install",
+              "suggestion",
+              "deferral"
+            ]
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "APPROVED",
+              "REJECTED",
+              "MODIFIED",
+              "DEFERRED"
+            ]
+          },
+          "by": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "release_gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "blocking"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PASS",
+              "FAIL",
+              "NOT_RUN",
+              "SKIPPED"
+            ]
+          },
+          "blocking": {
+            "type": "boolean"
+          },
+          "evaluated": {
+            "type": "string",
+            "description": "The command or condition as evaluated."
+          },
+          "exit_code": {
+            "type": "integer"
+          },
+          "artifact": {
+            "type": "string"
+          },
+          "ran_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "suggestions": {
+      "type": "array",
+      "description": "Inert recommendations. Present in state so they can be reported and audited; they never mutate the playbook.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "category",
+          "summary",
+          "status"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "MISSING_REVIEW_COVERAGE",
+              "CAPABILITY_STACK_MISMATCH",
+              "EXCESSIVE_PERMISSIONS",
+              "CONFLICTING_STEPS",
+              "EXECUTION_ORDER",
+              "MISSING_VERIFICATION",
+              "MISSING_RELEASE_GATE",
+              "DUPLICATE_CAPABILITY",
+              "DEPRECATED_CAPABILITY",
+              "SECURITY_CONCERN"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "proposed_change": {
+            "type": "string",
+            "description": "Human-readable description of the change. Never an applied edit."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "ACCEPTED",
+              "REJECTED",
+              "EDITED"
+            ],
+            "default": "OPEN"
+          },
+          "raised_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "completion": {
+      "type": "object",
+      "description": "A completion claim is valid only when every criterion below is true. Criteria are recorded individually so the claim is auditable rather than asserted.",
+      "additionalProperties": false,
+      "properties": {
+        "claimed": {
+          "type": "boolean",
+          "default": false
+        },
+        "claimed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "final_commit": {
+          "type": "string"
+        },
+        "criteria": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "all_required_steps_succeeded": {
+              "type": "boolean"
+            },
+            "all_verification_commands_passed": {
+              "type": "boolean"
+            },
+            "all_release_gates_passed": {
+              "type": "boolean"
+            },
+            "no_blocking_findings_open": {
+              "type": "boolean"
+            },
+            "required_approvals_recorded": {
+              "type": "boolean"
+            },
+            "declared_manual_reviews_complete": {
+              "type": "boolean"
+            },
+            "results_tied_to_commit": {
+              "type": "boolean"
+            },
+            "capability_manifest_reported": {
+              "type": "boolean"
+            },
+            "execution_order_reported": {
+              "type": "boolean"
+            },
+            "skipped_steps_reported": {
+              "type": "boolean"
+            },
+            "unapplied_recommendations_reported": {
+              "type": "boolean"
+            },
+            "playbook_digest_stable": {
+              "type": "boolean"
+            },
+            "no_unacknowledged_blocking_lane": {
+              "type": "boolean"
+            },
+            "readiness_statement_qualified": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "log": {
+      "type": "array",
+      "description": "Append-only. Never rewritten.",
+      "items": {
+        "type": "object",
+        "required": [
+          "at",
+          "event"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "event": {
+            "type": "string"
+          },
+          "step_id": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "release_readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Readiness is not an average. A single validated critical blocker outranks any score.",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "NOT_READY",
+            "CONDITIONALLY_READY",
+            "READY_FOR_STAGING",
+            "READY_FOR_PRODUCTION"
+          ]
+        },
+        "capped_by": {
+          "type": "string",
+          "description": "Why a higher status was unreachable, e.g. an unassigned lane."
+        },
+        "active_blockers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "blocker"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "blocker": {
+                "type": "string"
+              },
+              "detail": {
+                "type": "string"
+              },
+              "finding_id": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "statement": {
+          "type": "string",
+          "description": "Must be phrased as passing the user-configured gates at a named commit, never as an unqualified production-ready claim."
+        }
+      }
+    },
+    "coverage": {
+      "type": "array",
+      "description": "Per-lane coverage at report time. An UNASSIGNED lane is a hole in the audit and must appear in the readiness statement.",
+      "items": {
+        "type": "object",
+        "required": [
+          "lane",
+          "status"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "lane": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "UNASSIGNED",
+              "PARTIAL",
+              "ASSIGNED"
+            ]
+          },
+          "assigned_capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "blocking": {
+            "type": "boolean"
+          },
+          "acknowledged_by": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "events_log": {
+      "type": "string",
+      "default": ".dokion/events.ndjson",
+      "description": "Append-only NDJSON event stream. The run log in HARDENING.md is its human rendering."
+    }
+  },
+  "$defs": {
+    "executionStatus": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "IN_PROGRESS",
+        "AWAITING_APPROVAL",
+        "SUCCEEDED",
+        "FAILED",
+        "BLOCKED",
+        "SKIPPED_INAPPLICABLE",
+        "SKIPPED_BY_USER",
+        "STOPPED_BY_POLICY"
+      ]
+    },
+    "severityCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "CRITICAL": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "HIGH": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "MEDIUM": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "LOW": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "INFO": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

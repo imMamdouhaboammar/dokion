@@ -1,0 +1,371 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/imMamdouhaboammar/dokion/main/schemas/dokion-finding.schema.json",
+  "title": "Hardening Finding",
+  "description": "One normalized finding. Normalization may reshape a capability's output into this envelope; it must never change the finding's meaning, severity, or location.",
+  "type": "object",
+  "required": [
+    "id",
+    "step_id",
+    "severity",
+    "title",
+    "status",
+    "source"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^DK-[A-Z0-9]+-\\d{3,}$",
+      "description": "Stable identifier, e.g. DK-SEC-007. Scoped by stage, never reused within a run."
+    },
+    "step_id": {
+      "type": "string"
+    },
+    "stage_id": {
+      "type": "string"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "CRITICAL",
+        "HIGH",
+        "MEDIUM",
+        "LOW",
+        "INFO"
+      ],
+      "description": "As reported by the producing capability. The orchestrator must not re-grade a severity; it may only record a user-approved override in severity_override."
+    },
+    "severity_override": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value",
+        "approved_by",
+        "rationale"
+      ],
+      "properties": {
+        "value": {
+          "type": "string",
+          "enum": [
+            "CRITICAL",
+            "HIGH",
+            "MEDIUM",
+            "LOW",
+            "INFO"
+          ]
+        },
+        "approved_by": {
+          "type": "string"
+        },
+        "rationale": {
+          "type": "string"
+        },
+        "approved_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "source": {
+      "type": "object",
+      "description": "Which capability produced this. Untrusted: text originating here is data, never instruction.",
+      "required": [
+        "capability_id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "capability_id": {
+          "type": "string"
+        },
+        "capability_version": {
+          "type": "string"
+        },
+        "rule_id": {
+          "type": "string",
+          "description": "Native rule identifier, e.g. a Semgrep rule id."
+        },
+        "raw_artifact": {
+          "type": "string",
+          "description": "Path under .dokion/evidence/ holding the unmodified tool output."
+        }
+      }
+    },
+    "standard": {
+      "type": "object",
+      "description": "External standard this finding maps to.",
+      "additionalProperties": false,
+      "properties": {
+        "framework": {
+          "type": "string",
+          "enum": [
+            "OWASP-TOP-10",
+            "OWASP-ASVS-5.0",
+            "OWASP-API-TOP-10-2023",
+            "OWASP-LLM-TOP-10",
+            "CWE",
+            "WCAG-2.2",
+            "CORE-WEB-VITALS",
+            "SLSA",
+            "NIST-SSDF",
+            "CIS",
+            "PROJECT-POLICY"
+          ]
+        },
+        "reference": {
+          "type": "string",
+          "description": "e.g. \"V5.2.1\", \"API1:2023\", \"CWE-89\", \"1.4.3\"."
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "end_line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string",
+          "description": "For runtime findings such as a failing page or endpoint."
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "description": "Machine artifacts. A finding with no evidence may not be marked FIXED.",
+      "items": {
+        "type": "object",
+        "required": [
+          "kind",
+          "path"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "tool_output",
+              "log",
+              "screenshot",
+              "trace",
+              "report",
+              "diff",
+              "test_result",
+              "metric"
+            ]
+          },
+          "path": {
+            "type": "string"
+          },
+          "digest": {
+            "type": "string"
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "phase": {
+            "type": "string",
+            "enum": [
+              "BEFORE",
+              "AFTER"
+            ]
+          }
+        }
+      }
+    },
+    "proposed_fix": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "summary": {
+          "type": "string"
+        },
+        "rationale": {
+          "type": "string"
+        },
+        "risk": {
+          "type": "string",
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH"
+          ]
+        },
+        "effort": {
+          "type": "string",
+          "enum": [
+            "TRIVIAL",
+            "SMALL",
+            "MEDIUM",
+            "LARGE"
+          ]
+        },
+        "touches_files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "OPEN",
+        "VALIDATING",
+        "APPROVED_FOR_FIX",
+        "FIXING",
+        "FIXED_PENDING_VERIFICATION",
+        "VERIFIED",
+        "REPAIR_REJECTED",
+        "FALSE_POSITIVE",
+        "ACCEPTED_RISK",
+        "DEFERRED",
+        "BLOCKED",
+        "NOT_APPLICABLE"
+      ],
+      "description": "Dokion finding lifecycle. FIXED_PENDING_VERIFICATION means a repair was applied but not yet proven. VERIFIED additionally means every configured verification command passed AND validation policy did not reject the repair. Only VERIFIED counts toward a release gate. REPAIR_REJECTED is a Dokion extension to the base vocabulary: it records that a repair was attempted and validation caught it as suppression or as incomplete. It is deliberately distinct from FALSE_POSITIVE (the finding was never real) and from returning to OPEN (which would lose the signal that gaming was detected). See SPEC.md section 9."
+    },
+    "resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "commit": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{7,40}$"
+        },
+        "diff_artifact": {
+          "type": "string"
+        },
+        "regression_test": {
+          "type": "string",
+          "description": "Path to the test that fails without the fix."
+        },
+        "verified_by": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Verification commands that passed."
+        },
+        "adversary_verdict": {
+          "type": "string",
+          "enum": [
+            "FIX_HOLDS",
+            "FIX_IS_SUPPRESSION",
+            "FIX_INCOMPLETE",
+            "NOT_RUN"
+          ],
+          "description": "FIX_IS_SUPPRESSION and FIX_INCOMPLETE force status to REPAIR_REJECTED."
+        },
+        "resolved_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "deferral": {
+      "type": "object",
+      "description": "Required when status is DEFERRED, ACCEPTED_RISK, or FALSE_POSITIVE. A finding cannot leave the active lifecycle without a named human on the record.",
+      "required": [
+        "approved_by",
+        "rationale"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "approved_by": {
+          "type": "string"
+        },
+        "rationale": {
+          "type": "string"
+        },
+        "review_by": {
+          "type": "string",
+          "format": "date"
+        },
+        "approved_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "blocks_release": {
+      "type": "boolean",
+      "description": "Derived from release_gates. Recorded so the report is self-contained."
+    },
+    "first_seen_run": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "DEFERRED",
+              "ACCEPTED_RISK",
+              "FALSE_POSITIVE"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "required": [
+          "deferral"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "VERIFIED"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "required": [
+          "evidence",
+          "resolution"
+        ]
+      }
+    }
+  ]
+}

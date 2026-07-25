@@ -1,0 +1,724 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/imMamdouhaboammar/dokion/main/schemas/dokion-playbook.schema.json",
+  "title": "Dokion Playbook",
+  "description": "Validates `.dokion/playbook.json` \u2014 the user's approved selection, ordering, permissions and gates. This is the only file that authorises execution. `dokion.json` is a catalog of what exists; this is the record of what you chose. The orchestrator executes this file and may never edit it.",
+  "type": "object",
+  "required": [
+    "version",
+    "project",
+    "authority",
+    "stages"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of this playbook document."
+    },
+    "project": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target": {
+          "type": "string",
+          "enum": [
+            "BASELINE",
+            "READY_FOR_STAGING",
+            "READY_FOR_PRODUCTION",
+            "ENTERPRISE"
+          ],
+          "description": "Declared readiness objective. Informational only: it never relaxes or tightens a gate on its own."
+        },
+        "repository": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "description": "The control model. Every field here is a prohibition on the orchestrator, not a preference.",
+      "required": [
+        "capability_selection",
+        "execution_order"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "capability_selection": {
+          "const": "USER_ONLY"
+        },
+        "execution_order": {
+          "const": "USER_ONLY"
+        },
+        "capability_behavior": {
+          "type": "string",
+          "enum": [
+            "USER_ONLY",
+            "USER_DEFINED"
+          ]
+        },
+        "automatic_capability_discovery": {
+          "const": false,
+          "default": false
+        },
+        "automatic_installation": {
+          "const": false,
+          "default": false
+        },
+        "automatic_substitution": {
+          "const": false,
+          "default": false
+        },
+        "automatic_reordering": {
+          "const": false,
+          "default": false
+        },
+        "allow_recommendations": {
+          "type": "boolean",
+          "default": true
+        },
+        "recommendations_require_approval": {
+          "const": true,
+          "default": true
+        }
+      }
+    },
+    "enforcement": {
+      "type": "object",
+      "description": "How playbook immutability is enforced at runtime. Hook-based prevention is Claude Code only; hash verification is portable to every agent.",
+      "additionalProperties": false,
+      "properties": {
+        "playbook_immutable": {
+          "type": "boolean",
+          "default": true
+        },
+        "hash_algorithm": {
+          "type": "string",
+          "enum": [
+            "sha256",
+            "sha512"
+          ],
+          "default": "sha256"
+        },
+        "verify_before_each_step": {
+          "type": "boolean",
+          "default": true
+        },
+        "on_mutation": {
+          "type": "string",
+          "enum": [
+            "ABORT_TAINTED",
+            "REQUEST_USER_DECISION"
+          ],
+          "default": "ABORT_TAINTED",
+          "description": "ABORT_TAINTED halts the pipeline, marks the run TAINTED, and records observed vs expected digest."
+        },
+        "protected_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            ".dokion/playbook.json",
+            "schemas/**"
+          ],
+          "description": "Paths the orchestrator must never write. Enforced by PreToolUse hook where available, by digest comparison everywhere."
+        }
+      }
+    },
+    "registry": {
+      "type": "object",
+      "description": "Where capability metadata is verified. The registry has no selection, substitution, or installation authority.",
+      "additionalProperties": false,
+      "properties": {
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Catalog files consulted for capability metadata, normally ['dokion.json']."
+        },
+        "require_verified": {
+          "type": "boolean",
+          "default": true
+        },
+        "require_digest": {
+          "type": "boolean",
+          "default": true
+        },
+        "require_signature": {
+          "type": "boolean",
+          "default": false
+        },
+        "on_unverified": {
+          "type": "string",
+          "enum": [
+            "STOP_STEP",
+            "REQUEST_USER_DECISION"
+          ],
+          "default": "STOP_STEP"
+        }
+      }
+    },
+    "defaults": {
+      "type": "object",
+      "description": "Fallbacks applied only where a step omits the field. A step-level value always wins.",
+      "additionalProperties": false,
+      "properties": {
+        "approval": {
+          "$ref": "#/$defs/approvalPolicy"
+        },
+        "failure_policy": {
+          "$ref": "#/$defs/failurePolicy"
+        },
+        "mode": {
+          "$ref": "#/$defs/executionMode"
+        },
+        "retry_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10,
+          "default": 1
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maximum_iterations": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        },
+        "parallel_execution": {
+          "type": "boolean",
+          "default": false
+        },
+        "validation": {
+          "$ref": "#/$defs/validationPolicy"
+        }
+      }
+    },
+    "stages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/stage"
+      },
+      "description": "Ordered. Executed exactly as declared."
+    },
+    "release_gates": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/releaseGate"
+      },
+      "description": "Evaluated after all stages. A blocking gate that fails prevents any completion claim. A single validated critical blocker outranks any aggregate score."
+    },
+    "notes": {
+      "type": "string"
+    },
+    "manifest": {
+      "type": "string",
+      "default": "dokion.json",
+      "description": "Path to the Dokion manifest whose capability_catalog and loops this playbook draws from."
+    },
+    "coverage_policy": {
+      "type": "object",
+      "description": "How unassigned capability lanes affect completion. A lane with no capability assigned to it is a hole in the audit, and the user decides whether that hole blocks a readiness claim.",
+      "additionalProperties": false,
+      "properties": {
+        "blocking_lanes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Lanes that must be ASSIGNED before any readiness above CONDITIONALLY_READY may be claimed."
+        },
+        "acknowledged_gaps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "lane",
+              "acknowledged_by"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "lane": {
+                "type": "string"
+              },
+              "acknowledged_by": {
+                "type": "string"
+              },
+              "rationale": {
+                "type": "string"
+              },
+              "acknowledged_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "description": "Lanes the user has knowingly left uncovered. Reported in every readiness statement."
+        },
+        "unassigned_lane_readiness_cap": {
+          "type": "string",
+          "enum": [
+            "NOT_READY",
+            "CONDITIONALLY_READY",
+            "READY_FOR_STAGING"
+          ],
+          "default": "CONDITIONALLY_READY",
+          "description": "Highest readiness attainable while any blocking lane is unassigned."
+        }
+      }
+    }
+  },
+  "$defs": {
+    "executionMode": {
+      "type": "string",
+      "enum": [
+        "READ_ONLY",
+        "ANALYZE",
+        "CONFIGURE",
+        "FIX_WITH_APPROVAL",
+        "FIX_AUTOMATICALLY",
+        "VERIFY_ONLY",
+        "REPORT_ONLY"
+      ],
+      "description": "READ_ONLY: inspect only, no findings emitted. ANALYZE: emit findings, never modify source. FIX_WITH_APPROVAL: modify source only after the configured approval. FIX_AUTOMATICALLY: modify source without per-fix approval. VERIFY_ONLY: run verification commands, assert nothing else. REPORT_ONLY: render existing state, touch nothing. CONFIGURE: adjust project configuration only, never application source."
+    },
+    "failurePolicy": {
+      "type": "string",
+      "enum": [
+        "STOP_PIPELINE",
+        "STOP_STAGE",
+        "CONTINUE",
+        "REQUEST_USER_DECISION",
+        "MARK_BLOCKED"
+      ]
+    },
+    "approvalPolicy": {
+      "type": "string",
+      "enum": [
+        "NEVER",
+        "FROM_PLAYBOOK",
+        "BEFORE_INSTALL",
+        "BEFORE_EXECUTION",
+        "BEFORE_WRITE",
+        "BEFORE_EACH_FIX",
+        "BEFORE_COMMIT",
+        "ALWAYS"
+      ]
+    },
+    "capabilityType": {
+      "type": "string",
+      "enum": [
+        "skill",
+        "plugin",
+        "agent",
+        "subagent",
+        "mcp_server",
+        "tool",
+        "command"
+      ]
+    },
+    "capability": {
+      "type": "object",
+      "description": "A capability the USER selected. The orchestrator resolves and verifies it; it never chooses it.",
+      "required": [
+        "type",
+        "id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/capabilityType"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "workflow": {
+          "type": "string",
+          "description": "Named entry point within a multi-workflow plugin."
+        },
+        "version": {
+          "type": "string",
+          "description": "Exact version or the literal 'user-pinned'."
+        },
+        "source": {
+          "type": "string",
+          "description": "Registry key or explicit source location."
+        },
+        "immutable_reference": {
+          "type": "string",
+          "pattern": "^(sha256:[a-fA-F0-9]{64}|sha512:[a-fA-F0-9]{128}|git:[a-fA-F0-9]{40}|sha256:PLACEHOLDER)$",
+          "description": "Content digest or 40-char git commit SHA. Required when registry.require_digest is true. The literal 'sha256:PLACEHOLDER' is a template sentinel: it is schema-legal so reference playbooks can be structurally validated in CI, and it MUST be rejected by the runtime loader. Structural validity is not executability \u2014 a playbook containing any sentinel cannot run."
+        },
+        "platforms": {
+          "type": "object",
+          "description": "Per-agent capability mapping. A step is inapplicable on an agent absent from this map.",
+          "additionalProperties": false,
+          "properties": {
+            "claude_code": {
+              "type": "string"
+            },
+            "codex": {
+              "type": "string"
+            },
+            "gemini_cli": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "description": "The step's declared scope. This IS the tool grant: anything outside it is a hard failure, not a warning.",
+      "additionalProperties": false,
+      "properties": {
+        "read": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "write": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "network": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Allowlisted hosts."
+            }
+          ],
+          "default": false
+        },
+        "shell": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Allowed commands. Absent or empty means no shell access."
+        },
+        "env": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Readable environment variable names. Absent means none."
+        }
+      }
+    },
+    "validationPolicy": {
+      "type": "object",
+      "description": "How findings and repairs are checked before a step may report success.",
+      "additionalProperties": false,
+      "properties": {
+        "adversarial_verification": {
+          "type": "boolean",
+          "default": false,
+          "description": "Run a read-only adversary that attempts to prove the repair is fake."
+        },
+        "suppression_detection": {
+          "type": "boolean",
+          "default": true,
+          "description": "Fail the repair if it silences a check instead of fixing the defect."
+        },
+        "require_regression_test": {
+          "type": "boolean",
+          "default": false
+        },
+        "require_evidence_artifact": {
+          "type": "boolean",
+          "default": true
+        },
+        "forbid_test_deletion": {
+          "type": "boolean",
+          "default": true
+        },
+        "forbid_out_of_scope_edits": {
+          "type": "boolean",
+          "default": true
+        },
+        "max_diff_lines": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Repairs exceeding this are treated as refactors and rejected."
+        }
+      }
+    },
+    "applicability": {
+      "type": "object",
+      "description": "Whether a DECLARED step runs. Detection may gate a declared step; it may never introduce an undeclared one.",
+      "additionalProperties": false,
+      "properties": {
+        "when_paths_exist": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "when_paths_absent": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "when_platform": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "claude_code",
+              "codex",
+              "gemini_cli"
+            ]
+          }
+        },
+        "when_profile": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "boolean",
+              "string",
+              "array"
+            ]
+          },
+          "description": "Matched against the P0 project profile, e.g. {\"has_frontend\": true}."
+        },
+        "on_inapplicable": {
+          "type": "string",
+          "enum": [
+            "SKIP",
+            "MARK_BLOCKED",
+            "STOP_STAGE"
+          ],
+          "default": "SKIP"
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "required": [
+        "id",
+        "capability",
+        "responsibility",
+        "mode"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "name": {
+          "type": "string"
+        },
+        "capability": {
+          "$ref": "#/$defs/capability"
+        },
+        "responsibility": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The single job of this step. Work beyond this sentence is out of scope and must be rejected."
+        },
+        "mode": {
+          "$ref": "#/$defs/executionMode"
+        },
+        "required": {
+          "type": "boolean",
+          "default": true
+        },
+        "depends_on": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "applicability": {
+          "$ref": "#/$defs/applicability"
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "permissions": {
+          "$ref": "#/$defs/permissions"
+        },
+        "approval": {
+          "$ref": "#/$defs/approvalPolicy"
+        },
+        "validation": {
+          "$ref": "#/$defs/validationPolicy"
+        },
+        "verification": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Commands that must exit 0 before this step may report success. Evidence is stored per command."
+        },
+        "success_conditions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stop_conditions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "retry_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "maximum_iterations": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "failure_policy": {
+          "$ref": "#/$defs/failurePolicy"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "stage": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "name": {
+          "type": "string"
+        },
+        "execution": {
+          "type": "string",
+          "enum": [
+            "SEQUENTIAL",
+            "PARALLEL"
+          ],
+          "default": "SEQUENTIAL",
+          "description": "PARALLEL requires isolated git worktrees per writer, non-conflicting file scopes, independent verification per result, and a declared merge order. Claude Code only; other agents degrade to SEQUENTIAL."
+        },
+        "merge_order": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Required when execution is PARALLEL and more than one step writes."
+        },
+        "depends_on": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "applicability": {
+          "$ref": "#/$defs/applicability"
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/step"
+          }
+        },
+        "notes": {
+          "type": "string"
+        },
+        "loop_ref": {
+          "type": "string",
+          "description": "Id of a loop defined in the manifest. Referencing a loop imports its ordered_steps verbatim; it does not let the orchestrator alter them. Steps listed alongside a loop_ref are appended after the loop's steps."
+        }
+      }
+    },
+    "releaseGate": {
+      "type": "object",
+      "required": [
+        "id",
+        "blocking"
+      ],
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": [
+            "command"
+          ]
+        },
+        {
+          "required": [
+            "condition"
+          ]
+        }
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "command": {
+          "type": "string",
+          "description": "Must exit 0 to pass."
+        },
+        "condition": {
+          "type": "string",
+          "description": "Expression over run state, e.g. \"open_findings.CRITICAL == 0\"."
+        },
+        "blocking": {
+          "type": "boolean"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

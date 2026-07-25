@@ -1,0 +1,249 @@
+{
+  "$schema": "../schemas/dokion-playbook.schema.json",
+  "version": "1.0.0",
+  "project": {
+    "name": "example-project",
+    "target": "READY_FOR_PRODUCTION",
+    "notes": "Minimal three-stage playbook. Copy to .dokion/playbook.json, replace every sha256:PLACEHOLDER with a real digest, and delete any step you do not want executed."
+  },
+  "authority": {
+    "capability_selection": "USER_ONLY",
+    "execution_order": "USER_ONLY",
+    "capability_behavior": "USER_ONLY",
+    "automatic_capability_discovery": false,
+    "automatic_installation": false,
+    "automatic_substitution": false,
+    "automatic_reordering": false,
+    "allow_recommendations": true,
+    "recommendations_require_approval": true
+  },
+  "enforcement": {
+    "playbook_immutable": true,
+    "hash_algorithm": "sha256",
+    "verify_before_each_step": true,
+    "on_mutation": "ABORT_TAINTED",
+    "protected_paths": [
+      ".dokion/playbook.json",
+      "schemas/**"
+    ]
+  },
+  "registry": {
+    "sources": [
+      "dokion.json"
+    ],
+    "require_verified": true,
+    "require_digest": true,
+    "on_unverified": "STOP_STEP"
+  },
+  "defaults": {
+    "approval": "BEFORE_WRITE",
+    "failure_policy": "STOP_STAGE",
+    "retry_count": 1,
+    "maximum_iterations": 1,
+    "parallel_execution": false,
+    "validation": {
+      "suppression_detection": true,
+      "require_evidence_artifact": true,
+      "forbid_test_deletion": true,
+      "forbid_out_of_scope_edits": true
+    }
+  },
+  "stages": [
+    {
+      "id": "baseline",
+      "name": "Project Baseline",
+      "execution": "SEQUENTIAL",
+      "steps": [
+        {
+          "id": "project-inventory",
+          "capability": {
+            "type": "skill",
+            "id": "project-inventory",
+            "version": "1.2.0",
+            "source": "user-approved-registry",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Detect the repository stack and produce a project inventory.",
+          "mode": "READ_ONLY",
+          "required": true,
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              "HARDENING.md",
+              ".dokion/**"
+            ],
+            "network": false,
+            "shell": [
+              "git status",
+              "git rev-parse HEAD",
+              "bun --version"
+            ]
+          },
+          "approval": "NEVER",
+          "verification": [
+            "bun test tests/inventory"
+          ],
+          "success_conditions": [
+            "stack_detected",
+            "commit_sha_recorded",
+            "project_profile_recorded"
+          ],
+          "failure_policy": "STOP_PIPELINE"
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "name": "Security Hardening",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "baseline"
+      ],
+      "steps": [
+        {
+          "id": "security-review",
+          "capability": {
+            "type": "plugin",
+            "id": "codex-security",
+            "workflow": "security-scan",
+            "version": "user-pinned",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Identify security findings within the repository.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "BEFORE_EXECUTION",
+          "permissions": {
+            "read": [
+              "src/**",
+              "app/**",
+              "packages/**",
+              "infra/**",
+              "tests/**"
+            ],
+            "write": [
+              ".dokion/findings/**",
+              ".dokion/evidence/**",
+              "HARDENING.md"
+            ],
+            "network": false
+          },
+          "maximum_iterations": 1,
+          "failure_policy": "STOP_STAGE"
+        },
+        {
+          "id": "security-fixes",
+          "capability": {
+            "type": "plugin",
+            "id": "codex-security",
+            "workflow": "fix-finding",
+            "version": "user-pinned",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Repair security findings approved by the user.",
+          "mode": "FIX_WITH_APPROVAL",
+          "required": true,
+          "depends_on": [
+            "security-review"
+          ],
+          "approval": "BEFORE_EACH_FIX",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              "src/**",
+              "app/**",
+              "packages/**",
+              "tests/**"
+            ],
+            "network": false
+          },
+          "validation": {
+            "adversarial_verification": true,
+            "suppression_detection": true,
+            "require_regression_test": true,
+            "require_evidence_artifact": true,
+            "forbid_test_deletion": true,
+            "forbid_out_of_scope_edits": true,
+            "max_diff_lines": 200
+          },
+          "verification": [
+            "bun test",
+            "bun run typecheck",
+            "bun run lint"
+          ],
+          "maximum_iterations": 3,
+          "failure_policy": "REQUEST_USER_DECISION"
+        }
+      ]
+    },
+    {
+      "id": "code-review",
+      "name": "Final Code Review",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "security"
+      ],
+      "steps": [
+        {
+          "id": "coderabbit-review",
+          "capability": {
+            "type": "plugin",
+            "id": "coderabbit",
+            "workflow": "code-review",
+            "version": "user-pinned",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Review the final committed diff.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "BEFORE_EXECUTION",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/findings/**",
+              ".dokion/evidence/**",
+              "HARDENING.md"
+            ],
+            "network": true
+          },
+          "maximum_iterations": 2,
+          "failure_policy": "STOP_STAGE"
+        }
+      ]
+    }
+  ],
+  "release_gates": [
+    {
+      "id": "tests",
+      "command": "bun test",
+      "blocking": true
+    },
+    {
+      "id": "types",
+      "command": "bun run typecheck",
+      "blocking": true
+    },
+    {
+      "id": "lint",
+      "command": "bun run lint",
+      "blocking": true
+    },
+    {
+      "id": "critical-findings",
+      "condition": "open_findings.CRITICAL == 0",
+      "blocking": true
+    },
+    {
+      "id": "high-findings",
+      "condition": "open_findings.HIGH == 0",
+      "blocking": true
+    }
+  ],
+  "manifest": "dokion.json"
+}
