@@ -24,6 +24,17 @@ export type FailurePolicy =
   | "REQUEST_USER_DECISION"
   | "MARK_BLOCKED";
 
+export type DokionPlatform = "claude_code" | "codex" | "gemini_cli" | "other";
+export type InapplicablePolicy = "SKIP" | "MARK_BLOCKED" | "STOP_STAGE";
+
+export interface Applicability {
+  when_paths_exist?: string[];
+  when_paths_absent?: string[];
+  when_platform?: Array<Exclude<DokionPlatform, "other">>;
+  when_profile?: Record<string, boolean | string | unknown[]>;
+  on_inapplicable?: InapplicablePolicy;
+}
+
 export interface ValidationPolicy {
   adversarial_verification?: boolean;
   suppression_detection?: boolean;
@@ -56,14 +67,14 @@ export interface PlaybookStep {
   mode: ExecutionMode;
   required?: boolean;
   depends_on?: string[];
+  applicability?: Applicability;
   approval?: ApprovalPolicy;
   validation?: ValidationPolicy;
   verification?: string[];
   success_conditions?: string[];
   stop_conditions?: string[];
   failure_policy?: FailurePolicy;
-  retry_count?: number;
-  maximum_iterations?: number;
+  retry  maximum_iterations?: number;
   timeout_seconds?: number;
   permissions?: {
     read?: string[];
@@ -79,6 +90,7 @@ export interface PlaybookStage {
   name?: string;
   execution: "SEQUENTIAL" | "PARALLEL";
   depends_on?: string[];
+  applicability?: Applicability;
   steps: PlaybookStep[];
 }
 
