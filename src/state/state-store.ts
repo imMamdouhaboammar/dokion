@@ -30,6 +30,8 @@ export class StateStore {
           captured_at: now
         }
       : undefined;
+    const platform = input.platform;
+    const agent = platform?.agent ?? input.agent;
 
     const state: DokionState = {
       $schema: "../schemas/dokion-state.schema.json",
@@ -38,7 +40,10 @@ export class StateStore {
         id: `run-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
         started_at: now,
         status: "RUNNING",
-        ...(input.agent ? { agent: input.agent } : {})
+        ...(agent ? { agent } : {}),
+        ...(platform?.version ? { agent_version: platform.version } : {}),
+        ...(platform?.model ? { model: platform.model } : {}),
+        ...(platform ? { degradations: platform.degradations } : {})
       },
       playbook: {
         path: ".dokion/playbook.json",
@@ -47,6 +52,7 @@ export class StateStore {
         verified_at: now
       },
       ...(baseline ? { baseline } : {}),
+      ...(platform ? { profile: { platform } } : {}),
       stages: input.stages.map((stage) => ({
         id: stage.id,
         status: "PENDING",
