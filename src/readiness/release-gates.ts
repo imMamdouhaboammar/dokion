@@ -53,10 +53,12 @@ function requiredStepsComplete(playbook: DokionPlaybook, state: DokionState): bo
 }
 
 function blockingLanesAssigned(playbook: DokionPlaybook, state: DokionState): boolean {
-  const blockingLanes = playbook.coverage_policy?.blocking_lanes ?? [];
-  if (blockingLanes.length === 0) return true;
   const coverageByLane = new Map((state.coverage ?? []).map((lane) => [lane.lane, lane] as const));
-  return blockingLanes.every((lane) => coverageByLane.get(lane)?.status === "ASSIGNED");
+  const blockingLanes = new Set([
+    ...(playbook.coverage_policy?.blocking_lanes ?? []),
+    ...(state.coverage ?? []).filter((lane) => lane.blocking).map((lane) => lane.lane)
+  ]);
+  return [...blockingLanes].every((lane) => coverageByLane.get(lane)?.status === "ASSIGNED");
 }
 
 function evaluateCondition(input: {
