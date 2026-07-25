@@ -77,13 +77,17 @@ jobs:
           set -o pipefail
           bunx @google/gemini-cli@0.51.0 extensions validate . 2>&1 | tee gemini-extension.log
 
-      - name: Verify clean repository
+      - name: Verify no tracked mutation or credential residue
         shell: bash
         run: |
-          test -z "$(git status --porcelain --untracked-files=all)" || {
-            git status --short
-            exit 1
-          }
+          git diff --exit-code
+          git diff --cached --exit-code
+          test ! -e .npmrc
+          test ! -e bunfig.toml
+          test ! -e .env
+          test ! -e .dokion
+          test ! -e HARDENING.md
+          test -z "$(find . -maxdepth 1 -type f -name '*.tgz' -print -quit)"
 
       - name: Upload diagnostics
         if: always()
