@@ -1,3 +1,4 @@
+import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 
 import { validateFindingData } from "../contracts/schema-validator.ts";
@@ -11,17 +12,30 @@ function laneCode(stageId: string): string {
   return value || "GEN";
 }
 
+function findingsDirectory(root: string): string {
+  return join(root, ".dokion", "findings");
+}
+
 function findingPath(root: string, id: string): string {
-  return join(root, ".dokion", "findings", `${id}.json`);
+  return join(findingsDirectory(root), `${id}.json`);
 }
 
 export async function listFindings(root: string): Promise<NormalizedFinding[]> {
-  const glob = new Bun.Glob(".dokion/findings/*.json");
-  const paths: string[] = [];
-  for await (const path of glob.scan({ cwd: root, onlyFiles: true })) {
-    paths.push(path);
+  let entries;
+  try {
+    entries = await readdir(findingsDirectory(root), { withFileTypes: true });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw error;
   }
-  const findings = await Promise.all(paths.sort().map((path) => readJson<NormalizedFinding>(join(root, path))));
+
+  const filenames = entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
+    .map((entry) => entry.name)
+    .sort();
+  const findings = await Promise.all(
+    filenames.map((filename) => readJson<NormalizedFinding>(join(findingsDirectory(root), filename)))
+  );
   return findings.sort((left, right) => left.id.localeCompare(right.id));
 }
 
