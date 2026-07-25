@@ -7,7 +7,7 @@ description: Runs and resumes a user-authored Dokion hardening playbook, records
 
 Use the Dokion CLI as the execution boundary. `.dokion/playbook.json` is the only execution authority.
 
-Never select, install, substitute, reorder, upgrade, or enable a capability. Never edit `.dokion/playbook.json`. Recommendations are inert until the user changes the playbook.
+Never select, install, substitute, reorder, or enable a capability. Never upgrade a capability or edit `.dokion/playbook.json`. Recommendations are inert until the user changes the playbook.
 
 ## Start
 
