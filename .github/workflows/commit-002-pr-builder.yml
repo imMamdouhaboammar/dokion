@@ -1,0 +1,158 @@
+name: Prepare Commit 002
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    if: github.head_ref == 'feat/002-reconcile-spec-status'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/002-reconcile-spec-status
+          fetch-depth: 0
+
+      - name: Reconcile documentation status
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+
+          spec_path = Path("SPEC.md")
+          readme_path = Path("README.md")
+          spec = spec_path.read_text()
+          readme = readme_path.read_text()
+
+          stale_status = """**Status:** spec-stage. This repository defines the system; it does not yet implement it.
+          **Version:** 1.0.0
+          **Tagline:** Your rules. Your tools. Proven software.""".replace("\n          ", "\n")
+          current_status = """**Status:** Runtime baseline M0-M6 implemented.
+          **Specification version:** 1.0.0
+          **Tagline:** Your rules. Your tools. Proven software.
+
+          Production hardening backlog: in progress.
+
+          The implemented baseline is recorded in [`docs/architecture/current-baseline.md`](docs/architecture/current-baseline.md). This status does not assert general production readiness for Dokion or for any repository evaluated by Dokion.""".replace("\n          ", "\n")
+
+          old_milestones = """### 14.1 Milestones
+
+          Each has a binary acceptance test. Do not proceed until it passes.
+
+          | M | Scope | Acceptance |
+          |---|---|---|
+          | **M0** | Schemas + validation CI | All schemas and playbooks validate; CI fails on a malformed playbook; CI fails on `sha256:PLACEHOLDER` in an active playbook |
+          | **M1** | Loader, digest pinning, enforcement hook | Mid-run playbook mutation aborts as `TAINTED` with expected vs observed recorded; hook blocks a direct write on Claude Code; hookless agents record `NO_HOOK_ENFORCEMENT` |
+          | **M2** | Execution engine + journal writer | A three-step playbook runs in declared order; killing and resuming reproduces exact state from disk with nothing lost |
+          | **M3** | Vertical slice: the security stage of `example.playbook.json` | Findings produced → normalized → approval-gated → repaired → verified → journaled, with BEFORE and AFTER artifacts |
+          | **M4** | Validation policy + adversary | A faked fix (suppression over a real defect) is caught; the finding lands in `REJECTED_BY_VALIDATION`, never `VERIFIED` |
+          | **M5** | Reference playbooks + adapters | Identical canonical `SKILL.md` files load in all three agents; each run reports its own degradations |
+          | **M6** | Marketplace publish | `claude plugin validate --strict` passes; clean install reproduces M3 in a fresh checkout |""".replace("\n          ", "\n")
+
+          new_milestones = """### 14.1 Implemented milestone baseline
+
+          Runtime baseline: M0-M6 implemented. Each milestone is limited to behavior covered by code and CI at the audited baseline in [`docs/architecture/current-baseline.md`](docs/architecture/current-baseline.md).
+
+          | M | Scope | Status | Audited acceptance evidence |
+          |---|---|---|---|
+          | **M0** | Schemas and validation CI | Implemented | Schemas, reference playbooks, and catalog contracts validate; malformed active playbooks and unresolved digest placeholders are rejected |
+          | **M1** | Loader, digest pinning, and enforcement guard | Implemented | Active playbook mutation is detected as `TAINTED`; Claude Code receives a fail-closed guard; weaker platforms record degradations |
+          | **M2** | Execution engine and journal | Implemented | Declared stages and steps execute in order with disk state, events, evidence, reporting, and resume |
+          | **M3** | Findings and remediation lifecycle | Implemented | Findings are normalized, approval-gated, repaired through declared commands, verified, and persisted with evidence |
+          | **M4** | Adversarial repair validation and readiness gates | Implemented | Out-of-scope edits, suppression, deleted tests, missing regression evidence, and failed verification reject and roll back repairs |
+          | **M5** | Cross-agent adapters | Implemented | One canonical hardening skill is packaged for Claude Code, Codex, and Gemini CLI with explicit platform degradations |
+          | **M6** | Distribution and release | Implemented | Embedded assets, exact package inspection, clean Bun installation, Gemini extension validation, five compiled binaries, and protected tag release automation pass CI |
+
+          Production hardening backlog: in progress. The next backlog adds missing CLI commands, stronger state integrity, capability provenance, bounded autopilot, module contracts, broader platform proof, and release attestations. This status does not assert general production readiness.""".replace("\n          ", "\n")
+
+          readme_old = """## Current status
+
+          Dokion is an executable Bun CLI with cross-agent packaging, adversarial repair validation, clean-install reproduction, package validation, and a protected Bun-only release pipeline.""".replace("\n          ", "\n")
+          readme_new = """## Current status
+
+          Runtime baseline: M0-M6 implemented.
+
+          Production hardening backlog: in progress.
+
+          Dokion is an executable Bun CLI with cross-agent packaging, adversarial repair validation, clean-install reproduction, package validation, and a protected Bun-only release pipeline. The audited baseline is recorded in [`docs/architecture/current-baseline.md`](docs/architecture/current-baseline.md), and the active production backlog is recorded in [the 100-commit implementation plan](docs/superpowers/plans/2026-07-25-production-grade-bounded-autopilot-backlog.md). This status does not assert general production readiness.""".replace("\n          ", "\n")
+
+          assert spec.count(stale_status) == 1
+          assert spec.count(old_milestones) == 1
+          assert readme.count(readme_old) == 1
+
+          spec_path.write_text(spec.replace(stale_status, current_status).replace(old_milestones, new_milestones))
+          readme_path.write_text(readme.replace(readme_old, readme_new))
+
+          test_path = Path("tests/contracts/document-status.test.ts")
+          test_path.parent.mkdir(parents=True, exist_ok=True)
+          test_path.write_text('''import { describe, expect, test } from "bun:test";
+
+          const root = process.cwd();
+
+          async function read(path: string): Promise<string> {
+            return Bun.file(`${root}/${path}`).text();
+          }
+
+          describe("documentation implementation status contract", () => {
+            test("does not describe the implemented runtime as spec-only", async () => {
+              const specification = await read("SPEC.md");
+
+              expect(specification).not.toContain("**Status:** spec-stage");
+              expect(specification).not.toContain("This repository defines the system; it does not yet implement it.");
+            });
+
+            test("README and specification publish the same implementation marker", async () => {
+              const [readme, specification] = await Promise.all([read("README.md"), read("SPEC.md")]);
+              const marker = "M0-M6 implemented";
+
+              expect(readme).toContain(marker);
+              expect(specification).toContain(marker);
+              expect(readme).toContain("docs/architecture/current-baseline.md");
+              expect(specification).toContain("docs/architecture/current-baseline.md");
+            });
+
+            test("keeps implemented milestones separate from the production backlog", async () => {
+              const [readme, specification] = await Promise.all([read("README.md"), read("SPEC.md")]);
+
+              expect(readme).toContain("Production hardening backlog: in progress");
+              expect(specification).toContain("Production hardening backlog: in progress");
+              expect(specification).toContain("| **M6** | Distribution and release | Implemented |");
+              expect(specification).toContain("This status does not assert general production readiness");
+            });
+          });
+          '''.replace("\n          ", "\n").lstrip())
+
+          progress = Path("docs/progress/production-backlog-progress.md")
+          progress.parent.mkdir(parents=True, exist_ok=True)
+          progress.write_text('''# Dokion Production Backlog Progress
+
+          This ledger records merged implementation items from the 100-commit production backlog. The current item records the previously merged SHA because a commit cannot contain its own final Git SHA.
+
+          | Item | Status | Main SHA | Pull request | Verification |
+          | --- | --- | --- | --- | --- |
+          | 001 | Merged | `52a85a61ba5a31840e53544cc78e083d594e391f` | #12 | CI run 216: contracts, tests, typecheck, build, binaries, distribution, clean install, Gemini validation, and residue checks passed |
+          '''.replace("\n          ", "\n").lstrip())
+
+          Path(".github/workflows/commit-002-pr-builder.yml").unlink()
+          PY
+
+      - name: Verify and commit final branch state
+        shell: bash
+        run: |
+          set -euo pipefail
+          bun install --frozen-lockfile
+          bun test tests/contracts/document-status.test.ts
+          bun run typecheck
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add SPEC.md README.md tests/contracts/document-status.test.ts docs/progress/production-backlog-progress.md .github/workflows/commit-002-pr-builder.yml
+          git commit -m "docs: reconcile specification implementation status"
+          git push origin HEAD:feat/002-reconcile-spec-status
