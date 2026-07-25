@@ -5,15 +5,65 @@
   "type": "module",
   "private": false,
   "license": "MIT",
+  "author": {
+    "name": "Mamdouh Aboammar"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/imMamdouhaboammar/dokion.git"
+  },
+  "homepage": "https://github.com/imMamdouhaboammar/dokion#readme",
+  "bugs": {
+    "url": "https://github.com/imMamdouhaboammar/dokion/issues"
+  },
+  "keywords": [
+    "software-hardening",
+    "agent",
+    "claude-code",
+    "codex",
+    "gemini-cli",
+    "security",
+    "testing",
+    "release-gates",
+    "bun"
+  ],
   "packageManager": "bun@1.3.14",
   "bin": {
     "dokion": "./src/cli.ts"
+  },
+  "files": [
+    "src",
+    "schemas",
+    "skills",
+    "playbooks/reference",
+    "templates",
+    "commands",
+    "hooks",
+    "scripts/claude-playbook-guard.ts",
+    "scripts/validate-distribution.ts",
+    "scripts/smoke-test-package.ts",
+    "dokion.json",
+    "SPEC.md",
+    "AGENTS.md",
+    "GEMINI.md",
+    "gemini-extension.json",
+    ".claude-plugin",
+    ".claude/skills/dokion",
+    ".codex/AGENTS.md",
+    ".agents/skills/dokion-hardening"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "build": "bun build src/cli.ts --compile --outfile dist/dokion",
-    "validate:contracts": "python3 schemas/conformance_test.py && bun run src/cli.ts validate --catalog-only"
+    "validate:contracts": "python3 schemas/conformance_test.py && bun run src/cli.ts validate --catalog-only",
+    "validate:distribution": "bun run scripts/validate-distribution.ts",
+    "smoke:package": "bun run scripts/smoke-test-package.ts",
+    "prepack": "bun run validate:distribution && bun test && bun run typecheck"
   },
   "dependencies": {
     "ajv": "8.20.0",
