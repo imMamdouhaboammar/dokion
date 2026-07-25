@@ -38,7 +38,7 @@ function missing(error: unknown): boolean {
 export async function evaluatePlaybookGuard(root: string): Promise<GuardResult> {
   const statePath = join(root, ".dokion", "state.json");
   const playbookPath = join(root, ACTIVE_PLAYBOOK_PATH);
-  if (!(await exists(statePath)) || !(await exists(playbookPath))) return { allow: true };
+  if (!(await exists(statePath))) return { allow: true };
 
   let state: StoredState;
   try {
@@ -51,7 +51,12 @@ export async function evaluatePlaybookGuard(root: string): Promise<GuardResult> 
   if (!activeStatuses.has(state.run?.status ?? "")) return { allow: true };
 
   const expected = state.playbook?.digest;
-  if (!expected || !expected.startsWith("sha256:")) return { allow: true };
+  if (!expected || !/^sha256:[a-f0-9]{64}$/i.test(expected)) {
+    return {
+      allow: false,
+      reason: "PLAYBOOK_TAINTED: Active run contains an invalid playbook digest."
+    };
+  }
 
   const declaredPath = state.playbook?.path ?? ACTIVE_PLAYBOOK_PATH;
   if (declaredPath !== ACTIVE_PLAYBOOK_PATH) {
@@ -60,6 +65,10 @@ export async function evaluatePlaybookGuard(root: string): Promise<GuardResult> 
       reason: `PLAYBOOK_TAINTED: State contains a noncanonical playbook path: ${declaredPath}`,
       expected
     };
+  }
+
+  if (!(await exists(playbookPath))) {
+    return { allow: false, reason: `PLAYBOOK_TAINTED: Active playbook is missing at ${ACTIVE_PLAYBOOK_PATH}.`, expected };
   }
 
   try {
@@ -75,7 +84,7 @@ export async function evaluatePlaybookGuard(root: string): Promise<GuardResult> 
     if (missing(error)) {
       return { allow: false, reason: `PLAYBOOK_TAINTED: Active playbook is missing at ${ACTIVE_PLAYBOOK_PATH}.`, expected };
     }
-    return { allow: false, reason: `PLAYBOOK_TAINTED: Active playbook metadata could not be read.`, expected };
+    return { allow: false, reason: "PLAYBOOK_TAINTED: Active playbook metadata could not be read.", expected };
   }
 
   const observed = sha256(await readFile(playbookPath));
