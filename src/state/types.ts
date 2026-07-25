@@ -27,6 +27,14 @@ export interface ApprovalStateRecord {
   notes?: string;
 }
 
+export interface CoverageLaneState {
+  lane: string;
+  status: "UNASSIGNED" | "PARTIAL" | "ASSIGNED";
+  assigned_capabilities?: string[];
+  blocking?: boolean;
+  acknowledged_by?: string;
+}
+
 export interface StepState {
   id: string;
   status: ExecutionStatus;
@@ -111,7 +119,7 @@ export interface DokionState {
   completion?: Record<string, unknown>;
   log?: Array<{ at: string; event: string; step_id?: string; detail?: string }>;
   release_readiness?: Record<string, unknown>;
-  coverage?: Array<Record<string, unknown>>;
+  coverage?: CoverageLaneState[];
   events_log?: string;
 }
 
