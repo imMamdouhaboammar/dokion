@@ -6,6 +6,7 @@ on:
       - main
       - "feat/**"
       - "fix/**"
+      - "codex/**"
   pull_request:
     branches:
       - main
@@ -16,7 +17,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -58,6 +59,32 @@ jobs:
       - name: Build
         run: bun run build
 
+      - name: Validate packed distribution
+        shell: bash
+        run: |
+          set -o pipefail
+          bun run validate:distribution 2>&1 | tee distribution.log
+
+      - name: Smoke-test clean Bun installation
+        shell: bash
+        run: |
+          set -o pipefail
+          bun run smoke:package 2>&1 | tee package-smoke.log
+
+      - name: Validate Gemini CLI extension
+        shell: bash
+        run: |
+          set -o pipefail
+          bunx @google/gemini-cli@0.51.0 extensions validate . 2>&1 | tee gemini-extension.log
+
+      - name: Verify clean repository
+        shell: bash
+        run: |
+          test -z "$(git status --porcelain --untracked-files=all)" || {
+            git status --short
+            exit 1
+          }
+
       - name: Upload diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -66,5 +93,8 @@ jobs:
           path: |
             test.log
             typecheck.log
+            distribution.log
+            package-smoke.log
+            gemini-extension.log
             bun.lock
           if-no-files-found: ignore
