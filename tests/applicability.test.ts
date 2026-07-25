@@ -136,28 +136,28 @@ describe("declared applicability", () => {
   test("rejects path, profile, and platform mismatches with deterministic reasons", async () => {
     const root = await temporaryRoot();
 
-    expect((await evaluateApplicability({
+    expect(await evaluateApplicability({
       root,
       platform: "codex",
       profile: profile(),
       applicability: { when_paths_exist: ["missing/**/*.ts"] }
     })).toEqual({ applicable: false, reason: "required path pattern has no match: missing/**/*.ts" });
 
-    expect((await evaluateApplicability({
+    expect(await evaluateApplicability({
       root,
       platform: "codex",
       profile: profile(),
       applicability: { when_paths_absent: ["src/**/*.ts"] }
     })).toEqual({ applicable: false, reason: "forbidden path pattern matched: src/**/*.ts" });
 
-    expect((await evaluateApplicability({
+    expect(await evaluateApplicability({
       root,
       platform: "codex",
       profile: profile(),
       applicability: { when_profile: { has_frontend: true } }
     })).toEqual({ applicable: false, reason: "profile mismatch: has_frontend" });
 
-    expect((await evaluateApplicability({
+    expect(await evaluateApplicability({
       root,
       platform: "codex",
       profile: profile(),
