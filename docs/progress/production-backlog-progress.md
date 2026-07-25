@@ -7,4 +7,4 @@ This ledger records merged implementation items from the 100-commit production b
 | 001 | Merged | `52a85a61ba5a31840e53544cc78e083d594e391f` | #12 | CI run 216: contracts, tests, typecheck, build, binaries, distribution, clean install, Gemini validation, and residue checks passed |
 | 002 | Merged | `d71bac283d42675766594ecbe29e697a549a4188` | #15 | RED contract proven in CI run 220; final CI run 240 passed contracts, tests, typecheck, build, binaries, distribution, clean install, Gemini validation, and residue checks |
 | 003 | Merged | `33ed5d6e3c51279ebfdc4b9e86807548296255ee` | #17 | RED contract proven in CI run 244; final CI run 255 passed contracts, tests, typecheck, build, binaries, distribution, clean install, Gemini validation, and residue checks |
-| 004 | In review | `pending` | #19 | RED contract proven in CI run 259; final full-suite verification pending |
+| 004 | Verified in PR | `pending` | #19 | RED contract proven in CI run 259; final CI run 268 passed contracts, tests, typecheck, build, binaries, distribution, clean install, Gemini validation, and residue checks |
