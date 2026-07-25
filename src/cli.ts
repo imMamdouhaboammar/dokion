@@ -5,6 +5,7 @@ import { join } from "node:path";
 
 import { recordApproval, type ApprovalSubjectType } from "./approvals/approval-store.ts";
 import { builtinCatalog } from "./catalog/builtin-catalog.ts";
+import { renderCliHelp, resolveCliCommand } from "./cli/command-registry.ts";
 import { validateRepositoryContracts } from "./contracts/schema-validator.ts";
 import { DokionError } from "./core/errors.ts";
 import { readJson } from "./core/json.ts";
@@ -30,7 +31,7 @@ function optionValue(name: string): string | undefined {
 }
 
 function help(): void {
-  console.log(`Dokion ${DOKION_VERSION}\n\nUsage: dokion <command>\n\nObserve:\n  inspect\n  doctor\n  status\n  findings\n  report\n  tools list\n  skills list\n  plugins list\n  loops list\n\nConfigure:\n  init\n  validate [--catalog-only]\n\nExecute:\n  run\n  resume\n  verify\n  approve <step:id|finding:id> --by <identity> [--notes <text>]\n  reject <step:id|finding:id> --by <identity> [--notes <text>]\n\nDokion never installs, selects, substitutes, reorders, or enables capabilities.`);
+  console.log(renderCliHelp(DOKION_VERSION));
 }
 
 async function initialize(): Promise<void> {
@@ -172,6 +173,15 @@ async function main(): Promise<void> {
     case "-h":
       help();
       return;
+  }
+
+  const registeredCommand = resolveCliCommand(command);
+  if (!registeredCommand) throw new Error(`Unknown command: ${command}`);
+  if (registeredCommand.status === "PLANNED") {
+    throw new Error(`Command is planned but not implemented: ${registeredCommand.manifestCommand}`);
+  }
+
+  switch (registeredCommand.runtimeCase) {
     case "init":
       await initialize();
       return;
@@ -225,7 +235,7 @@ async function main(): Promise<void> {
       await listCatalog("loops");
       return;
     default:
-      throw new Error(`Unknown command: ${command}`);
+      throw new Error(`Runtime handler missing for registered command: ${registeredCommand.manifestCommand}`);
   }
 }
 
