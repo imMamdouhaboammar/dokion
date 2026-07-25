@@ -115,6 +115,11 @@ export async function validateStateData(root: string, data: unknown, file = ".do
   return registry.state(data) ? [] : normalizeErrors(file, registry.state.errors);
 }
 
+export async function validateFindingData(root: string, data: unknown, file = ".dokion/findings/unknown.json"): Promise<ValidationIssue[]> {
+  const registry = await buildRegistry(root);
+  return registry.finding(data) ? [] : normalizeErrors(file, registry.finding.errors);
+}
+
 export async function validateRepositoryContracts(root: string): Promise<ValidationSummary> {
   const registry = await buildRegistry(root);
   const checkedFiles: string[] = [];
