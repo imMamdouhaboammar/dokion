@@ -179,7 +179,7 @@ describe("M3 capability findings and remediation", () => {
     expect(await readFile(join(root, "src/query.ts"), "utf8")).toContain("values: [name]");
   }, 20000);
 
-  test("rejects a suppression repair and never marks the finding verified", async () => {
+  test("rejects and rolls back a suppression repair", async () => {
     const root = await fixture("suppression", "NEVER");
     const state = await new ExecutionEngine(root).run();
     expect(state.run.status).toBe("FAILED");
@@ -187,6 +187,6 @@ describe("M3 capability findings and remediation", () => {
     const [finding] = await listFindings(root);
     expect(finding?.status).toBe("REPAIR_REJECTED");
     expect(finding?.resolution?.adversary_verdict).toBe("FIX_IS_SUPPRESSION");
-    expect(await readFile(join(root, "src/query.ts"), "utf8")).toContain("// nosec");
+    expect(await readFile(join(root, "src/query.ts"), "utf8")).not.toContain("// nosec");
   }, 20000);
 });
