@@ -74,7 +74,8 @@ export interface PlaybookStep {
   success_conditions?: string[];
   stop_conditions?: string[];
   failure_policy?: FailurePolicy;
-  retry  maximum_iterations?: number;
+  retry_count?: number;
+  maximum_iterations?: number;
   timeout_seconds?: number;
   permissions?: {
     read?: string[];
