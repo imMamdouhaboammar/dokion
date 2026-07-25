@@ -70,8 +70,9 @@ describe("canonical CLI command registry", () => {
 
     for (const descriptor of CLI_COMMAND_REGISTRY) {
       const entry = byCommand.get(descriptor.manifestCommand);
+      const expectedUsage = "manifestUsage" in descriptor ? descriptor.manifestUsage : undefined;
       expect(entry).toBeDefined();
-      expect(entry?.usage).toBe(descriptor.manifestUsage);
+      expect(entry?.usage).toBe(expectedUsage);
     }
   });
 
