@@ -1,6 +1,8 @@
+import { evaluateApplicability, detectPlatform } from "../applicability/evaluate-applicability.ts";
 import { isApproved, latestDecision } from "../approvals/approval-store.ts";
 import { DokionError } from "../core/errors.ts";
 import { writeCommandEvidence } from "../evidence/evidence-store.ts";
+import { inspectProject } from "../inspect/project-inspector.ts";
 import { assertPlaybookUnchanged, loadActivePlaybook } from "../playbook/load-playbook.ts";
 import type { LoadedPlaybook, PlaybookStage, PlaybookStep } from "../playbook/types.ts";
 import { writeHardeningReport } from "../report/render-hardening.ts";
@@ -16,6 +18,8 @@ interface GitContext {
   branch?: string;
   worktreeClean?: boolean;
 }
+
+type InapplicableOutcome = "CONTINUE" | "STOP_STAGE" | "STOP_RUN";
 
 async function runGit(root: string, args: string[]): Promise<string | undefined> {
   const child = Bun.spawn(["git", ...args], { cwd: root, stdout: "pipe", stderr: "ignore", stdin: "ignore" });
@@ -81,13 +85,15 @@ export class ExecutionEngine {
   async run(): Promise<DokionState> {
     const loaded = await loadActivePlaybook(this.root);
     assertSequentialExecution(loaded.data);
-    const git = await inspectGit(this.root);
+    const [git, profile] = await Promise.all([inspectGit(this.root), inspectProject(this.root)]);
+    const platform = detectPlatform();
     const state = await this.store.initialize({
       playbookDigest: loaded.digest,
       commitSha: git.commitSha,
       ...(git.branch ? { branch: git.branch } : {}),
       ...(git.worktreeClean !== undefined ? { worktreeClean: git.worktreeClean } : {}),
-      agent: "other",
+      agent: platform,
+      profile: { ...profile },
       stages: loaded.data.stages.map((stage) => ({
         id: stage.id,
         steps: stage.steps.map((step) => ({ id: step.id, mode: step.mode }))
@@ -97,7 +103,7 @@ export class ExecutionEngine {
       at: new Date().toISOString(),
       run_id: state.run.id,
       event: "RUN_STARTED",
-      data: { playbook_digest: loaded.digest }
+      data: { playbook_digest: loaded.digest, platform }
     });
     await writeHardeningReport(this.root, state);
     return this.execute(loaded);
@@ -123,20 +129,36 @@ export class ExecutionEngine {
   private async execute(loaded: LoadedPlaybook): Promise<DokionState> {
     for (const stage of loaded.data.stages) {
       let state = await this.store.load();
-      if (findStageState(state, stage.id).status === "SUCCEEDED") continue;
+      const existingStage = findStageState(state, stage.id);
+      if (["SUCCEEDED", "SKIPPED_INAPPLICABLE", "STOPPED_BY_POLICY"].includes(existingStage.status)) continue;
       assertStageDependencies(stage, state);
+
+      const stageApplicability = await evaluateApplicability({
+        root: this.root,
+        platform: state.run.agent ?? "other",
+        profile: state.profile ?? {},
+        applicability: stage.applicability
+      });
+      if (!stageApplicability.applicable) {
+        const outcome = await this.markStageInapplicable(stage, stageApplicability.reason);
+        if (outcome === "STOP_RUN") return this.store.load();
+        continue;
+      }
+
       state = await this.updateState((current) => {
         const target = findStageState(current, stage.id);
         target.status = "IN_PROGRESS";
         target.started_at ??= new Date().toISOString();
         delete target.ended_at;
+        delete target.reason;
         return current;
       });
 
+      let stageStopped = false;
       for (const step of stage.steps) {
         state = await this.store.load();
         const stepState = findStepState(state, stage.id, step.id);
-        if (stepState.status === "SUCCEEDED" || stepState.status.startsWith("SKIPPED_")) continue;
+        if (["SUCCEEDED", "SKIPPED_INAPPLICABLE", "SKIPPED_BY_USER", "STOPPED_BY_POLICY"].includes(stepState.status)) continue;
 
         try {
           await assertPlaybookUnchanged(loaded);
@@ -149,6 +171,22 @@ export class ExecutionEngine {
         }
 
         assertStepDependencies(step, state);
+        const stepApplicability = await evaluateApplicability({
+          root: this.root,
+          platform: state.run.agent ?? "other",
+          profile: state.profile ?? {},
+          applicability: step.applicability
+        });
+        if (!stepApplicability.applicable) {
+          const outcome = await this.markStepInapplicable(stage, step, stepApplicability.reason);
+          if (outcome === "STOP_RUN") return this.store.load();
+          if (outcome === "STOP_STAGE") {
+            stageStopped = true;
+            break;
+          }
+          continue;
+        }
+
         state = await this.updateState((current) => {
           current.playbook.last_verified_before_step = step.id;
           current.playbook.verified_at = new Date().toISOString();
@@ -158,6 +196,7 @@ export class ExecutionEngine {
           delete target.ended_at;
           target.attempts = (target.attempts ?? 0) + 1;
           delete target.failure_reason;
+          delete target.skip_reason;
           return current;
         });
         await appendEvent(this.root, {
@@ -201,9 +240,7 @@ export class ExecutionEngine {
           target.verification_results = [...(target.verification_results ?? []), ...result.verificationResults];
           target.success_conditions_met = step.success_conditions?.length ? [...step.success_conditions] : ["execution_evidence_recorded"];
           target.success_conditions_unmet = [];
-          if (target.approval) {
-            target.approval.granted = true;
-          }
+          if (target.approval) target.approval.granted = true;
           return current;
         });
         await appendEvent(this.root, {
@@ -215,6 +252,7 @@ export class ExecutionEngine {
         });
       }
 
+      if (stageStopped) continue;
       state = await this.updateState((current) => {
         const target = findStageState(current, stage.id);
         const allSucceeded = target.steps.every((step) => step.status === "SUCCEEDED" || step.status.startsWith("SKIPPED_"));
@@ -231,6 +269,82 @@ export class ExecutionEngine {
     }));
     await appendEvent(this.root, { at: new Date().toISOString(), run_id: completed.run.id, event: "RUN_COMPLETED" });
     return completed;
+  }
+
+  private async markStageInapplicable(stage: PlaybookStage, reason: string): Promise<InapplicableOutcome> {
+    const policy = stage.applicability?.on_inapplicable ?? "SKIP";
+    const now = new Date().toISOString();
+    const state = await this.updateState((current) => {
+      const target = findStageState(current, stage.id);
+      target.reason = reason;
+      target.ended_at = now;
+      if (policy === "MARK_BLOCKED") {
+        target.status = "BLOCKED";
+        current.run.status = "BLOCKED";
+        current.run.ended_at = now;
+      } else if (policy === "STOP_STAGE") {
+        target.status = "STOPPED_BY_POLICY";
+      } else {
+        target.status = "SKIPPED_INAPPLICABLE";
+      }
+      for (const step of target.steps) {
+        if (step.status !== "PENDING") continue;
+        step.status = policy === "MARK_BLOCKED" ? "BLOCKED" : policy === "STOP_STAGE" ? "STOPPED_BY_POLICY" : "SKIPPED_INAPPLICABLE";
+        step.skip_reason = reason;
+        step.ended_at = now;
+      }
+      return current;
+    });
+    await appendEvent(this.root, {
+      at: now,
+      run_id: state.run.id,
+      event: "STAGE_INAPPLICABLE",
+      stage_id: stage.id,
+      detail: `${policy}: ${reason}`
+    });
+    return policy === "MARK_BLOCKED" ? "STOP_RUN" : policy === "STOP_STAGE" ? "STOP_STAGE" : "CONTINUE";
+  }
+
+  private async markStepInapplicable(stage: PlaybookStage, step: PlaybookStep, reason: string): Promise<InapplicableOutcome> {
+    const policy = step.applicability?.on_inapplicable ?? "SKIP";
+    const now = new Date().toISOString();
+    const state = await this.updateState((current) => {
+      const stageState = findStageState(current, stage.id);
+      const target = findStepState(current, stage.id, step.id);
+      target.skip_reason = reason;
+      target.ended_at = now;
+      if (policy === "MARK_BLOCKED") {
+        target.status = "BLOCKED";
+        stageState.status = "BLOCKED";
+        stageState.reason = reason;
+        stageState.ended_at = now;
+        current.run.status = "BLOCKED";
+        current.run.ended_at = now;
+      } else if (policy === "STOP_STAGE") {
+        target.status = "STOPPED_BY_POLICY";
+        stageState.status = "STOPPED_BY_POLICY";
+        stageState.reason = reason;
+        stageState.ended_at = now;
+        for (const remaining of stageState.steps) {
+          if (remaining.status !== "PENDING") continue;
+          remaining.status = "STOPPED_BY_POLICY";
+          remaining.skip_reason = reason;
+          remaining.ended_at = now;
+        }
+      } else {
+        target.status = "SKIPPED_INAPPLICABLE";
+      }
+      return current;
+    });
+    await appendEvent(this.root, {
+      at: now,
+      run_id: state.run.id,
+      event: "STEP_INAPPLICABLE",
+      stage_id: stage.id,
+      step_id: step.id,
+      detail: `${policy}: ${reason}`
+    });
+    return policy === "MARK_BLOCKED" ? "STOP_RUN" : policy === "STOP_STAGE" ? "STOP_STAGE" : "CONTINUE";
   }
 
   private async runVerificationOnly(stage: PlaybookStage, step: PlaybookStep, state: DokionState): Promise<CapabilityRunResult> {
