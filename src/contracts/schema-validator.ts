@@ -1,8 +1,10 @@
-import Ajv2020, { type AnySchema, type ErrorObject, type ValidateFunction } from "ajv/dist/2020.js";
+import Ajv2020, { type ErrorObject, type ValidateFunction } from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
-import { join, relative, resolve } from "node:path";
+import { join, relative } from "node:path";
 
+import { builtinCatalog } from "../catalog/builtin-catalog.ts";
 import { readJson } from "../core/json.ts";
+import { embeddedSchemas } from "./embedded-schemas.ts";
 
 export interface ValidationIssue {
   file: string;
@@ -25,66 +27,37 @@ interface SchemaRegistry {
   capabilityLock: ValidateFunction;
 }
 
-const schemaNames = {
-  manifest: "dokion-manifest.schema.json",
-  playbook: "dokion-playbook.schema.json",
-  state: "dokion-state.schema.json",
-  finding: "dokion-finding.schema.json",
-  capabilityLock: "capability-lock.schema.json"
-} as const;
+let registryCache: Promise<SchemaRegistry> | undefined;
 
-const registryCache = new Map<string, Promise<SchemaRegistry>>();
-
-async function compileRegistry(root: string): Promise<SchemaRegistry> {
+async function compileRegistry(): Promise<SchemaRegistry> {
   const ajv = new Ajv2020({ allErrors: true, strict: false, allowUnionTypes: true });
   addFormats(ajv);
 
-  const loaded = new Map<string, AnySchema>();
-  for (const filename of Object.values(schemaNames)) {
-    const schema = await readJson<AnySchema>(join(root, "schemas", filename));
-    loaded.set(filename, schema);
-    ajv.addSchema(schema);
-  }
-
-  const compile = (filename: string): ValidateFunction => {
-    const schema = loaded.get(filename);
-    if (!schema) {
-      throw new Error(`Schema was not loaded: ${filename}`);
-    }
+  for (const schema of Object.values(embeddedSchemas)) ajv.addSchema(schema);
+  const compile = (schema: (typeof embeddedSchemas)[keyof typeof embeddedSchemas]): ValidateFunction => {
     const id = typeof schema === "object" && schema !== null && "$id" in schema ? String(schema.$id) : undefined;
     return (id ? ajv.getSchema(id) : undefined) ?? ajv.compile(schema);
   };
 
   return {
-    manifest: compile(schemaNames.manifest),
-    playbook: compile(schemaNames.playbook),
-    state: compile(schemaNames.state),
-    finding: compile(schemaNames.finding),
-    capabilityLock: compile(schemaNames.capabilityLock)
+    manifest: compile(embeddedSchemas.manifest),
+    playbook: compile(embeddedSchemas.playbook),
+    state: compile(embeddedSchemas.state),
+    finding: compile(embeddedSchemas.finding),
+    capabilityLock: compile(embeddedSchemas.capabilityLock)
   };
 }
 
-async function buildRegistry(root: string): Promise<SchemaRegistry> {
-  const key = resolve(root);
-  const cached = registryCache.get(key);
-  if (cached) {
-    return cached;
-  }
-
-  const compiling = compileRegistry(key).catch((error) => {
-    registryCache.delete(key);
+async function buildRegistry(): Promise<SchemaRegistry> {
+  registryCache ??= compileRegistry().catch((error) => {
+    registryCache = undefined;
     throw error;
   });
-  registryCache.set(key, compiling);
-  return compiling;
+  return registryCache;
 }
 
-export function clearSchemaRegistryCache(root?: string): void {
-  if (root) {
-    registryCache.delete(resolve(root));
-    return;
-  }
-  registryCache.clear();
+export function clearSchemaRegistryCache(_root?: string): void {
+  registryCache = undefined;
 }
 
 function normalizeErrors(file: string, errors: ErrorObject[] | null | undefined): ValidationIssue[] {
@@ -99,45 +72,46 @@ function normalizeErrors(file: string, errors: ErrorObject[] | null | undefined)
 async function collectJsonFiles(root: string, pattern: string): Promise<string[]> {
   const files: string[] = [];
   const glob = new Bun.Glob(pattern);
-  for await (const path of glob.scan({ cwd: root, onlyFiles: true })) {
-    files.push(path);
-  }
+  for await (const path of glob.scan({ cwd: root, onlyFiles: true })) files.push(path);
   return files.sort();
 }
 
-export async function validatePlaybookData(root: string, data: unknown, file = ".dokion/playbook.json"): Promise<ValidationIssue[]> {
-  const registry = await buildRegistry(root);
+export async function validatePlaybookData(_root: string, data: unknown, file = ".dokion/playbook.json"): Promise<ValidationIssue[]> {
+  const registry = await buildRegistry();
   return registry.playbook(data) ? [] : normalizeErrors(file, registry.playbook.errors);
 }
 
-export async function validateStateData(root: string, data: unknown, file = ".dokion/state.json"): Promise<ValidationIssue[]> {
-  const registry = await buildRegistry(root);
+export async function validateStateData(_root: string, data: unknown, file = ".dokion/state.json"): Promise<ValidationIssue[]> {
+  const registry = await buildRegistry();
   return registry.state(data) ? [] : normalizeErrors(file, registry.state.errors);
 }
 
-export async function validateFindingData(root: string, data: unknown, file = ".dokion/findings/unknown.json"): Promise<ValidationIssue[]> {
-  const registry = await buildRegistry(root);
+export async function validateFindingData(_root: string, data: unknown, file = ".dokion/findings/unknown.json"): Promise<ValidationIssue[]> {
+  const registry = await buildRegistry();
   return registry.finding(data) ? [] : normalizeErrors(file, registry.finding.errors);
 }
 
 export async function validateRepositoryContracts(root: string): Promise<ValidationSummary> {
-  const registry = await buildRegistry(root);
+  const registry = await buildRegistry();
   const checkedFiles: string[] = [];
   const errors: ValidationIssue[] = [];
 
-  const validateFile = async (path: string, validator: ValidateFunction): Promise<void> => {
-    const data = await readJson<unknown>(join(root, path));
+  const validateData = (path: string, data: unknown, validator: ValidateFunction): void => {
     checkedFiles.push(path);
-    if (!validator(data)) {
-      errors.push(...normalizeErrors(path, validator.errors));
-    }
+    if (!validator(data)) errors.push(...normalizeErrors(path, validator.errors));
   };
 
-  await validateFile("dokion.json", registry.manifest);
+  const validateFile = async (path: string, validator: ValidateFunction): Promise<void> => {
+    validateData(path, await readJson<unknown>(join(root, path)), validator);
+  };
 
-  for (const path of await collectJsonFiles(root, "playbooks/**/*.json")) {
-    await validateFile(path, registry.playbook);
+  if (await Bun.file(join(root, "dokion.json")).exists()) {
+    await validateFile("dokion.json", registry.manifest);
+  } else {
+    validateData("builtin:dokion.json", builtinCatalog, registry.manifest);
   }
+
+  for (const path of await collectJsonFiles(root, "playbooks/**/*.json")) await validateFile(path, registry.playbook);
 
   const optionalRuntimeFiles: Array<[string, ValidateFunction]> = [
     [".dokion/playbook.json", registry.playbook],
@@ -147,18 +121,14 @@ export async function validateRepositoryContracts(root: string): Promise<Validat
   ];
 
   for (const [path, validator] of optionalRuntimeFiles) {
-    if (await Bun.file(join(root, path)).exists()) {
-      await validateFile(path, validator);
-    }
+    if (await Bun.file(join(root, path)).exists()) await validateFile(path, validator);
   }
 
-  for (const path of await collectJsonFiles(root, ".dokion/findings/**/*.json")) {
-    await validateFile(path, registry.finding);
-  }
+  for (const path of await collectJsonFiles(root, ".dokion/findings/**/*.json")) await validateFile(path, registry.finding);
 
   return {
     valid: errors.length === 0,
-    checkedFiles: checkedFiles.map((path) => relative(root, join(root, path))),
+    checkedFiles: checkedFiles.map((path) => (path.startsWith("builtin:") ? path : relative(root, join(root, path)))),
     errors
   };
 }
