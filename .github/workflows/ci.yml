@@ -34,7 +34,7 @@ jobs:
         run: python -m pip install --disable-pip-version-check jsonschema
 
       - name: Install Bun dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
 
       - name: Schema conformance
         run: python3 schemas/conformance_test.py
