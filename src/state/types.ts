@@ -29,6 +29,24 @@ export interface ApprovalStateRecord {
   notes?: string;
 }
 
+export interface CoverageLaneState {
+  lane: string;
+  status: "UNASSIGNED" | "PARTIAL" | "ASSIGNED";
+  assigned_capabilities?: string[];
+  blocking?: boolean;
+  acknowledged_by?: string;
+}
+
+export interface ReleaseGateState {
+  id: string;
+  status: "PASS" | "FAIL" | "NOT_RUN" | "SKIPPED";
+  blocking: boolean;
+  evaluated?: string;
+  exit_code?: number;
+  artifact?: string;
+  ran_at?: string;
+}
+
 export interface StepState {
   id: string;
   status: ExecutionStatus;
@@ -111,12 +129,12 @@ export interface DokionState {
   stages: StageState[];
   findings_index?: Record<string, unknown>;
   approvals?: ApprovalStateRecord[];
-  release_gates?: Array<Record<string, unknown>>;
+  release_gates?: ReleaseGateState[];
   suggestions?: Array<Record<string, unknown>>;
   completion?: Record<string, unknown>;
   log?: Array<{ at: string; event: string; step_id?: string; detail?: string }>;
   release_readiness?: Record<string, unknown>;
-  coverage?: Array<Record<string, unknown>>;
+  coverage?: CoverageLaneState[];
   events_log?: string;
 }
 
@@ -127,6 +145,7 @@ export interface StateInitialization {
   worktreeClean?: boolean;
   platform?: PlatformProfile;
   agent?: AgentPlatform;
+  profile?: Record<string, unknown>;
   stages: Array<{
     id: string;
     steps: Array<{ id: string; mode?: string }>;
