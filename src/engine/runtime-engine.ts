@@ -111,10 +111,11 @@ export class ExecutionEngine {
     if (state.run.status === "COMPLETED" || state.run.status === "TAINTED") return state;
     if (state.playbook.digest !== loaded.digest) return this.markTainted(state, loaded.digest, "resume");
 
-    state = await this.updateState((current) => ({
-      ...current,
-      run: { ...current.run, status: "RUNNING", ended_at: undefined }
-    }));
+    state = await this.updateState((current) => {
+      const run = { ...current.run, status: "RUNNING" as const };
+      delete run.ended_at;
+      return { ...current, run };
+    });
     await appendEvent(this.root, { at: new Date().toISOString(), run_id: state.run.id, event: "RUN_RESUMED" });
     return this.execute(loaded);
   }
@@ -128,7 +129,7 @@ export class ExecutionEngine {
         const target = findStageState(current, stage.id);
         target.status = "IN_PROGRESS";
         target.started_at ??= new Date().toISOString();
-        target.ended_at = undefined;
+        delete target.ended_at;
         return current;
       });
 
@@ -154,9 +155,9 @@ export class ExecutionEngine {
           const target = findStepState(current, stage.id, step.id);
           target.status = "IN_PROGRESS";
           target.started_at ??= new Date().toISOString();
-          target.ended_at = undefined;
+          delete target.ended_at;
           target.attempts = (target.attempts ?? 0) + 1;
-          target.failure_reason = undefined;
+          delete target.failure_reason;
           return current;
         });
         await appendEvent(this.root, {
@@ -200,7 +201,9 @@ export class ExecutionEngine {
           target.verification_results = [...(target.verification_results ?? []), ...result.verificationResults];
           target.success_conditions_met = step.success_conditions?.length ? [...step.success_conditions] : ["execution_evidence_recorded"];
           target.success_conditions_unmet = [];
-          target.approval = target.approval ? { ...target.approval, granted: true } : target.approval;
+          if (target.approval) {
+            target.approval.granted = true;
+          }
           return current;
         });
         await appendEvent(this.root, {
