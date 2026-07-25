@@ -1,0 +1,8 @@
+description = "Validate and run the active user-authored Dokion playbook"
+prompt = """
+Read skills/dokion-hardening/SKILL.md and follow it exactly.
+
+Run `dokion doctor`, then `dokion validate`. If validation fails or `.dokion/playbook.json` is absent, stop and report the exact blocker. If validation succeeds, run `dokion run` and summarize the resulting state, approvals required, findings, evidence, and platform degradations.
+
+Never select, install, substitute, reorder, upgrade, or enable a capability. Never modify `.dokion/playbook.json`.
+"""
