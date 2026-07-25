@@ -7,7 +7,12 @@ function cell(value: unknown): string {
   return String(value ?? "").replaceAll("|", "\\|").replaceAll("\n", " ");
 }
 
+function availability(value: boolean | undefined): string {
+  return value ? "recorded" : "unavailable or unproven";
+}
+
 export function renderHardeningMarkdown(state: DokionState): string {
+  const platform = state.profile?.platform;
   const lines: string[] = [
     "# Dokion Hardening Report",
     "",
@@ -23,11 +28,38 @@ export function renderHardeningMarkdown(state: DokionState): string {
     `- Playbook digest: \`${cell(state.playbook.digest)}\``,
     `- Baseline commit: \`${cell(state.baseline?.commit ?? "not captured")}\``,
     "",
+    "## Agent platform",
+    "",
+    `- Agent: \`${cell(state.run.agent ?? "other")}\``,
+    `- Agent version: \`${cell(state.run.agent_version ?? "not reported")}\``,
+    `- Model: \`${cell(state.run.model ?? "not reported")}\``,
+    `- Detection evidence: \`${cell(platform?.detected_by ?? "not recorded")}\``,
+    "",
+    "| Guarantee | Status |",
+    "|---|---|",
+    `| Hook enforcement | ${availability(platform?.guarantees.hook_enforcement)} |`,
+    `| Subagent isolation | ${availability(platform?.guarantees.subagent_isolation)} |`,
+    `| Parallel writes | ${availability(platform?.guarantees.parallel_writes)} |`,
+    `| Worktree isolation | ${availability(platform?.guarantees.worktree_isolation)} |`,
+    "",
+    "### Platform degradations",
+    ""
+  ];
+
+  const degradations = state.run.degradations ?? [];
+  if (degradations.length === 0) {
+    lines.push("None recorded. Every platform guarantee listed above has explicit evidence.");
+  } else {
+    for (const degradation of degradations) lines.push(`- \`${cell(degradation)}\``);
+  }
+
+  lines.push(
+    "",
     "## Declared execution order",
     "",
     "| Stage | Step | Mode | Status | Attempts | Evidence |",
     "|---|---|---|---|---:|---:|"
-  ];
+  );
 
   for (const stage of state.stages) {
     for (const step of stage.steps) {
@@ -57,9 +89,7 @@ export function renderHardeningMarkdown(state: DokionState): string {
   if (evidence.length === 0) {
     lines.push("No evidence artifacts recorded yet.");
   } else {
-    for (const artifact of evidence) {
-      lines.push(`- \`${cell(artifact)}\``);
-    }
+    for (const artifact of evidence) lines.push(`- \`${cell(artifact)}\``);
   }
 
   lines.push("", "## Integrity", "");
@@ -74,7 +104,7 @@ export function renderHardeningMarkdown(state: DokionState): string {
   lines.push("", "## Readiness statement", "");
   if (state.run.status === "COMPLETED") {
     lines.push(
-      `This repository passed the user-configured Dokion steps implemented in this run at commit \`${cell(state.baseline?.commit ?? "unknown")}\`. Remaining limitations, manual checks, skipped steps, uncovered lanes, and accepted risks must be evaluated before any broader readiness claim.`
+      `This repository passed the user-configured Dokion steps implemented in this run at commit \`${cell(state.baseline?.commit ?? "unknown")}\`. Remaining limitations, platform degradations, manual checks, skipped steps, uncovered lanes, and accepted risks must be evaluated before any broader readiness claim.`
     );
   } else {
     lines.push("No completion claim is active. The run has not completed every declared step with stored verification evidence.");
