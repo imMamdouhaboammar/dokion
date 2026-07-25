@@ -8,7 +8,7 @@ import type { CoverageLaneState, DokionState, ExecutionStatus } from "../state/t
 
 interface ManifestCoverageGap {
   lane: string;
-  status: "UNASSIGNED" | "PARTIAL";
+  status: string;
   reason?: string;
 }
 
@@ -43,6 +43,10 @@ function strongestStatus(
   return statusRank(candidate) > statusRank(current) ? candidate : current;
 }
 
+function normalizeManifestStatus(status: string): "UNASSIGNED" | "PARTIAL" {
+  return status === "PARTIAL" ? "PARTIAL" : "UNASSIGNED";
+}
+
 function acknowledgementMap(acknowledgements: CoverageGapAcknowledgement[]): Map<string, CoverageGapAcknowledgement> {
   return new Map(acknowledgements.map((acknowledgement) => [acknowledgement.lane, acknowledgement]));
 }
@@ -55,8 +59,9 @@ export function evaluateCoverage(input: {
   const policy = input.playbook.coverage_policy ?? {};
   const blockingLanes = new Set(policy.blocking_lanes ?? []);
   const acknowledgements = acknowledgementMap(policy.acknowledged_gaps ?? []);
+  const manifestGaps = input.manifest.coverage?.gaps_requiring_user_selected_capabilities ?? [];
   const laneNames = new Set<string>([
-    ...(input.manifest.coverage?.gaps_requiring_user_selected_capabilities ?? []).map((gap) => gap.lane),
+    ...manifestGaps.map((gap) => gap.lane),
     ...blockingLanes,
     ...acknowledgements.keys(),
     ...input.playbook.stages.flatMap((stage) =>
@@ -65,7 +70,7 @@ export function evaluateCoverage(input: {
   ]);
 
   const baselineByLane = new Map<string, "UNASSIGNED" | "PARTIAL">(
-    (input.manifest.coverage?.gaps_requiring_user_selected_capabilities ?? []).map((gap) => [gap.lane, gap.status])
+    manifestGaps.map((gap) => [gap.lane, normalizeManifestStatus(gap.status)])
   );
   const stepStateById = new Map(
     input.state.stages.flatMap((stage) => stage.steps.map((step) => [step.id, step] as const))
