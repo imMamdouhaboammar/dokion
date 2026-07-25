@@ -26,6 +26,8 @@ export type FailurePolicy =
 
 export type DokionPlatform = "claude_code" | "codex" | "gemini_cli" | "other";
 export type InapplicablePolicy = "SKIP" | "MARK_BLOCKED" | "STOP_STAGE";
+export type CoverageLaneStatus = "ASSIGNED" | "PARTIAL";
+export type ReadinessCap = "NOT_READY" | "CONDITIONALLY_READY" | "READY_FOR_STAGING";
 
 export interface Applicability {
   when_paths_exist?: string[];
@@ -33,6 +35,24 @@ export interface Applicability {
   when_platform?: Array<Exclude<DokionPlatform, "other">>;
   when_profile?: Record<string, boolean | string | unknown[]>;
   on_inapplicable?: InapplicablePolicy;
+}
+
+export interface CoverageLaneAssignment {
+  lane: string;
+  status: CoverageLaneStatus;
+}
+
+export interface CoverageGapAcknowledgement {
+  lane: string;
+  acknowledged_by: string;
+  rationale?: string;
+  acknowledged_at?: string;
+}
+
+export interface CoveragePolicy {
+  blocking_lanes?: string[];
+  acknowledged_gaps?: CoverageGapAcknowledgement[];
+  unassigned_lane_readiness_cap?: ReadinessCap;
 }
 
 export interface ValidationPolicy {
@@ -68,6 +88,7 @@ export interface PlaybookStep {
   required?: boolean;
   depends_on?: string[];
   applicability?: Applicability;
+  coverage_lanes?: CoverageLaneAssignment[];
   approval?: ApprovalPolicy;
   validation?: ValidationPolicy;
   verification?: string[];
@@ -100,12 +121,13 @@ export interface DokionPlaybook {
   version: string;
   project: {
     name: string;
-    target: "NOT_READY" | "CONDITIONALLY_READY" | "READY_FOR_STAGING" | "READY_FOR_PRODUCTION";
+    target?: "BASELINE" | "READY_FOR_STAGING" | "READY_FOR_PRODUCTION" | "ENTERPRISE";
+    repository?: string;
     notes?: string;
   };
   authority: Record<string, unknown>;
-  enforcement: Record<string, unknown>;
-  registry: Record<string, unknown>;
+  enforcement?: Record<string, unknown>;
+  registry?: Record<string, unknown>;
   defaults?: {
     approval?: ApprovalPolicy;
     failure_policy?: FailurePolicy;
@@ -116,7 +138,9 @@ export interface DokionPlaybook {
   };
   stages: PlaybookStage[];
   release_gates?: Array<Record<string, unknown>>;
-  manifest: string;
+  coverage_policy?: CoveragePolicy;
+  manifest?: string;
+  notes?: string;
   [key: string]: unknown;
 }
 
