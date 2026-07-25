@@ -68,7 +68,7 @@ function parseNameStatus(raw: string): Array<{ status: string; path: string }> {
 }
 
 const suppressionPatterns: Array<[string, RegExp]> = [
-  ["nosec", /\bnoqa\b|#\s*nosec\b/i],
+  ["nosec", /(?:#|\/\/|\/\*)\s*nosec\b|\bnoqa\b/i],
   ["eslint-disable", /eslint-disable(?:-next-line|-line)?/i],
   ["ts-ignore", /@ts-ignore|@ts-nocheck/i],
   ["type-ignore", /#\s*type:\s*ignore/i],
