@@ -1,0 +1,900 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/imMamdouhaboammar/dokion/main/schemas/dokion-manifest.schema.json",
+  "title": "Dokion Identity and Procedures Manifest",
+  "description": "Validates `dokion.json` \u2014 the product manifest describing who Dokion is, what capabilities it knows about, and what loops it can run. This is a CATALOG, not a configuration. Nothing in it executes. The user's approved selection and ordering live separately in `.dokion/playbook.json`.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "kind",
+    "identity",
+    "authority",
+    "capability_catalog",
+    "loops"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "kind": {
+      "const": "DokionIdentityAndProceduresManifest"
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "identity": {
+      "type": "object",
+      "required": [
+        "name",
+        "slug",
+        "primary_artifact",
+        "state_directory",
+        "supported_agents"
+      ],
+      "properties": {
+        "name": {
+          "const": "Dokion"
+        },
+        "slug": {
+          "const": "dokion"
+        },
+        "pronunciation": {
+          "type": "string"
+        },
+        "meaning": {
+          "type": "string"
+        },
+        "tagline": {
+          "type": "string"
+        },
+        "category": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "supported_agents": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "claude-code",
+              "codex",
+              "gemini-cli"
+            ]
+          }
+        },
+        "primary_artifact": {
+          "const": "HARDENING.md"
+        },
+        "state_directory": {
+          "const": ".dokion"
+        },
+        "configuration_files": {
+          "type": "object",
+          "properties": {
+            "identity_and_procedures": {
+              "type": "string"
+            },
+            "user_playbook": {
+              "type": "string"
+            },
+            "machine_state": {
+              "type": "string"
+            },
+            "event_log": {
+              "type": "string"
+            },
+            "findings": {
+              "type": "string"
+            },
+            "evidence": {
+              "type": "string"
+            },
+            "reports": {
+              "type": "string"
+            },
+            "capability_lock": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "source_basis": {
+      "type": "object",
+      "description": "Where the catalog was extracted from, pinned to exact file digests so the catalog can be re-derived and audited.",
+      "properties": {
+        "repository": {
+          "type": "string"
+        },
+        "repository_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "default_branch": {
+          "type": "string"
+        },
+        "extraction_policy": {
+          "type": "object",
+          "properties": {
+            "use_only_documented_resources": {
+              "const": true
+            },
+            "preserve_documented_commands": {
+              "const": true
+            },
+            "do_not_claim_unlisted_capabilities": {
+              "const": true
+            },
+            "record_coverage_gaps": {
+              "const": true
+            }
+          }
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "path",
+              "sha"
+            ],
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "sha": {
+                "type": "string",
+                "pattern": "^[a-fA-F0-9]{40}$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "description": "The control model, asserted by the manifest itself. Every ownership field is pinned to USER and the forbidden-autonomy list is a floor, not a default.",
+      "required": [
+        "selection_owner",
+        "ordering_owner",
+        "behavior_owner",
+        "permission_owner",
+        "release_gate_owner",
+        "forbidden_autonomy"
+      ],
+      "properties": {
+        "selection_owner": {
+          "const": "USER"
+        },
+        "ordering_owner": {
+          "const": "USER"
+        },
+        "behavior_owner": {
+          "const": "USER"
+        },
+        "permission_owner": {
+          "const": "USER"
+        },
+        "release_gate_owner": {
+          "const": "USER"
+        },
+        "orchestrator_role": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "forbidden_autonomy": {
+          "type": "array",
+          "description": "Must contain at least these. A manifest that drops one of them is rejected at load.",
+          "items": {
+            "type": "string"
+          },
+          "allOf": [
+            {
+              "contains": {
+                "const": "install undeclared capability"
+              }
+            },
+            {
+              "contains": {
+                "const": "replace a declared capability"
+              }
+            },
+            {
+              "contains": {
+                "const": "reorder steps"
+              }
+            },
+            {
+              "contains": {
+                "const": "expand write scope"
+              }
+            },
+            {
+              "contains": {
+                "const": "change release gates"
+              }
+            },
+            {
+              "contains": {
+                "const": "silence findings without user approval"
+              }
+            }
+          ]
+        },
+        "playbook_status": {
+          "type": "string",
+          "enum": [
+            "DRAFT_REQUIRES_USER_APPROVAL",
+            "USER_APPROVED"
+          ]
+        }
+      }
+    },
+    "runtime_policy": {
+      "type": "object",
+      "properties": {
+        "preferred_runtime": {
+          "type": "string"
+        },
+        "preferred_package_manager": {
+          "type": "string"
+        },
+        "upstream_installer_exception": {
+          "type": "object",
+          "description": "A capability may document a different installer. The exception is permitted but must be recorded, so a reader can see every place the preferred runtime was departed from.",
+          "properties": {
+            "allowed": {
+              "type": "boolean"
+            },
+            "condition": {
+              "type": "string"
+            },
+            "record_exception_in": {
+              "type": "string"
+            }
+          }
+        },
+        "generated_files_commit_policy": {
+          "const": "DO_NOT_COMMIT_UNLESS_USER_APPROVES"
+        },
+        "secrets_policy": {
+          "type": "object",
+          "properties": {
+            "persist_secrets_in_repo": {
+              "const": false
+            },
+            "include_secrets_in_logs": {
+              "const": false
+            },
+            "include_secrets_in_reports": {
+              "const": false
+            }
+          }
+        }
+      }
+    },
+    "dokion_cli": {
+      "type": "object",
+      "required": [
+        "binary",
+        "commands"
+      ],
+      "properties": {
+        "binary": {
+          "const": "dokion"
+        },
+        "commands": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "command",
+              "purpose"
+            ],
+            "properties": {
+              "command": {
+                "type": "string",
+                "pattern": "^dokion( [a-z-]+)+( --?[a-z-]+)*$"
+              },
+              "purpose": {
+                "type": "string",
+                "minLength": 1
+              },
+              "usage": {
+                "type": "string"
+              },
+              "mode": {
+                "$ref": "#/$defs/executionMode"
+              },
+              "writes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "approval": {
+                "$ref": "#/$defs/approvalPolicy"
+              }
+            }
+          }
+        }
+      }
+    },
+    "capability_catalog": {
+      "type": "object",
+      "description": "Everything Dokion knows how to run. Knowing about a capability is not enabling it: every entry is default_enabled false and requires_user_approval true, enforced as constants below so the invariant cannot drift.",
+      "required": [
+        "selection_state"
+      ],
+      "properties": {
+        "selection_state": {
+          "type": "string",
+          "enum": [
+            "PROPOSED_NOT_APPROVED",
+            "USER_APPROVED"
+          ]
+        },
+        "skills": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/catalogEntry"
+          }
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/catalogEntry"
+          }
+        },
+        "plugins_and_adapters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "default_enabled"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "role": {
+                "type": "string"
+              },
+              "capability_ref": {
+                "type": "string"
+              },
+              "platforms": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "default_enabled": {
+                "const": false
+              },
+              "documented_claude_command": {
+                "type": [
+                  "string",
+                  "array"
+                ],
+                "items": {
+                  "type": "string"
+                }
+              },
+              "documented_claude_install": {
+                "type": [
+                  "string",
+                  "array"
+                ],
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "loops": {
+      "type": "object",
+      "description": "Named, reusable step sequences. A loop is a TEMPLATE. It does not run until the user references it from an approved playbook.",
+      "required": [
+        "definitions"
+      ],
+      "properties": {
+        "execution_policy": {
+          "type": "object",
+          "properties": {
+            "order_is_user_defined": {
+              "const": true
+            },
+            "orchestrator_may_reorder": {
+              "const": false
+            },
+            "undeclared_step_execution": {
+              "const": false
+            },
+            "default_execution": {
+              "type": "string",
+              "enum": [
+                "SEQUENTIAL",
+                "PARALLEL"
+              ]
+            },
+            "parallel_read_only_requires_declaration": {
+              "const": true
+            },
+            "parallel_writes_require_isolated_worktrees": {
+              "const": true
+            },
+            "one_writer_by_default": {
+              "type": "boolean"
+            }
+          }
+        },
+        "definitions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "purpose",
+              "ordered_steps"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]*$"
+              },
+              "name": {
+                "type": "string"
+              },
+              "purpose": {
+                "type": "string",
+                "minLength": 1
+              },
+              "applicability": {
+                "type": "string"
+              },
+              "maximum_iterations": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "ordered_steps": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "executor",
+                    "mode"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "executor": {
+                      "type": "string"
+                    },
+                    "mode": {
+                      "$ref": "#/$defs/executionMode"
+                    },
+                    "condition": {
+                      "type": "string"
+                    },
+                    "skills": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "capabilities": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "helpers": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "groups": {
+                      "type": "array"
+                    },
+                    "optional_delegate": {
+                      "type": "string"
+                    },
+                    "rules": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "actions": {
+                      "type": "array"
+                    },
+                    "checks": {
+                      "type": "array"
+                    },
+                    "options": {
+                      "type": "array"
+                    },
+                    "defaults": {
+                      "type": "object"
+                    },
+                    "scope": {
+                      "type": [
+                        "string",
+                        "array",
+                        "object"
+                      ]
+                    },
+                    "run": {
+                      "type": [
+                        "string",
+                        "array"
+                      ]
+                    },
+                    "run_preference": {
+                      "type": [
+                        "string",
+                        "array"
+                      ]
+                    },
+                    "selection_rule": {
+                      "type": "string"
+                    },
+                    "command_selection": {
+                      "type": [
+                        "string",
+                        "array"
+                      ]
+                    },
+                    "command_resolution": {
+                      "type": [
+                        "string",
+                        "array"
+                      ]
+                    },
+                    "outputs": {
+                      "type": "array"
+                    },
+                    "required_outputs": {
+                      "type": "array"
+                    },
+                    "success_condition": {
+                      "type": "string"
+                    },
+                    "success_evidence": {
+                      "type": [
+                        "string",
+                        "array"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "finding_and_evidence_policy": {
+      "type": "object",
+      "properties": {
+        "finding_statuses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "severities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "required_evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "repair_policy": {
+          "type": "object",
+          "properties": {
+            "fix_all_findings_blindly": {
+              "const": false
+            },
+            "default_batch": {
+              "type": "string"
+            },
+            "max_fix_attempts_per_finding": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "rollback_required": {
+              "const": true
+            }
+          }
+        }
+      }
+    },
+    "release_readiness": {
+      "type": "object",
+      "properties": {
+        "statuses": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "NOT_READY",
+              "CONDITIONALLY_READY",
+              "READY_FOR_STAGING",
+              "READY_FOR_PRODUCTION"
+            ]
+          }
+        },
+        "critical_blocker_overrides_score": {
+          "const": true,
+          "description": "A single validated critical blocker outranks any aggregate score. Readiness is not an average."
+        },
+        "default_blockers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "completion_statement_template": {
+          "type": "string",
+          "description": "Must be phrased as 'passed the user-configured gates at commit <sha>' \u2014 never as an unqualified production-ready claim."
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "description": "What the catalog covers and, more importantly, what it does not. An honest gap list is the mechanism that stops an unqualified readiness claim.",
+      "properties": {
+        "covered_by_riftbook_selection": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "gaps_requiring_user_selected_capabilities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "lane",
+              "status",
+              "reason"
+            ],
+            "properties": {
+              "lane": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "UNASSIGNED",
+                  "PARTIAL",
+                  "ASSIGNED"
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "user_approval_checklist": {
+      "type": "object",
+      "properties": {
+        "required_before_first_run": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "recommended_initial_profile": {
+          "type": "object",
+          "required": [
+            "status"
+          ],
+          "properties": {
+            "status": {
+              "const": "PROPOSED_ONLY",
+              "description": "A recommended profile is a suggestion and stays one. It is never an active configuration."
+            },
+            "capabilities": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "executionMode": {
+      "type": "string",
+      "enum": [
+        "READ_ONLY",
+        "ANALYZE",
+        "CONFIGURE",
+        "FIX_WITH_APPROVAL",
+        "FIX_AUTOMATICALLY",
+        "VERIFY_ONLY",
+        "REPORT_ONLY"
+      ]
+    },
+    "approvalPolicy": {
+      "type": "string",
+      "enum": [
+        "NEVER",
+        "FROM_PLAYBOOK",
+        "BEFORE_INSTALL",
+        "BEFORE_EXECUTION",
+        "BEFORE_WRITE",
+        "BEFORE_EACH_FIX",
+        "BEFORE_COMMIT",
+        "ALWAYS"
+      ]
+    },
+    "catalogEntry": {
+      "type": "object",
+      "description": "A skill or tool Dokion knows about. Presence in the catalog confers no permission to run it.",
+      "required": [
+        "id",
+        "role",
+        "default_enabled",
+        "requires_user_approval"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1
+        },
+        "applicability": {
+          "type": "string"
+        },
+        "official_repository": {
+          "type": "string"
+        },
+        "official_url": {
+          "type": "string"
+        },
+        "binary": {
+          "type": "string"
+        },
+        "requirements": {
+          "type": [
+            "array",
+            "object",
+            "string"
+          ]
+        },
+        "documented_install_commands": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "documented_run_commands": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "documented_commands": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "documented_agent_commands": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "documented_detector_commands": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "documented_platform_commands": {
+          "type": [
+            "array",
+            "object"
+          ]
+        },
+        "documented_ci_component": {
+          "type": [
+            "string",
+            "object"
+          ]
+        },
+        "command_resolution": {
+          "type": [
+            "array",
+            "string",
+            "object"
+          ]
+        },
+        "recommended_initial_policy": {
+          "type": [
+            "string",
+            "object"
+          ]
+        },
+        "required_process_skills": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "guardrails": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "default_enabled": {
+          "const": false,
+          "description": "Always false. Cataloguing a capability must never enable it."
+        },
+        "requires_user_approval": {
+          "const": true,
+          "description": "Always true. There is no capability the orchestrator may run on its own initiative."
+        }
+      }
+    }
+  }
+}

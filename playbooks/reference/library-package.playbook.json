@@ -1,0 +1,561 @@
+{
+  "$schema": "../../schemas/dokion-playbook.schema.json",
+  "version": "1.0.0",
+  "project": {
+    "name": "REPLACE-ME",
+    "target": "READY_FOR_PRODUCTION",
+    "notes": "REFERENCE PLAYBOOK \u2014 INERT. A published library has a different threat model from an application: it has no runtime you control, and its defects propagate to every consumer. The emphasis here is on API surface stability, dependency hygiene, provenance, and not shipping secrets or unintended files. Copy to .dokion/playbook.json, replace every sha256:PLACEHOLDER with a real digest, and delete any step you do not want executed. Coverage: this playbook assigns capabilities to the lanes listed in coverage_policy. Lanes left unassigned cap readiness at CONDITIONALLY_READY until you either assign a capability or acknowledge the gap by name \u2014 an uncovered lane is a hole in the audit, not a pass."
+  },
+  "authority": {
+    "capability_selection": "USER_ONLY",
+    "execution_order": "USER_ONLY",
+    "capability_behavior": "USER_ONLY",
+    "automatic_capability_discovery": false,
+    "automatic_installation": false,
+    "automatic_substitution": false,
+    "automatic_reordering": false,
+    "allow_recommendations": true,
+    "recommendations_require_approval": true
+  },
+  "enforcement": {
+    "playbook_immutable": true,
+    "hash_algorithm": "sha256",
+    "verify_before_each_step": true,
+    "on_mutation": "ABORT_TAINTED",
+    "protected_paths": [
+      ".dokion/playbook.json",
+      "schemas/**"
+    ]
+  },
+  "registry": {
+    "sources": [
+      "dokion.json"
+    ],
+    "require_verified": true,
+    "require_digest": true,
+    "on_unverified": "STOP_STEP"
+  },
+  "coverage_policy": {
+    "blocking_lanes": [
+      "application-security",
+      "supply-chain-and-release-security"
+    ],
+    "acknowledged_gaps": [
+      {
+        "lane": "api-security-and-contracts",
+        "acknowledged_by": "REPLACE-WITH-YOUR-NAME",
+        "rationale": "The api-surface stage covers export-contract stability, not network API security. A library exposes no endpoints."
+      },
+      {
+        "lane": "database-hardening",
+        "acknowledged_by": "REPLACE-WITH-YOUR-NAME",
+        "rationale": "Not applicable."
+      },
+      {
+        "lane": "observability",
+        "acknowledged_by": "REPLACE-WITH-YOUR-NAME",
+        "rationale": "Not applicable: a library has no runtime the author controls."
+      },
+      {
+        "lane": "performance-benchmarking",
+        "acknowledged_by": "REPLACE-WITH-YOUR-NAME",
+        "rationale": "No benchmark capability declared."
+      },
+      {
+        "lane": "mobile-native-security",
+        "acknowledged_by": "REPLACE-WITH-YOUR-NAME",
+        "rationale": "Not applicable."
+      }
+    ],
+    "unassigned_lane_readiness_cap": "CONDITIONALLY_READY"
+  },
+  "defaults": {
+    "approval": "BEFORE_WRITE",
+    "failure_policy": "STOP_STAGE",
+    "mode": "ANALYZE",
+    "retry_count": 1,
+    "maximum_iterations": 1,
+    "parallel_execution": false,
+    "validation": {
+      "suppression_detection": true,
+      "require_evidence_artifact": true,
+      "forbid_test_deletion": true,
+      "forbid_out_of_scope_edits": true,
+      "max_diff_lines": 200
+    }
+  },
+  "stages": [
+    {
+      "id": "baseline",
+      "name": "Baseline and Inventory",
+      "execution": "SEQUENTIAL",
+      "steps": [
+        {
+          "id": "repo-baseline",
+          "name": "Record baseline commit and package profile",
+          "capability": {
+            "type": "tool",
+            "id": "git",
+            "version": ">=2.40",
+            "source": "system",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Record the baseline commit, branch, worktree cleanliness, and detected package profile.",
+          "mode": "READ_ONLY",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/state.json",
+              "HARDENING.md"
+            ],
+            "network": false,
+            "shell": [
+              "git status --porcelain",
+              "git rev-parse HEAD",
+              "git rev-parse --abbrev-ref HEAD"
+            ]
+          },
+          "success_conditions": [
+            "commit_sha_recorded",
+            "project_profile_recorded"
+          ],
+          "failure_policy": "STOP_PIPELINE"
+        }
+      ]
+    },
+    {
+      "id": "supply-chain",
+      "name": "Supply Chain and Provenance",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "baseline"
+      ],
+      "notes": "Standards: OSV, SLSA provenance, SBOM (CycloneDX or SPDX). For a library, a transitive vulnerability becomes every consumer's vulnerability.",
+      "steps": [
+        {
+          "id": "dependency-vulnerabilities",
+          "name": "Scan dependencies for known vulnerabilities",
+          "capability": {
+            "type": "tool",
+            "id": "osv-scanner",
+            "version": "PLACEHOLDER_PIN_EXACT_VERSION",
+            "source": "github:google/osv-scanner",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Report known vulnerabilities in declared, locked, and transitive dependencies.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/findings/**",
+              ".dokion/evidence/**"
+            ],
+            "network": true,
+            "shell": [
+              "osv-scanner --format json --recursive ."
+            ]
+          },
+          "success_conditions": [
+            "scan_completed",
+            "findings_normalized"
+          ],
+          "failure_policy": "STOP_STAGE"
+        },
+        {
+          "id": "runtime-dependency-review",
+          "name": "Review the runtime dependency surface",
+          "capability": {
+            "type": "tool",
+            "id": "git",
+            "version": ">=2.40",
+            "source": "system",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Report runtime dependencies that could be devDependencies, and any dependency with a single trivial use.",
+          "mode": "ANALYZE",
+          "required": false,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "package.json",
+              "pyproject.toml",
+              "Cargo.toml",
+              "go.mod",
+              "src/**",
+              "lib/**"
+            ],
+            "write": [
+              ".dokion/findings/**"
+            ],
+            "network": false
+          },
+          "success_conditions": [
+            "dependency_surface_reported"
+          ],
+          "failure_policy": "CONTINUE"
+        },
+        {
+          "id": "sbom-generation",
+          "name": "Generate an SBOM for the published artifact",
+          "capability": {
+            "type": "tool",
+            "id": "trivy",
+            "version": "PLACEHOLDER_PIN_EXACT_VERSION",
+            "source": "github:aquasecurity/trivy",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Produce a CycloneDX SBOM covering what ships to consumers.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "BEFORE_WRITE",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/evidence/**"
+            ],
+            "network": true,
+            "shell": [
+              "trivy fs --format cyclonedx --output .dokion/evidence/sbom.cdx.json ."
+            ]
+          },
+          "success_conditions": [
+            "sbom_generated"
+          ],
+          "failure_policy": "CONTINUE"
+        }
+      ]
+    },
+    {
+      "id": "publish-hygiene",
+      "name": "Publish Hygiene",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "baseline"
+      ],
+      "notes": "The most common library incident is not a clever exploit: it is publishing a file that should never have left the machine.",
+      "steps": [
+        {
+          "id": "secret-history-scan",
+          "name": "Scan full git history for committed secrets",
+          "capability": {
+            "type": "tool",
+            "id": "gitleaks",
+            "version": "PLACEHOLDER_PIN_EXACT_VERSION",
+            "source": "github:gitleaks/gitleaks",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Detect secrets committed anywhere in git history.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/findings/**",
+              ".dokion/evidence/**"
+            ],
+            "network": false,
+            "shell": [
+              "gitleaks detect --no-banner --report-format json --report-path .dokion/evidence/gitleaks.json"
+            ]
+          },
+          "success_conditions": [
+            "history_scanned"
+          ],
+          "stop_conditions": [
+            "live_credential_detected"
+          ],
+          "notes": "A hit is a rotation task, not a code edit. Report and stop; never rewrite git history unprompted.",
+          "failure_policy": "REQUEST_USER_DECISION"
+        },
+        {
+          "id": "package-contents-review",
+          "name": "Review what the published artifact actually contains",
+          "capability": {
+            "type": "tool",
+            "id": "REPLACE_WITH_YOUR_PACKAGE_MANAGER",
+            "version": "PLACEHOLDER_PIN_EXACT_VERSION",
+            "source": "system",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Report files included in the published artifact that should not ship.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/findings/**",
+              ".dokion/evidence/**"
+            ],
+            "network": false,
+            "shell": [
+              "REPLACE_WITH_YOUR_PACK_DRY_RUN_COMMAND"
+            ]
+          },
+          "success_conditions": [
+            "artifact_contents_enumerated",
+            "unintended_files_flagged"
+          ],
+          "failure_policy": "STOP_STAGE"
+        }
+      ]
+    },
+    {
+      "id": "api-surface",
+      "name": "Public API Surface",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "baseline"
+      ],
+      "notes": "A library's public API is a contract. An accidental break is a defect even when every test passes.",
+      "steps": [
+        {
+          "id": "api-surface-review",
+          "name": "Review the exported surface for accidental breaks",
+          "capability": {
+            "type": "tool",
+            "id": "REPLACE_WITH_YOUR_API_EXTRACTOR",
+            "version": "PLACEHOLDER_PIN_EXACT_VERSION",
+            "source": "npm:REPLACE_ME",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Report additions, removals, and signature changes in the public exported surface since the last release.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "src/**",
+              "lib/**",
+              "types/**",
+              "index.*"
+            ],
+            "write": [
+              ".dokion/findings/**",
+              ".dokion/evidence/**"
+            ],
+            "network": false,
+            "shell": [
+              "REPLACE_WITH_YOUR_API_REPORT_COMMAND"
+            ]
+          },
+          "success_conditions": [
+            "public_surface_enumerated",
+            "breaking_changes_flagged"
+          ],
+          "failure_policy": "REQUEST_USER_DECISION"
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "name": "Code Security",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "supply-chain"
+      ],
+      "notes": "Standards: OWASP ASVS 5.0 where applicable, CWE Top 25. A library cannot assume its inputs are trusted.",
+      "steps": [
+        {
+          "id": "sast-scan",
+          "name": "Static analysis for dangerous patterns",
+          "capability": {
+            "type": "tool",
+            "id": "semgrep",
+            "version": "PLACEHOLDER_PIN_EXACT_VERSION",
+            "source": "pypi:semgrep",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Identify code-level security findings and map each to a CWE reference.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "BEFORE_EXECUTION",
+          "permissions": {
+            "read": [
+              "src/**",
+              "lib/**"
+            ],
+            "write": [
+              ".dokion/findings/**",
+              ".dokion/evidence/**"
+            ],
+            "network": true,
+            "shell": [
+              "semgrep --config auto --json --output .dokion/evidence/semgrep.json"
+            ]
+          },
+          "success_conditions": [
+            "scan_completed",
+            "findings_mapped_to_standard"
+          ],
+          "failure_policy": "STOP_STAGE"
+        },
+        {
+          "id": "security-fixes",
+          "name": "Repair approved security findings",
+          "capability": {
+            "type": "tool",
+            "id": "semgrep",
+            "version": "PLACEHOLDER_PIN_EXACT_VERSION",
+            "source": "pypi:semgrep",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Repair security findings the user approved, one finding per commit.",
+          "mode": "FIX_WITH_APPROVAL",
+          "required": true,
+          "depends_on": [
+            "sast-scan"
+          ],
+          "approval": "BEFORE_EACH_FIX",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              "src/**",
+              "lib/**",
+              "tests/**",
+              "test/**"
+            ],
+            "network": false,
+            "shell": [
+              "semgrep --config auto --json"
+            ]
+          },
+          "validation": {
+            "adversarial_verification": true,
+            "suppression_detection": true,
+            "require_regression_test": true,
+            "require_evidence_artifact": true,
+            "forbid_test_deletion": true,
+            "forbid_out_of_scope_edits": true,
+            "max_diff_lines": 150
+          },
+          "verification": [
+            "REPLACE_WITH_YOUR_TEST_COMMAND",
+            "semgrep --config auto --error"
+          ],
+          "success_conditions": [
+            "finding_count_decreased",
+            "no_new_findings_introduced",
+            "no_public_api_change",
+            "verification_commands_passed"
+          ],
+          "maximum_iterations": 3,
+          "failure_policy": "REQUEST_USER_DECISION"
+        }
+      ]
+    },
+    {
+      "id": "release",
+      "name": "Release Readiness",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "security",
+        "api-surface",
+        "publish-hygiene"
+      ],
+      "steps": [
+        {
+          "id": "final-verification",
+          "name": "Re-run the full verification suite against the final commit",
+          "capability": {
+            "type": "tool",
+            "id": "git",
+            "version": ">=2.40",
+            "source": "system",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Confirm every verification command passes against the final commit and tie results to that SHA.",
+          "mode": "VERIFY_ONLY",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/state.json",
+              "HARDENING.md",
+              ".dokion/evidence/**"
+            ],
+            "network": false,
+            "shell": [
+              "git rev-parse HEAD",
+              "git status --porcelain"
+            ]
+          },
+          "verification": [
+            "REPLACE_WITH_YOUR_TEST_COMMAND",
+            "REPLACE_WITH_YOUR_TYPECHECK_COMMAND",
+            "REPLACE_WITH_YOUR_LINT_COMMAND",
+            "REPLACE_WITH_YOUR_BUILD_COMMAND"
+          ],
+          "success_conditions": [
+            "all_verification_passed",
+            "results_tied_to_commit"
+          ],
+          "failure_policy": "STOP_PIPELINE"
+        }
+      ]
+    }
+  ],
+  "release_gates": [
+    {
+      "id": "tests",
+      "command": "REPLACE_WITH_YOUR_TEST_COMMAND",
+      "blocking": true
+    },
+    {
+      "id": "types",
+      "command": "REPLACE_WITH_YOUR_TYPECHECK_COMMAND",
+      "blocking": true
+    },
+    {
+      "id": "build",
+      "command": "REPLACE_WITH_YOUR_BUILD_COMMAND",
+      "blocking": true
+    },
+    {
+      "id": "critical-findings",
+      "condition": "open_findings.CRITICAL == 0",
+      "blocking": true
+    },
+    {
+      "id": "high-findings",
+      "condition": "open_findings.HIGH == 0",
+      "blocking": true
+    },
+    {
+      "id": "no-unintended-breaking-change",
+      "condition": "open_findings_by_stage.api-surface == 0",
+      "blocking": true
+    },
+    {
+      "id": "no-tainted-run",
+      "condition": "run.status != 'TAINTED'",
+      "blocking": true
+    },
+    {
+      "id": "no-scope-violations",
+      "condition": "scope_violations.total == 0",
+      "blocking": true
+    }
+  ],
+  "manifest": "dokion.json"
+}

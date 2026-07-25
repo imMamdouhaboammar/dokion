@@ -1,0 +1,666 @@
+{
+  "$schema": "../../schemas/dokion-playbook.schema.json",
+  "version": "1.0.0",
+  "project": {
+    "name": "REPLACE-ME",
+    "target": "READY_FOR_PRODUCTION",
+    "notes": "REFERENCE PLAYBOOK \u2014 INERT. Backend service with no frontend: no Core Web Vitals stage, no accessibility stage. Copy to .dokion/playbook.json, replace every sha256:PLACEHOLDER with a real digest, replace the REPLACE_WITH_* commands, and delete any step you do not want executed. Coverage: this playbook assigns capabilities to the lanes listed in coverage_policy. Lanes left unassigned cap readiness at CONDITIONALLY_READY until you either assign a capability or acknowledge the gap by name \u2014 an uncovered lane is a hole in the audit, not a pass."
+  },
+  "authority": {
+    "capability_selection": "USER_ONLY",
+    "execution_order": "USER_ONLY",
+    "capability_behavior": "USER_ONLY",
+    "automatic_capability_discovery": false,
+    "automatic_installation": false,
+    "automatic_substitution": false,
+    "automatic_reordering": false,
+    "allow_recommendations": true,
+    "recommendations_require_approval": true
+  },
+  "enforcement": {
+    "playbook_immutable": true,
+    "hash_algorithm": "sha256",
+    "verify_before_each_step": true,
+    "on_mutation": "ABORT_TAINTED",
+    "protected_paths": [
+      ".dokion/playbook.json",
+      "schemas/**"
+    ]
+  },
+  "registry": {
+    "sources": [
+      "dokion.json"
+    ],
+    "require_verified": true,
+    "require_digest": true,
+    "on_unverified": "STOP_STEP"
+  },
+  "coverage_policy": {
+    "blocking_lanes": [
+      "application-security",
+      "api-security-and-contracts",
+      "supply-chain-and-release-security",
+      "database-hardening"
+    ],
+    "acknowledged_gaps": [
+      {
+        "lane": "observability",
+        "acknowledged_by": "REPLACE-WITH-YOUR-NAME",
+        "rationale": "The logging-review step is static only. No tracing, metrics, or alert-validation capability is declared."
+      },
+      {
+        "lane": "performance-benchmarking",
+        "acknowledged_by": "REPLACE-WITH-YOUR-NAME",
+        "rationale": "No load-testing capability declared. Throughput and latency under load are unverified."
+      },
+      {
+        "lane": "mobile-native-security",
+        "acknowledged_by": "REPLACE-WITH-YOUR-NAME",
+        "rationale": "Not applicable: backend service."
+      }
+    ],
+    "unassigned_lane_readiness_cap": "CONDITIONALLY_READY"
+  },
+  "defaults": {
+    "approval": "BEFORE_WRITE",
+    "failure_policy": "STOP_STAGE",
+    "mode": "ANALYZE",
+    "retry_count": 1,
+    "maximum_iterations": 1,
+    "parallel_execution": false,
+    "validation": {
+      "suppression_detection": true,
+      "require_evidence_artifact": true,
+      "forbid_test_deletion": true,
+      "forbid_out_of_scope_edits": true,
+      "max_diff_lines": 250
+    }
+  },
+  "stages": [
+    {
+      "id": "baseline",
+      "name": "Baseline and Inventory",
+      "execution": "SEQUENTIAL",
+      "steps": [
+        {
+          "id": "repo-baseline",
+          "name": "Record baseline commit and service profile",
+          "capability": {
+            "type": "tool",
+            "id": "git",
+            "version": ">=2.40",
+            "source": "system",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Record the baseline commit, branch, worktree cleanliness, and detected service profile.",
+          "mode": "READ_ONLY",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/state.json",
+              "HARDENING.md"
+            ],
+            "network": false,
+            "shell": [
+              "git status --porcelain",
+              "git rev-parse HEAD",
+              "git rev-parse --abbrev-ref HEAD"
+            ]
+          },
+          "success_conditions": [
+            "commit_sha_recorded",
+            "project_profile_recorded"
+          ],
+          "failure_policy": "STOP_PIPELINE"
+        }
+      ]
+    },
+    {
+      "id": "supply-chain",
+      "name": "Supply Chain and Secrets",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "baseline"
+      ],
+      "steps": [
+        {
+          "id": "dependency-vulnerabilities",
+          "name": "Scan dependencies for known vulnerabilities",
+          "capability": {
+            "type": "tool",
+            "id": "osv-scanner",
+            "version": "PLACEHOLDER_PIN_EXACT_VERSION",
+            "source": "github:google/osv-scanner",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Report known vulnerabilities in declared and locked dependencies.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/findings/**",
+              ".dokion/evidence/**"
+            ],
+            "network": true,
+            "shell": [
+              "osv-scanner --format json --recursive ."
+            ]
+          },
+          "success_conditions": [
+            "scan_completed",
+            "findings_normalized"
+          ],
+          "failure_policy": "STOP_STAGE"
+        },
+        {
+          "id": "secret-history-scan",
+          "name": "Scan full git history for committed secrets",
+          "capability": {
+            "type": "tool",
+            "id": "gitleaks",
+            "version": "PLACEHOLDER_PIN_EXACT_VERSION",
+            "source": "github:gitleaks/gitleaks",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Detect secrets committed anywhere in git history.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/findings/**",
+              ".dokion/evidence/**"
+            ],
+            "network": false,
+            "shell": [
+              "gitleaks detect --no-banner --report-format json --report-path .dokion/evidence/gitleaks.json"
+            ]
+          },
+          "success_conditions": [
+            "history_scanned"
+          ],
+          "stop_conditions": [
+            "live_credential_detected"
+          ],
+          "notes": "A hit is a rotation task, not a code edit. Report and stop; never rewrite git history unprompted.",
+          "failure_policy": "REQUEST_USER_DECISION"
+        }
+      ]
+    },
+    {
+      "id": "api-security",
+      "name": "API Security",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "supply-chain"
+      ],
+      "notes": "Standards: OWASP API Security Top 10 2023 and OWASP ASVS 5.0. API1 (BOLA) and API5 (BFLA) are authorization-logic defects that scanners detect poorly; the review step is doing real work and should not be deleted as redundant.",
+      "steps": [
+        {
+          "id": "sast-scan",
+          "name": "Static analysis for dangerous patterns",
+          "capability": {
+            "type": "tool",
+            "id": "semgrep",
+            "version": "PLACEHOLDER_PIN_EXACT_VERSION",
+            "source": "pypi:semgrep",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Identify code-level security findings and map each to a CWE or ASVS reference.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "BEFORE_EXECUTION",
+          "permissions": {
+            "read": [
+              "src/**",
+              "app/**",
+              "api/**",
+              "server/**",
+              "internal/**",
+              "pkg/**",
+              "cmd/**"
+            ],
+            "write": [
+              ".dokion/findings/**",
+              ".dokion/evidence/**"
+            ],
+            "network": true,
+            "shell": [
+              "semgrep --config auto --json --output .dokion/evidence/semgrep.json"
+            ]
+          },
+          "success_conditions": [
+            "scan_completed",
+            "findings_mapped_to_standard"
+          ],
+          "failure_policy": "STOP_STAGE"
+        },
+        {
+          "id": "authz-review",
+          "name": "Review object and function level authorization",
+          "capability": {
+            "type": "tool",
+            "id": "semgrep",
+            "version": "PLACEHOLDER_PIN_EXACT_VERSION",
+            "source": "pypi:semgrep",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Enumerate endpoints and report those lacking object-level or function-level authorization.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "src/**",
+              "app/**",
+              "api/**",
+              "server/**",
+              "routes/**",
+              "handlers/**"
+            ],
+            "write": [
+              ".dokion/findings/**",
+              ".dokion/evidence/**"
+            ],
+            "network": false,
+            "shell": [
+              "semgrep --config p/owasp-top-ten --json --output .dokion/evidence/semgrep-authz.json"
+            ]
+          },
+          "success_conditions": [
+            "endpoints_enumerated",
+            "authorization_coverage_reported"
+          ],
+          "failure_policy": "STOP_STAGE"
+        },
+        {
+          "id": "resource-limits",
+          "name": "Check rate limiting, pagination, and payload limits",
+          "capability": {
+            "type": "tool",
+            "id": "semgrep",
+            "version": "PLACEHOLDER_PIN_EXACT_VERSION",
+            "source": "pypi:semgrep",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Report endpoints without rate limiting, pagination bounds, or request size limits.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "src/**",
+              "app/**",
+              "api/**",
+              "server/**",
+              "middleware/**"
+            ],
+            "write": [
+              ".dokion/findings/**"
+            ],
+            "network": false,
+            "shell": [
+              "semgrep --config auto --json"
+            ]
+          },
+          "success_conditions": [
+            "resource_limits_reported"
+          ],
+          "failure_policy": "CONTINUE"
+        },
+        {
+          "id": "security-fixes",
+          "name": "Repair approved security findings",
+          "capability": {
+            "type": "tool",
+            "id": "semgrep",
+            "version": "PLACEHOLDER_PIN_EXACT_VERSION",
+            "source": "pypi:semgrep",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Repair security findings the user approved, one finding per commit.",
+          "mode": "FIX_WITH_APPROVAL",
+          "required": true,
+          "depends_on": [
+            "sast-scan",
+            "authz-review"
+          ],
+          "approval": "BEFORE_EACH_FIX",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              "src/**",
+              "app/**",
+              "api/**",
+              "server/**",
+              "internal/**",
+              "pkg/**",
+              "tests/**"
+            ],
+            "network": false,
+            "shell": [
+              "semgrep --config auto --json"
+            ]
+          },
+          "validation": {
+            "adversarial_verification": true,
+            "suppression_detection": true,
+            "require_regression_test": true,
+            "require_evidence_artifact": true,
+            "forbid_test_deletion": true,
+            "forbid_out_of_scope_edits": true,
+            "max_diff_lines": 200
+          },
+          "verification": [
+            "REPLACE_WITH_YOUR_TEST_COMMAND",
+            "semgrep --config auto --error"
+          ],
+          "success_conditions": [
+            "finding_count_decreased",
+            "no_new_findings_introduced",
+            "verification_commands_passed"
+          ],
+          "maximum_iterations": 3,
+          "failure_policy": "REQUEST_USER_DECISION"
+        }
+      ]
+    },
+    {
+      "id": "data",
+      "name": "Data Layer",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "api-security"
+      ],
+      "applicability": {
+        "when_profile": {
+          "has_database": true
+        },
+        "on_inapplicable": "SKIP"
+      },
+      "steps": [
+        {
+          "id": "migration-safety",
+          "name": "Review migrations for destructive and blocking operations",
+          "capability": {
+            "type": "tool",
+            "id": "git",
+            "version": ">=2.40",
+            "source": "system",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Identify migrations that drop data, lock tables, or cannot be rolled back.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "migrations/**",
+              "db/**",
+              "prisma/**",
+              "alembic/**",
+              "supabase/**"
+            ],
+            "write": [
+              ".dokion/findings/**"
+            ],
+            "network": false,
+            "shell": [
+              "git log --oneline -- migrations"
+            ]
+          },
+          "success_conditions": [
+            "migrations_reviewed",
+            "irreversible_migrations_flagged"
+          ],
+          "failure_policy": "REQUEST_USER_DECISION"
+        }
+      ]
+    },
+    {
+      "id": "reliability",
+      "name": "Reliability and Observability",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "api-security"
+      ],
+      "steps": [
+        {
+          "id": "failure-mode-review",
+          "name": "Review timeouts, retries, and idempotency",
+          "capability": {
+            "type": "tool",
+            "id": "semgrep",
+            "version": "PLACEHOLDER_PIN_EXACT_VERSION",
+            "source": "pypi:semgrep",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Report outbound calls without timeouts, retries without backoff, and non-idempotent write paths.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "src/**",
+              "app/**",
+              "api/**",
+              "server/**",
+              "internal/**",
+              "pkg/**"
+            ],
+            "write": [
+              ".dokion/findings/**"
+            ],
+            "network": false,
+            "shell": [
+              "semgrep --config auto --json"
+            ]
+          },
+          "success_conditions": [
+            "failure_modes_reported"
+          ],
+          "failure_policy": "CONTINUE"
+        },
+        {
+          "id": "logging-review",
+          "name": "Review structured logging and secret redaction",
+          "capability": {
+            "type": "tool",
+            "id": "semgrep",
+            "version": "PLACEHOLDER_PIN_EXACT_VERSION",
+            "source": "pypi:semgrep",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Report unstructured logging, missing correlation ids, and secrets or PII reaching logs.",
+          "mode": "ANALYZE",
+          "required": false,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "src/**",
+              "app/**",
+              "server/**",
+              "internal/**",
+              "pkg/**"
+            ],
+            "write": [
+              ".dokion/findings/**"
+            ],
+            "network": false,
+            "shell": [
+              "semgrep --config auto --json"
+            ]
+          },
+          "success_conditions": [
+            "logging_reviewed"
+          ],
+          "failure_policy": "CONTINUE"
+        }
+      ]
+    },
+    {
+      "id": "cicd",
+      "name": "CI/CD and Infrastructure",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "supply-chain"
+      ],
+      "applicability": {
+        "when_paths_exist": [
+          ".github/workflows",
+          "Dockerfile",
+          "infra",
+          "terraform",
+          "k8s"
+        ],
+        "on_inapplicable": "SKIP"
+      },
+      "steps": [
+        {
+          "id": "iac-and-container-scan",
+          "name": "Scan IaC and container configuration",
+          "capability": {
+            "type": "tool",
+            "id": "trivy",
+            "version": "PLACEHOLDER_PIN_EXACT_VERSION",
+            "source": "github:aquasecurity/trivy",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Report misconfiguration in infrastructure-as-code, Dockerfiles, and CI workflow definitions.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "BEFORE_EXECUTION",
+          "permissions": {
+            "read": [
+              ".github/**",
+              "Dockerfile",
+              "docker-compose*.yml",
+              "infra/**",
+              "terraform/**",
+              "k8s/**"
+            ],
+            "write": [
+              ".dokion/findings/**",
+              ".dokion/evidence/**"
+            ],
+            "network": true,
+            "shell": [
+              "trivy config --format json --output .dokion/evidence/trivy-config.json ."
+            ]
+          },
+          "success_conditions": [
+            "iac_scanned"
+          ],
+          "failure_policy": "STOP_STAGE"
+        }
+      ]
+    },
+    {
+      "id": "release",
+      "name": "Release Readiness",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "api-security",
+        "reliability"
+      ],
+      "steps": [
+        {
+          "id": "final-verification",
+          "name": "Re-run the full verification suite against the final commit",
+          "capability": {
+            "type": "tool",
+            "id": "git",
+            "version": ">=2.40",
+            "source": "system",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Confirm every verification command passes against the final commit and tie results to that SHA.",
+          "mode": "VERIFY_ONLY",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/state.json",
+              "HARDENING.md",
+              ".dokion/evidence/**"
+            ],
+            "network": false,
+            "shell": [
+              "git rev-parse HEAD",
+              "git status --porcelain"
+            ]
+          },
+          "verification": [
+            "REPLACE_WITH_YOUR_TEST_COMMAND",
+            "REPLACE_WITH_YOUR_LINT_COMMAND",
+            "REPLACE_WITH_YOUR_BUILD_COMMAND"
+          ],
+          "success_conditions": [
+            "all_verification_passed",
+            "results_tied_to_commit"
+          ],
+          "failure_policy": "STOP_PIPELINE"
+        }
+      ]
+    }
+  ],
+  "release_gates": [
+    {
+      "id": "tests",
+      "command": "REPLACE_WITH_YOUR_TEST_COMMAND",
+      "blocking": true
+    },
+    {
+      "id": "lint",
+      "command": "REPLACE_WITH_YOUR_LINT_COMMAND",
+      "blocking": true
+    },
+    {
+      "id": "build",
+      "command": "REPLACE_WITH_YOUR_BUILD_COMMAND",
+      "blocking": true
+    },
+    {
+      "id": "critical-findings",
+      "condition": "open_findings.CRITICAL == 0",
+      "blocking": true
+    },
+    {
+      "id": "high-findings",
+      "condition": "open_findings.HIGH == 0",
+      "blocking": true
+    },
+    {
+      "id": "no-tainted-run",
+      "condition": "run.status != 'TAINTED'",
+      "blocking": true
+    },
+    {
+      "id": "no-scope-violations",
+      "condition": "scope_violations.total == 0",
+      "blocking": true
+    },
+    {
+      "id": "secrets-clean",
+      "condition": "open_findings_by_stage.supply-chain == 0",
+      "blocking": true
+    }
+  ],
+  "manifest": "dokion.json"
+}

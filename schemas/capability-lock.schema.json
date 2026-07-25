@@ -1,0 +1,401 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/imMamdouhaboammar/dokion/main/schemas/capability-lock.schema.json",
+  "title": "Dokion Capability Lock",
+  "description": "Validates `.dokion/capabilities.lock.json` \u2014 the resolution record for capabilities the USER selected in `.dokion/playbook.json`. It is a verification and provenance artifact, never a resolver: it cannot select, substitute, or install anything. It also records every upstream-installer exception, so any departure from the preferred runtime is visible rather than implicit.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "role",
+    "capabilities"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "role": {
+      "type": "object",
+      "description": "Declares, in the artifact itself, what this registry may and may not do. A registry asserting any authority flag as true is invalid and must be rejected at load.",
+      "required": [
+        "selection_authority",
+        "substitution_authority",
+        "installation_authority"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "metadata_lookup",
+              "compatibility_check",
+              "security_verification",
+              "version_verification",
+              "digest_verification",
+              "permission_validation",
+              "provenance_verification"
+            ]
+          }
+        },
+        "selection_authority": {
+          "const": false
+        },
+        "substitution_authority": {
+          "const": false
+        },
+        "installation_authority": {
+          "const": false
+        }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/capabilityLockEntry"
+      },
+      "description": "Resolution result per user-selected capability."
+    }
+  },
+  "$defs": {
+    "capabilityLockEntry": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "trust_status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "skill",
+            "plugin",
+            "agent",
+            "subagent",
+            "mcp_server",
+            "tool",
+            "command"
+          ]
+        },
+        "display_name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "source": {
+          "type": "object",
+          "description": "Where the capability comes from. Immutable references only: no floating tags, no branch names.",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "github",
+                "git",
+                "npm",
+                "pypi",
+                "oci",
+                "binary",
+                "builtin",
+                "local"
+              ]
+            },
+            "location": {
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
+            },
+            "commit": {
+              "type": "string",
+              "pattern": "^([a-fA-F0-9]{40}|EXAMPLE.*)$"
+            }
+          }
+        },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "claude_code",
+              "codex",
+              "gemini_cli"
+            ]
+          },
+          "description": "Agents this capability is known to run on. A step declaring it on an absent platform is inapplicable, not silently substituted."
+        },
+        "versions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "version"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "version": {
+                "type": "string"
+              },
+              "digest": {
+                "type": "string",
+                "pattern": "^(sha256:[a-fA-F0-9]{64}|sha512:[a-fA-F0-9]{128}|EXAMPLE.*)$"
+              },
+              "released_at": {
+                "type": "string",
+                "format": "date"
+              },
+              "deprecated": {
+                "type": "boolean",
+                "default": false
+              },
+              "deprecation_reason": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "publisher": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "identity_verified": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
+        "attestation": {
+          "type": "object",
+          "description": "Signature or provenance material, when available.",
+          "additionalProperties": false,
+          "properties": {
+            "signature": {
+              "type": "string"
+            },
+            "signing_identity": {
+              "type": "string"
+            },
+            "provenance": {
+              "type": "string",
+              "description": "e.g. an SLSA provenance URI."
+            },
+            "verified_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "license": {
+          "type": "string"
+        },
+        "required_permissions": {
+          "type": "object",
+          "description": "What this capability needs to function. Compared against the step's declared permissions: if the capability requires more than the step grants, the step stops and reports the exact excess.",
+          "additionalProperties": false,
+          "properties": {
+            "read": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "write": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "network": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            },
+            "shell": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "env": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "optional": {
+                "type": "boolean",
+                "default": false
+              }
+            }
+          }
+        },
+        "installation": {
+          "type": "object",
+          "description": "How a HUMAN installs this. Recorded for documentation and availability checks; the orchestrator never executes it on its own initiative.",
+          "additionalProperties": false,
+          "properties": {
+            "method": {
+              "type": "string",
+              "enum": [
+                "manual",
+                "package_manager",
+                "plugin_marketplace",
+                "skills_cli",
+                "preinstalled"
+              ]
+            },
+            "command": {
+              "type": "string"
+            },
+            "documentation": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        },
+        "verification": {
+          "type": "object",
+          "description": "How to confirm the capability is present and is what it claims to be.",
+          "additionalProperties": false,
+          "properties": {
+            "availability_command": {
+              "type": "string",
+              "description": "e.g. \"semgrep --version\". Must exit 0."
+            },
+            "expected_output_pattern": {
+              "type": "string"
+            },
+            "digest_check": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        },
+        "known_limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "known_risks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "description"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "description": {
+                "type": "string"
+              },
+              "severity": {
+                "type": "string",
+                "enum": [
+                  "CRITICAL",
+                  "HIGH",
+                  "MEDIUM",
+                  "LOW",
+                  "INFO"
+                ]
+              },
+              "reference": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "trust_status": {
+          "type": "string",
+          "enum": [
+            "VERIFIED",
+            "UNVERIFIED",
+            "BLOCKED",
+            "DEPRECATED",
+            "REVOKED"
+          ],
+          "description": "Only VERIFIED entries may execute when registry.require_verified is true. UNVERIFIED, BLOCKED, DEPRECATED, and REVOKED all stop the step with the exact reason: never a silent substitution."
+        },
+        "trust_notes": {
+          "type": "string"
+        },
+        "reviewed_by": {
+          "type": "string"
+        },
+        "reviewed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "installer_exception": {
+          "type": "object",
+          "description": "Recorded when a capability documents an installer other than the preferred runtime. Required by runtime_policy.upstream_installer_exception.record_exception_in.",
+          "properties": {
+            "used_installer": {
+              "type": "string"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "documented_at": {
+              "type": "string"
+            },
+            "approved_by": {
+              "type": "string"
+            }
+          }
+        },
+        "selected_in_playbook_steps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Steps that declared this capability. An entry present here but declared nowhere is an error."
+        }
+      }
+    }
+  }
+}
