@@ -10,12 +10,23 @@ export interface CommandResult {
   durationMs: number;
 }
 
-export async function runCommand(root: string, command: string, timeoutSeconds = 300): Promise<CommandResult> {
+export interface CommandOptions {
+  timeoutSeconds?: number;
+  env?: Record<string, string>;
+}
+
+export async function runCommand(
+  root: string,
+  command: string,
+  options: number | CommandOptions = 300
+): Promise<CommandResult> {
+  const normalized: CommandOptions = typeof options === "number" ? { timeoutSeconds: options } : options;
+  const timeoutSeconds = normalized.timeoutSeconds ?? 300;
   const startedAt = new Date().toISOString();
   const started = performance.now();
   const processHandle = Bun.spawn(["bash", "-lc", command], {
     cwd: root,
-    env: process.env,
+    env: { ...process.env, ...(normalized.env ?? {}) },
     stdout: "pipe",
     stderr: "pipe",
     stdin: "ignore"
