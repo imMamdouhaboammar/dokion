@@ -17,7 +17,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -58,6 +58,13 @@ jobs:
 
       - name: Build
         run: bun run build
+
+      - name: Build cross-platform release binaries
+        shell: bash
+        run: |
+          bun run scripts/build-release.ts
+          test "$(find release -maxdepth 1 -type f -name 'dokion-*' | wc -l)" -eq 5
+          rm -rf release
 
       - name: Validate packed distribution
         shell: bash
