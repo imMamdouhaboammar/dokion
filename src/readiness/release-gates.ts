@@ -3,16 +3,8 @@ import { join } from "node:path";
 import { writeJsonAtomic } from "../core/json.ts";
 import { runCommand } from "../engine/command-runner.ts";
 import type { NormalizedFinding } from "../findings/types.ts";
-import type { DokionPlaybook } from "../playbook/types.ts";
+import type { DokionPlaybook, ReleaseGateDefinition } from "../playbook/types.ts";
 import type { DokionState, ReleaseGateState } from "../state/types.ts";
-
-interface ReleaseGateDefinition {
-  id: string;
-  command?: string;
-  condition?: string;
-  blocking: boolean;
-  notes?: string;
-}
 
 const closedFindingStatuses = new Set<NormalizedFinding["status"]>([
   "VERIFIED",
@@ -28,7 +20,7 @@ const completedRequiredStepStatuses = new Set([
 ]);
 
 function definitions(playbook: DokionPlaybook): ReleaseGateDefinition[] {
-  return (playbook.release_gates ?? []) as ReleaseGateDefinition[];
+  return playbook.release_gates ?? [];
 }
 
 function safeSegment(value: string): string {
