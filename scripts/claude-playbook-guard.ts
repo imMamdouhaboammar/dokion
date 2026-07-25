@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { lstat, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 interface HookInput {
@@ -21,6 +21,8 @@ export interface GuardResult {
   observed?: string;
 }
 
+const ACTIVE_PLAYBOOK_PATH = ".dokion/playbook.json";
+
 function sha256(content: Uint8Array): string {
   return `sha256:${createHash("sha256").update(content).digest("hex")}`;
 }
@@ -29,10 +31,14 @@ async function exists(path: string): Promise<boolean> {
   return Bun.file(path).exists();
 }
 
+function missing(error: unknown): boolean {
+  return error instanceof Error && "code" in error && error.code === "ENOENT";
+}
+
 export async function evaluatePlaybookGuard(root: string): Promise<GuardResult> {
   const statePath = join(root, ".dokion", "state.json");
-  const defaultPlaybookPath = join(root, ".dokion", "playbook.json");
-  if (!(await exists(statePath)) || !(await exists(defaultPlaybookPath))) return { allow: true };
+  const playbookPath = join(root, ACTIVE_PLAYBOOK_PATH);
+  if (!(await exists(statePath)) || !(await exists(playbookPath))) return { allow: true };
 
   let state: StoredState;
   try {
@@ -47,13 +53,29 @@ export async function evaluatePlaybookGuard(root: string): Promise<GuardResult> 
   const expected = state.playbook?.digest;
   if (!expected || !expected.startsWith("sha256:")) return { allow: true };
 
-  const declaredPath = state.playbook?.path ?? ".dokion/playbook.json";
-  const playbookPath = resolve(root, declaredPath);
-  if (!playbookPath.startsWith(`${resolve(root)}/`) && playbookPath !== resolve(root)) {
-    return { allow: false, reason: `PLAYBOOK_TAINTED: Unsafe playbook path in state: ${declaredPath}` };
+  const declaredPath = state.playbook?.path ?? ACTIVE_PLAYBOOK_PATH;
+  if (declaredPath !== ACTIVE_PLAYBOOK_PATH) {
+    return {
+      allow: false,
+      reason: `PLAYBOOK_TAINTED: State contains a noncanonical playbook path: ${declaredPath}`,
+      expected
+    };
   }
-  if (!(await exists(playbookPath))) {
-    return { allow: false, reason: `PLAYBOOK_TAINTED: Active playbook is missing at ${declaredPath}.`, expected };
+
+  try {
+    const stat = await lstat(playbookPath);
+    if (!stat.isFile() || stat.isSymbolicLink()) {
+      return {
+        allow: false,
+        reason: `PLAYBOOK_TAINTED: Active playbook must be a regular file at ${ACTIVE_PLAYBOOK_PATH}.`,
+        expected
+      };
+    }
+  } catch (error) {
+    if (missing(error)) {
+      return { allow: false, reason: `PLAYBOOK_TAINTED: Active playbook is missing at ${ACTIVE_PLAYBOOK_PATH}.`, expected };
+    }
+    return { allow: false, reason: `PLAYBOOK_TAINTED: Active playbook metadata could not be read.`, expected };
   }
 
   const observed = sha256(await readFile(playbookPath));
