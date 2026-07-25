@@ -1,0 +1,61 @@
+name: Apply Commit 006 Type Fixes
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.head_ref == 'feat/006-centralize-command-metadata'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/006-centralize-command-metadata
+          fetch-depth: 0
+
+      - name: Apply narrow type fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+
+          registry = Path('src/cli/command-registry.ts')
+          text = registry.read_text()
+          old = '''export function geminiCommandsForFile(file: GeminiCommandFile): readonly CliCommandDescriptor[] {
+            return CLI_COMMAND_REGISTRY.filter((command) => command.geminiFiles.includes(file))
+              .sort((left, right) => {'''.replace('\n            ', '\n')
+          new = '''export function geminiCommandsForFile(file: GeminiCommandFile): readonly CliCommandDescriptor[] {
+            return CLI_COMMAND_REGISTRY.filter((command) => {
+              const files: readonly GeminiCommandFile[] = command.geminiFiles;
+              return files.includes(file);
+            }).sort((left, right) => {'''.replace('\n            ', '\n')
+          assert text.count(old) == 1
+          registry.write_text(text.replace(old, new))
+
+          test_file = Path('tests/cli/command-registry-runtime.test.ts')
+          test_text = test_file.read_text()
+          old_type = '  manifestCliCommands(): readonly unknown[];'
+          new_type = '  manifestCliCommands(): unknown[];'
+          assert test_text.count(old_type) == 1
+          test_file.write_text(test_text.replace(old_type, new_type))
+
+          Path('.github/workflows/commit-006-type-fix.yml').unlink()
+          PY
+
+      - name: Commit corrected branch state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "fix: preserve registry metadata type boundaries"
+          git push origin HEAD:feat/006-centralize-command-metadata
