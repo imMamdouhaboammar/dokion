@@ -55,6 +55,14 @@ export interface CoveragePolicy {
   unassigned_lane_readiness_cap?: ReadinessCap;
 }
 
+export interface ReleaseGateDefinition {
+  id: string;
+  command?: string;
+  condition?: string;
+  blocking: boolean;
+  notes?: string;
+}
+
 export interface ValidationPolicy {
   adversarial_verification?: boolean;
   suppression_detection?: boolean;
@@ -137,7 +145,7 @@ export interface DokionPlaybook {
     validation?: ValidationPolicy;
   };
   stages: PlaybookStage[];
-  release_gates?: Array<Record<string, unknown>>;
+  release_gates?: ReleaseGateDefinition[] | undefined;
   coverage_policy?: CoveragePolicy;
   manifest?: string;
   notes?: string;
