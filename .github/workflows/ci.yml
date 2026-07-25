@@ -59,12 +59,19 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: Build cross-platform release binaries
+      - name: Build and smoke-test release binaries
         shell: bash
         run: |
+          set -euo pipefail
           bun run scripts/build-release.ts
           test "$(find release -maxdepth 1 -type f -name 'dokion-*' | wc -l)" -eq 5
-          rm -rf release
+          ./release/dokion-linux-x64 --help | grep -F "Dokion 0.3.0"
+          CLEAN_ROOT="$(mktemp -d)"
+          trap 'rm -rf "$CLEAN_ROOT" release' EXIT
+          (
+            cd "$CLEAN_ROOT"
+            "$GITHUB_WORKSPACE/release/dokion-linux-x64" validate --catalog-only | grep -F 'builtin:dokion.json'
+          )
 
       - name: Validate packed distribution
         shell: bash
