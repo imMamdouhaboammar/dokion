@@ -41,7 +41,7 @@ async function fixture(remediation: "good" | "suppression", approval: "BEFORE_EA
   );
   await writeFile(
     join(root, "scripts/analyze.ts"),
-    "import { readFile, writeFile } from 'node:fs/promises';\nconst source = await readFile('src/query.ts', 'utf8');\nconst output = process.env.DOKION_OUTPUT;\nif (!output) throw new Error('DOKION_OUTPUT is required');\nconst findings = source.includes(\"WHERE name = '${name}'\") ? [{ severity: 'HIGH', title: 'SQL query interpolates user input', description: 'The query embeds a user-controlled name directly in SQL.', rule_id: 'fixture.sql-interpolation', location: { file: 'src/query.ts', line: 2 }, proposed_fix: { summary: 'Use a parameterized query', risk: 'LOW', effort: 'SMALL', touches_files: ['src/query.ts', 'tests/query.test.ts'] }, blocks_release: true }] : [];\nawait writeFile(output, JSON.stringify({ version: 1, findings }, null, 2));\n"
+    "import { readFile, writeFile } from 'node:fs/promises';\nconst source = await readFile('src/query.ts', 'utf8');\nconst output = process.env.DOKION_OUTPUT;\nif (!output) throw new Error('DOKION_OUTPUT is required');\nconst findings = source.includes('buildQuery') ? [{ severity: 'HIGH', title: 'SQL query interpolates user input', description: 'The query embeds a user-controlled name directly in SQL.', rule_id: 'fixture.sql-interpolation', location: { file: 'src/query.ts', line: 2 }, proposed_fix: { summary: 'Use a parameterized query', risk: 'LOW', effort: 'SMALL', touches_files: ['src/query.ts', 'tests/query.test.ts'] }, blocks_release: true }] : [];\nawait writeFile(output, JSON.stringify({ version: 1, findings }, null, 2));\n"
   );
   await writeFile(
     join(root, "scripts/fix-good.ts"),
