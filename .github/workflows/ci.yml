@@ -17,7 +17,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -58,6 +58,20 @@ jobs:
 
       - name: Build
         run: bun run build
+
+      - name: Build and smoke-test release binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          bun run scripts/build-release.ts
+          test "$(find release -maxdepth 1 -type f -name 'dokion-*' | wc -l)" -eq 5
+          ./release/dokion-linux-x64 --help | grep -F "Dokion 0.3.0"
+          CLEAN_ROOT="$(mktemp -d)"
+          trap 'rm -rf "$CLEAN_ROOT" release' EXIT
+          (
+            cd "$CLEAN_ROOT"
+            "$GITHUB_WORKSPACE/release/dokion-linux-x64" validate --catalog-only | grep -F 'builtin:dokion.json'
+          )
 
       - name: Validate packed distribution
         shell: bash
