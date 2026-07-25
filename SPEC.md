@@ -186,6 +186,14 @@ The classes of content that are always untrusted: SKILL.md bodies and plugin doc
 scanner and linter output, CVE and advisory text, dependency metadata, commit messages,
 issue and pull request bodies, and any file content read from the repository under audit.
 
+### 2.5 Bounded autopilot
+
+Autopilot never enlarges authority. It means deterministic continuation of the approved playbook from persisted state, not permission to choose new capabilities, broaden scope, change policy, or infer approval.
+
+A next action may run automatically only when it is uniquely determined by the active playbook, verified capability lock, repository identity, recorded approvals, current state, declared policies, budgets, and platform guarantees. Missing, stale, conflicting, or ambiguous inputs stop the run.
+
+The mandatory stops, allowed continuation actions, forbidden actions, retry boundaries, platform handoff rules, and testable invariants are normative in [`docs/architecture/bounded-autopilot.md`](docs/architecture/bounded-autopilot.md).
+
 ---
 
 ## 3. The Playbook
