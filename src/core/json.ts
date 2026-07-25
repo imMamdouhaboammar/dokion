@@ -21,10 +21,9 @@ export async function readJson<T>(path: string): Promise<T> {
   }
 }
 
-export async function writeJsonAtomic(path: string, value: unknown): Promise<void> {
+export async function writeTextAtomic(path: string, content: string): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
   const temporaryPath = `${path}.tmp`;
-  const content = `${JSON.stringify(value, null, 2)}\n`;
 
   try {
     await writeFile(temporaryPath, content, { encoding: "utf8", flag: "w" });
@@ -33,4 +32,8 @@ export async function writeJsonAtomic(path: string, value: unknown): Promise<voi
     await rm(temporaryPath, { force: true });
     throw error;
   }
+}
+
+export async function writeJsonAtomic(path: string, value: unknown): Promise<void> {
+  await writeTextAtomic(path, `${JSON.stringify(value, null, 2)}\n`);
 }
