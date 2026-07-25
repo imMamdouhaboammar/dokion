@@ -1,0 +1,9 @@
+{
+  "name": "dokion",
+  "version": "0.3.0",
+  "description": "Run user-authored Dokion hardening playbooks with immutable configuration, stored evidence, repair validation, and scoped readiness reports.",
+  "contextFileName": "GEMINI.md",
+  "plan": {
+    "directory": ".dokion/plans"
+  }
+}

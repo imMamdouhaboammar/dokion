@@ -4,211 +4,263 @@
 
 ### *Your rules. Your tools. Proven software.*
 
-Cross-agent security & quality hardening engine for **Claude Code**, **Codex**, and **Gemini CLI**.
+A user-directed hardening runtime for Claude Code, Codex, Gemini CLI, and ordinary shell capabilities.
 
-[![Specification: v1.0.0--draft](https://img.shields.io/badge/Specification-v1.0.0--draft-0052CC.svg?style=flat-square)](SPEC.md)
-[![Conformance: 100% Passed](https://img.shields.io/badge/Conformance-100%25%20Passed-2EA44F.svg?style=flat-square&logo=python&logoColor=white)](schemas/conformance_test.py)
+[![Runtime: M0-M5](https://img.shields.io/badge/runtime-M0--M5%20implemented-2EA44F.svg?style=flat-square)](docs/superpowers/plans/2026-07-25-m5-cross-agent-adapters.md)
+[![Bun](https://img.shields.io/badge/Bun-1.3.14-black.svg?style=flat-square&logo=bun)](package.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/imMamdouhaboammar/dokion/pulls)
-[![GitHub Stars](https://img.shields.io/github/stars/imMamdouhaboammar/dokion?style=flat-square&logo=github)](https://github.com/imMamdouhaboammar/dokion/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/imMamdouhaboammar/dokion?style=flat-square&logo=github)](https://github.com/imMamdouhaboammar/dokion/network/members)
-[![GitHub Issues](https://img.shields.io/github/issues/imMamdouhaboammar/dokion?style=flat-square&color=blue)](https://github.com/imMamdouhaboammar/dokion/issues)
-
-[Overview](#-the-problem) • [Four Mechanisms](#-four-mechanisms) • [Security & Authority Model](#-why-the-authority-model-is-the-security-model) • [Architecture](#-the-two-file-split) • [Conformance](#-enforced-authority-model-conformance-testing) • [Quick Start](#-getting-started-once-implemented) • [Agent Compatibility](#-cross-agent-support-matrix)
 
 </div>
 
----
+## Current status
 
-> [!NOTE]
-> **Status: Spec-Stage Repository.** This repository defines the Dokion specification, JSON Schemas, authority model, and reference playbooks.
-> - [`SPEC.md`](SPEC.md) — Complete specification document.
-> - [`dokion.json`](dokion.json) — Identity & procedures manifest (catalog).
-> - [`templates/BUILD_PROMPT.md`](templates/BUILD_PROMPT.md) — Self-contained master prompt to implement Dokion with any coding agent.
+Dokion is an executable Bun CLI with cross-agent packaging and explicit platform-degradation records.
 
----
+Implemented:
 
-## 🎯 The Problem
+- M0: schemas, conformance tests, and CI validation
+- M1: immutable playbook loading and SHA-256 mutation detection
+- M2: ordered execution, state journaling, evidence capture, reporting, and resume
+- M3: normalized findings, approval records, declared remediation, and verification
+- M4: snapshot-based adversarial repair validation and exact rollback
+- M5: one canonical hardening skill, Claude Code/Codex/Gemini CLI adapters, platform detection, and honest degradation reporting
 
-Ask a coding agent to *"harden this project"* and the failure mode is predictable. It audits broadly, fixes shallowly, silences whatever still complains, and reports success. Nothing in that loop distinguishes a repaired vulnerability from a suppressed warning. And nothing survives the context window — thirty steps of tool output later, the agent no longer remembers what it checked.
+Still planned:
 
-**Dokion solves this by introducing deterministic, user-authored playbooks and verifiable evidence gates.**
+- M6: marketplace validation, clean-install reproduction, release automation, and distribution checks
 
----
+The specification remains the authority for intended behavior. Runtime claims are limited to behavior covered by code and CI.
 
-## ⚡ Four Mechanisms
+## Authority model
 
-| Mechanism | Description |
-| :--- | :--- |
-| **1. You Own Process** | `.dokion/playbook.json` is authored by you and is the **only file that authorizes execution**. Dokion may validate, verify, explain gaps, or *recommend* changes — but **never** selects, installs, substitutes, reorders, or enables capabilities on its own. Recommendations land in `.dokion/playbook.proposed.json` and change nothing until you accept them. |
-| **2. The File is the State** | `HARDENING.md` and `.dokion/state.json` are written before they are needed. Agent context is expendable; disk state is persistent. Kill the session mid-run and any agent, on any model, resumes from disk with zero context loss. |
-| **3. No Unverified Success** | A step advances only when a verification command exits `0` and its output is captured as cryptographic evidence. Never on an agent assertion alone. Adding `# nosec` over a defect routes to `REPAIR_REJECTED`, not `VERIFIED`. |
-| **4. Uncovered Means Uncovered** | Dokion tracks capability *lanes* (appsec, API contracts, DB hardening, observability, supply chain). A lane without assigned capabilities caps readiness at `CONDITIONALLY_READY` until you assign a capability or acknowledge the gap by name. A hole in the audit is reported as a hole, not rounded up to a pass. |
+Dokion does not decide which capability should run.
 
----
+`dokion.json` is an inert catalog. It describes known skills, tools, plugins, loops, and policies. Catalog entries do not execute by being listed.
 
-## 🔒 Why the Authority Model is the Security Model
+`.dokion/playbook.json` is the only execution authority. The user owns:
 
-Snyk's [ToxicSkills study](https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/) found prompt injection in **36% of tested agent skills** and 1,467 malicious payloads. The barrier to publishing a malicious skill is just a `SKILL.md` and a week-old GitHub account.
+- capability selection
+- execution order
+- permissions
+- approval policies
+- retry and stop rules
+- verification commands
+- release gates
 
-- **Self-selecting orchestrator:** Must be trusted about what it picked.
-- **Dokion model:** Only executes a user-authored list, making it **fully auditable**. You diff the playbook, and the final report reconciles against it.
+Dokion may validate, execute, journal, verify, explain gaps, and write inert recommendations. It may not autonomously select, install, substitute, reorder, upgrade, or enable a capability.
 
-That is why `.dokion/capabilities.lock.json` has **zero** selection, substitution, or installation authority: it strictly verifies what you already approved.
+## Cross-agent model
 
----
+The hardening workflow is authored once:
 
-## 📐 The Two-File Split
-
-```
-                              ┌─────────────────────────────────────────┐
-                              │               dokion.json               │
-                              │           (Ships with Dokion)           │
-                              │                                         │
-                              │ Catalog of identity, known capabilities, │
-                              │ loop templates, & policies. INERT.      │
-                              └────────────────────┬────────────────────┘
-                                                   │
-                                                   ▼
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                                 .dokion/playbook.json                                  │
-│                                  (Authored by YOU)                                     │
-│                                                                                        │
-│ Explicit list of approved capabilities, execution order, permissions, & approval gates.│
-└────────────────────────────────────────────────────────────────────────────────────────┘
+```text
+skills/dokion-hardening/SKILL.md
 ```
 
-| File | Owner | Role & Function |
-| :--- | :--- | :--- |
-| [`dokion.json`](dokion.json) | Ships with Dokion | **Catalog.** Identity, known capabilities, loop templates, policies, coverage gaps. Nothing in it executes by default (`default_enabled: false`, `requires_user_approval: true`). |
-| `.dokion/playbook.json` | **User (You)** | **Authorization.** The specific capabilities you approved, in the order you selected, with explicit permissions granted. |
+Platform packages are thin adapters:
 
----
+```text
+Claude Code
+  .claude-plugin/plugin.json
+  .claude/skills/dokion/SKILL.md
+  hooks/hooks.json
+  scripts/claude-playbook-guard.ts
 
-## 📂 Repository Structure
+Codex
+  AGENTS.md
+  .codex/AGENTS.md
+  .agents/skills/dokion-hardening/SKILL.md
 
-```gss
-.
-├── dokion.json                              # Identity + procedures manifest (the catalog)
-├── SPEC.md                                  # Complete Dokion system specification
-├── schemas/                                 # Rigid JSON Schemas enforcing authority & state
-│   ├── dokion-manifest.schema.json          # Validates dokion.json
-│   ├── dokion-playbook.schema.json          # Validates .dokion/playbook.json
-│   ├── dokion-state.schema.json             # Validates .dokion/state.json
-│   ├── dokion-finding.schema.json           # Normalized finding envelope
-│   ├── capability-lock.schema.json          # Validates .dokion/capabilities.lock.json
-│   └── conformance_test.py                  # Pytest suite proving schema enforcement
-├── playbooks/                               # Reference & example playbooks
-│   ├── example.playbook.json                # Minimal three-stage playbook
-│   └── reference/                           # Domain libraries (inert until copied & edited)
-│       ├── web-fullstack.playbook.json      # Full-stack web application playbook
-│       ├── api-service.playbook.json        # API service hardening playbook
-│       └── library-package.playbook.json    # Open-source library playbook
-└── templates/                               # Output & prompt templates
-    ├── HARDENING.template.md                # Markdown readiness report template
-    └── BUILD_PROMPT.md                      # Master prompt to implement Dokion engine
+Gemini CLI
+  gemini-extension.json
+  GEMINI.md
+  commands/dokion/run.toml
+  commands/dokion/status.toml
 ```
 
----
+Adapters translate discovery, packaging, commands, context, and hooks. They do not create a second workflow and do not receive authority to alter the playbook.
 
-## 🧪 Enforced Authority Model (Conformance Testing)
+## Platform guarantees and degradations
 
-A specification that only *describes* its security guarantees is a wish. Dokion encodes these guarantees into JSON Schemas, making non-compliant behavior **unrepresentable**:
+Dokion detects the active agent conservatively. `DOKION_AGENT` is the explicit authority. Unambiguous platform environment markers may be used when the explicit value is absent. Conflicting evidence becomes `other` rather than guessing.
+
+A guarantee is recorded only when explicit evidence is available:
+
+```text
+DOKION_GUARANTEE_HOOK_ENFORCEMENT=1
+DOKION_GUARANTEE_SUBAGENT_ISOLATION=1
+DOKION_GUARANTEE_PARALLEL_WRITES=1
+DOKION_GUARANTEE_WORKTREE_ISOLATION=1
+```
+
+Missing evidence is stored in `.dokion/state.json` and displayed in `HARDENING.md` as one or more degradations:
+
+- `NO_HOOK_ENFORCEMENT`
+- `NO_SUBAGENT_ISOLATION`
+- `NO_PARALLEL_WRITES`
+- `NO_WORKTREE_ISOLATION`
+
+Dokion never treats differently capable agents as equivalent without evidence.
+
+## Claude Code integrity guard
+
+The Claude Code plugin registers a `PreToolUse` guard for Bash, Edit, Write, and NotebookEdit. During `RUNNING` or `AWAITING_USER`, it compares the current playbook digest with the digest stored in `.dokion/state.json`.
+
+A mismatch blocks the tool call with `PLAYBOOK_TAINTED`. Terminal runs do not keep blocking the user's tools.
+
+## Repair validation
+
+Each remediation receives a repository snapshot captured immediately before the declared repair command.
+
+The validator compares that snapshot with the post-repair tree and checks:
+
+- tracked and untracked non-ignored files
+- added, modified, and deleted paths
+- edits outside the declared write scope
+- newly added suppression directives
+- deleted tests and added skip directives
+- diff-size limits
+- whether a required regression test was actually added or modified
+
+A historical unchanged test does not satisfy `require_regression_test`.
+
+When remediation, adversarial validation, or a verification command fails, Dokion restores the exact pre-remediation state for that finding. This preserves unrelated dirty work that existed before the repair and removes files created by the rejected repair.
+
+Ignored untracked trees are not covered by the M4 snapshot. This boundary must remain visible as a runtime or platform limitation until a bounded ignored-file policy is implemented.
+
+## Runtime layout
+
+```text
+HARDENING.md
+.dokion/
+  playbook.json
+  state.json
+  events.ndjson
+  findings/
+  evidence/
+  reports/
+  runs/
+```
+
+`HARDENING.md` is the human-readable report. `.dokion/state.json` is the machine state used for recovery and resume.
+
+## CLI
+
+```text
+Observe
+  dokion inspect
+  dokion doctor
+  dokion status
+  dokion findings
+  dokion report
+  dokion tools list
+  dokion skills list
+  dokion plugins list
+  dokion loops list
+
+Configure
+  dokion init
+  dokion validate
+  dokion validate --catalog-only
+
+Execute
+  dokion run
+  dokion resume
+  dokion verify
+  dokion approve <step:id|finding:id> --by <identity> [--notes <text>]
+  dokion reject <step:id|finding:id> --by <identity> [--notes <text>]
+```
+
+There is no `dokion install` command.
+
+## Development setup
+
+Requirements:
+
+- Bun 1.3.14 or newer
+- Python 3 with `jsonschema`
+- Git
 
 ```bash
-# Install validator & run strict schema conformance suite
-pip install jsonschema && python3 schemas/conformance_test.py
+bun install --frozen-lockfile
+python3 -m pip install jsonschema
+bun test
+bun run typecheck
+bun run validate:contracts
+bun run build
 ```
 
-### The Negative Suite Asserts Schema Rejection
-The test runner verifies that schemas **refuse**:
-- Playbooks granting `automatic_installation`, `automatic_substitution`, or `automatic_reordering`.
-- Playbooks delegating capability selection or execution order to the orchestrator.
-- Manifests dropping `"reorder steps"` or `"install undeclared capability"` from `forbidden_autonomy`.
-- Catalog entries shipping `default_enabled: true` or waiving user approval.
-- Capabilities pinned to floating references (`latest`).
-- Findings marked `VERIFIED` without evidence.
-- Risk acceptances or deferrals without user attribution.
+## Minimal project flow
 
----
-
-## 🛡️ Runtime Layout
-
-When running in a project, Dokion creates and maintains the following directory structure:
-
-```
-├── HARDENING.md                         # Auditable markdown report
-└── .dokion/                             # Machine state directory
-    ├── playbook.json                    # User authorization (write-blocked, SHA-256 pinned)
-    ├── playbook.proposed.json           # The only playbook file Dokion may generate
-    ├── state.json                       # Machine state & step progress tracker
-    ├── capabilities.lock.json           # Resolved capability digests & installer rules
-    ├── events.ndjson                    # Append-only execution event log
-    └── findings/ evidence/ reports/ runs/ # Artifact storage
-```
-
----
-
-## 🚀 Getting Started *(Once Implemented)*
-
-Dokion never invents a playbook without explicit approval.
-
-### 1. Initialize & Generate Proposal
+Initialize Dokion-owned state:
 
 ```bash
-dokion init          # Initialize .dokion state & HARDENING.md (installs nothing)
-dokion inspect       # Detect project stack (proposes no execution)
-dokion plan          # Write .dokion/playbook.proposed.json and stop
+dokion init
 ```
 
-### 2. Review & Activate
+Create `.dokion/playbook.json` yourself or copy and edit a reference playbook. Replace every placeholder digest with an immutable reference.
 
-Review and edit the proposed playbook, then activate it:
+Validate before execution:
 
 ```bash
-cp .dokion/playbook.proposed.json .dokion/playbook.json
-dokion validate      # Verify schema & validate declared capabilities
-dokion run           # Execute hardening stages, gated by approval policies
+dokion validate
 ```
 
-### 3. Or Adopt a Reference Playbook
+Run the approved playbook:
 
 ```bash
-mkdir -p .dokion
-cp playbooks/reference/web-fullstack.playbook.json .dokion/playbook.json
-
-# Edit .dokion/playbook.json:
-# 1. Replace sha256:PLACEHOLDER with real hashes
-# 2. Configure project-specific test & lint commands
-# 3. Prune steps you do not want to run
+dokion run
 ```
 
----
+When a step pauses for approval:
 
-## 🤖 Cross-Agent Support Matrix
+```bash
+dokion approve finding:DK-APPSEC-001 --by mamdouh --notes "Approved scoped repair"
+dokion resume
+```
 
-Dokion provides unified hardening across leading AI agent runtimes:
+## Evidence rule
 
-| Capability / Guarantee | Claude Code | Codex | Gemini CLI |
-| :--- | :---: | :---: | :---: |
-| **Playbook Authority & Schema Validation** | ✅ | ✅ | ✅ |
-| **SHA-256 Digest Pinning** | ✅ | ✅ | ✅ |
-| **Evidence Gates & State Recovery** | ✅ | ✅ | ✅ |
-| **Hook-Based Write Prevention** | ✅ | ⚠️ Detection only | ⚠️ Detection only |
-| **Subagent Scope Isolation** | ✅ | ⚠️ Detection only | ⚠️ Detection only |
-| **Parallel Isolated Writers** | ✅ | — | — |
+A step succeeds only when the declared command exits successfully and its output is stored as evidence.
 
-*Where a platform guarantee is missing or partial, the run log records it and `HARDENING.md` explicitly flags the limitation.*
+A finding reaches `VERIFIED` only when:
 
----
+1. the repair command completed
+2. the repair delta passed adversarial validation
+3. every declared verification command exited with code 0
+4. required regression-test evidence exists
 
-## 🔗 Related & Ecosystem
+A suppression-based or incomplete repair becomes `REPAIR_REJECTED`. It never counts toward a readiness gate.
 
-- **[Superpowers](https://github.com/obra/superpowers)** — Governs how you *build new code*. Dokion governs how you *prove existing code*. They compose seamlessly — Dokion's catalog lists Superpowers as a capability: pinned, verified, scoped, and off until you approve it.
+## Repository map
 
----
+```text
+src/
+  approvals/       append-only approval decisions
+  contracts/       JSON Schema validation
+  engine/          ordered runtime and capability execution
+  evidence/        command and repair artifacts
+  findings/        normalization and persistence
+  inspect/         project inspection
+  platform/        agent detection, guarantees, and degradations
+  playbook/        immutable playbook loading
+  report/          HARDENING.md rendering
+  state/           atomic state and event journal
+  validation/      repair snapshots and adversarial checks
 
-## 📜 License
+schemas/           manifest, playbook, state, finding, and lock schemas
+playbooks/         inert examples and reference playbooks
+skills/            canonical agent-neutral Dokion workflow
+templates/         report and implementation contracts
+tests/             seeded-defect and runtime acceptance tests
+```
 
-Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for details.
+## Completion language
 
+Dokion never emits an unqualified claim that a repository is production ready.
+
+The valid completion statement is scoped to the user-configured gates, the tested commit, the stored evidence, platform degradations, and the limitations recorded in `HARDENING.md`.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

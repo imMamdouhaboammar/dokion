@@ -10,6 +10,7 @@ import { readJson } from "./core/json.ts";
 import { ExecutionEngine } from "./engine/execution-engine.ts";
 import { listFindings } from "./findings/finding-store.ts";
 import { inspectProject } from "./inspect/project-inspector.ts";
+import { detectAgentPlatform } from "./platform/platform-detector.ts";
 import { loadActivePlaybook } from "./playbook/load-playbook.ts";
 import { writeHardeningReport } from "./report/render-hardening.ts";
 import { StateStore } from "./state/state-store.ts";
@@ -27,7 +28,7 @@ function optionValue(name: string): string | undefined {
 }
 
 function help(): void {
-  console.log(`Dokion 0.2.0\n\nUsage: dokion <command>\n\nObserve:\n  inspect\n  doctor\n  status\n  findings\n  report\n  tools list\n  skills list\n  plugins list\n  loops list\n\nConfigure:\n  init\n  validate [--catalog-only]\n\nExecute:\n  run\n  resume\n  verify\n  approve <step:id|finding:id> --by <identity> [--notes <text>]\n  reject <step:id|finding:id> --by <identity> [--notes <text>]\n\nDokion never installs, selects, substitutes, reorders, or enables capabilities.`);
+  console.log(`Dokion 0.3.0\n\nUsage: dokion <command>\n\nObserve:\n  inspect\n  doctor\n  status\n  findings\n  report\n  tools list\n  skills list\n  plugins list\n  loops list\n\nConfigure:\n  init\n  validate [--catalog-only]\n\nExecute:\n  run\n  resume\n  verify\n  approve <step:id|finding:id> --by <identity> [--notes <text>]\n  reject <step:id|finding:id> --by <identity> [--notes <text>]\n\nDokion never installs, selects, substitutes, reorders, or enables capabilities.`);
 }
 
 async function initialize(): Promise<void> {
@@ -40,7 +41,7 @@ async function initialize(): Promise<void> {
   if (await store.exists()) {
     state = await store.load();
   } else {
-    state = await store.initialize({ playbookDigest: "unconfigured", agent: "other", stages: [] });
+    state = await store.initialize({ playbookDigest: "unconfigured", stages: [] });
     state = await store.update((current) => ({
       ...current,
       run: { ...current.run, status: "STOPPED", ended_at: new Date().toISOString() }
@@ -52,6 +53,7 @@ async function initialize(): Promise<void> {
     active_playbook_created: false,
     state: ".dokion/state.json",
     report: "HARDENING.md",
+    platform: state.profile?.platform,
     next: "Create or copy .dokion/playbook.json, pin every capability digest, then run dokion validate."
   });
 }
@@ -79,6 +81,8 @@ async function status(): Promise<void> {
     run_id: state.run.id,
     status: state.run.status,
     playbook_digest: state.playbook.digest,
+    platform: state.profile?.platform,
+    degradations: state.run.degradations ?? [],
     approvals: state.approvals ?? [],
     stages: state.stages.map((stage) => ({
       id: stage.id,
@@ -114,6 +118,7 @@ async function listCatalog(kind: "skills" | "tools" | "plugins" | "loops"): Prom
 }
 
 async function doctor(): Promise<void> {
+  const platform = detectAgentPlatform();
   const checks = {
     bun: Bun.version,
     git: Bun.which("git") ?? null,
@@ -121,7 +126,7 @@ async function doctor(): Promise<void> {
     active_playbook: await Bun.file(join(root, ".dokion/playbook.json")).exists(),
     state: await Bun.file(join(root, ".dokion/state.json")).exists()
   };
-  print({ checks, healthy: Boolean(checks.git && checks.python3) });
+  print({ checks, platform, healthy: Boolean(checks.git && checks.python3) });
 }
 
 function inferSubjectType(subject: string): ApprovalSubjectType {

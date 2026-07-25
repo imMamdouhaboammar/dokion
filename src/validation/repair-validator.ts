@@ -1,12 +1,21 @@
-import { relative, join } from "node:path";
+import { join } from "node:path";
 
 import { sha256 } from "../core/digest.ts";
 import { writeTextAtomic } from "../core/json.ts";
+import {
+  captureRepairSnapshot,
+  diffRepairSnapshots,
+  isTestPath,
+  renderRepairDelta,
+  snapshotText,
+  type RepairSnapshot
+} from "./repair-snapshot.ts";
 
 export interface RepairValidationPolicy {
   suppression_detection?: boolean;
   forbid_test_deletion?: boolean;
   forbid_out_of_scope_edits?: boolean;
+  require_regression_test?: boolean;
   max_diff_lines?: number;
 }
 
@@ -14,19 +23,11 @@ export interface RepairValidationResult {
   verdict: "FIX_HOLDS" | "FIX_IS_SUPPRESSION" | "FIX_INCOMPLETE";
   violations: string[];
   changedPaths: string[];
+  changedTestPaths: string[];
   diffArtifact: string;
   diffDigest: string;
   diff: string;
-}
-
-async function git(root: string, args: string[]): Promise<{ exitCode: number; stdout: string; stderr: string }> {
-  const child = Bun.spawn(["git", ...args], { cwd: root, stdout: "pipe", stderr: "pipe", stdin: "ignore" });
-  const [exitCode, stdout, stderr] = await Promise.all([
-    child.exited,
-    child.stdout ? new Response(child.stdout).text() : "",
-    child.stderr ? new Response(child.stderr).text() : ""
-  ]);
-  return { exitCode, stdout, stderr };
+  after: RepairSnapshot;
 }
 
 function escapeRegExp(value: string): string {
@@ -56,17 +57,6 @@ function matchesAny(path: string, scopes: string[]): boolean {
   return scopes.some((scope) => globRegex(scope).test(path));
 }
 
-function parseNameStatus(raw: string): Array<{ status: string; path: string }> {
-  return raw
-    .split("\n")
-    .filter(Boolean)
-    .map((line) => {
-      const [status = "", ...pathParts] = line.split("\t");
-      return { status, path: pathParts.at(-1) ?? "" };
-    })
-    .filter((entry) => entry.path.length > 0);
-}
-
 const suppressionPatterns: Array<[string, RegExp]> = [
   ["nosec", /(?:#|\/\/|\/\*)\s*nosec\b|\bnoqa\b/i],
   ["eslint-disable", /eslint-disable(?:-next-line|-line)?/i],
@@ -77,74 +67,89 @@ const suppressionPatterns: Array<[string, RegExp]> = [
   ["test-skip", /\b(?:test|it|describe)\.(?:skip|todo)\b|\bx(?:it|describe)\s*\(/i]
 ];
 
+function countMatches(text: string | undefined, pattern: RegExp): number {
+  if (!text) return 0;
+  const flags = `${pattern.flags.replaceAll("g", "")}g`;
+  return Array.from(text.matchAll(new RegExp(pattern.source, flags))).length;
+}
+
+function lineHistogram(text: string | undefined): Map<string, number> {
+  const histogram = new Map<string, number>();
+  for (const line of (text ?? "").split("\n")) histogram.set(line, (histogram.get(line) ?? 0) + 1);
+  return histogram;
+}
+
+function changedLineCount(before: string | undefined, after: string | undefined): number {
+  const left = lineHistogram(before);
+  const right = lineHistogram(after);
+  const lines = new Set([...left.keys(), ...right.keys()]);
+  let count = 0;
+  for (const line of lines) count += Math.abs((left.get(line) ?? 0) - (right.get(line) ?? 0));
+  return count;
+}
+
 export async function validateRepair(input: {
   root: string;
   runId: string;
   findingId: string;
   writeScopes: string[];
   policy: RepairValidationPolicy;
+  before: RepairSnapshot;
 }): Promise<RepairValidationResult> {
-  const diffResult = await git(input.root, ["diff", "--no-ext-diff", "--unified=3", "--", "."]);
-  if (diffResult.exitCode !== 0) {
-    throw new Error(`git diff failed: ${diffResult.stderr}`);
-  }
-  const statusResult = await git(input.root, ["diff", "--name-status", "--", "."]);
-  if (statusResult.exitCode !== 0) {
-    throw new Error(`git diff --name-status failed: ${statusResult.stderr}`);
-  }
-
-  const entries = parseNameStatus(statusResult.stdout);
-  const changedPaths = entries.map((entry) => entry.path);
+  const after = await captureRepairSnapshot(input.root);
+  const delta = diffRepairSnapshots(input.before, after);
   const violations: string[] = [];
   const allowedScopes = [...input.writeScopes, ".dokion/**", "HARDENING.md"];
 
   if (input.policy.forbid_out_of_scope_edits !== false) {
-    for (const path of changedPaths) {
-      if (!matchesAny(path, allowedScopes)) {
-        violations.push(`out-of-scope edit: ${path}`);
-      }
+    for (const path of delta.changedPaths) {
+      if (!matchesAny(path, allowedScopes)) violations.push(`out-of-scope edit: ${path}`);
     }
   }
 
   if (input.policy.forbid_test_deletion !== false) {
-    for (const entry of entries) {
-      if (entry.status.startsWith("D") && /(^|\/)(?:test|tests|__tests__)(\/|$)|\.(?:test|spec)\.[^.]+$/i.test(entry.path)) {
-        violations.push(`test deleted: ${entry.path}`);
+    for (const path of delta.deletedPaths) {
+      if (isTestPath(path)) violations.push(`test deleted: ${path}`);
+    }
+  }
+
+  let suppressionDetected = false;
+  if (input.policy.suppression_detection !== false) {
+    for (const path of delta.changedPaths) {
+      const beforeText = snapshotText(input.before.files[path]);
+      const afterText = snapshotText(after.files[path]);
+      for (const [label, pattern] of suppressionPatterns) {
+        if (countMatches(afterText, pattern) > countMatches(beforeText, pattern)) {
+          violations.push(`suppression directive added: ${label}`);
+          suppressionDetected = true;
+        }
       }
     }
   }
 
-  const addedLines = diffResult.stdout
-    .split("\n")
-    .filter((line) => line.startsWith("+") && !line.startsWith("+++"))
-    .map((line) => line.slice(1));
-  let suppressionDetected = false;
-  if (input.policy.suppression_detection !== false) {
-    for (const [label, pattern] of suppressionPatterns) {
-      if (addedLines.some((line) => pattern.test(line))) {
-        violations.push(`suppression directive added: ${label}`);
-        suppressionDetected = true;
-      }
-    }
+  if (input.policy.require_regression_test && delta.changedTestPaths.length === 0) {
+    violations.push("repair did not add or modify a regression test");
   }
 
   if (input.policy.max_diff_lines !== undefined) {
-    const changedLineCount = diffResult.stdout
-      .split("\n")
-      .filter((line) => (line.startsWith("+") && !line.startsWith("+++")) || (line.startsWith("-") && !line.startsWith("---"))).length;
-    if (changedLineCount > input.policy.max_diff_lines) {
-      violations.push(`diff exceeds max_diff_lines: ${changedLineCount} > ${input.policy.max_diff_lines}`);
-    }
+    const count = delta.changedPaths.reduce(
+      (total, path) => total + changedLineCount(snapshotText(input.before.files[path]), snapshotText(after.files[path])),
+      0
+    );
+    if (count > input.policy.max_diff_lines) violations.push(`diff exceeds max_diff_lines: ${count} > ${input.policy.max_diff_lines}`);
   }
 
+  const diff = renderRepairDelta(input.before, after, delta);
   const diffArtifact = `.dokion/evidence/${input.runId}/findings/${input.findingId}/repair.diff`;
-  await writeTextAtomic(join(input.root, diffArtifact), diffResult.stdout);
+  await writeTextAtomic(join(input.root, diffArtifact), diff);
   return {
     verdict: suppressionDetected ? "FIX_IS_SUPPRESSION" : violations.length > 0 ? "FIX_INCOMPLETE" : "FIX_HOLDS",
-    violations,
-    changedPaths,
-    diffArtifact: relative(input.root, join(input.root, diffArtifact)),
-    diffDigest: sha256(diffResult.stdout),
-    diff: diffResult.stdout
+    violations: Array.from(new Set(violations)),
+    changedPaths: delta.changedPaths,
+    changedTestPaths: delta.changedTestPaths,
+    diffArtifact,
+    diffDigest: sha256(diff),
+    diff,
+    after
   };
 }
