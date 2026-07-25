@@ -24,6 +24,16 @@ export type FailurePolicy =
   | "REQUEST_USER_DECISION"
   | "MARK_BLOCKED";
 
+export interface ValidationPolicy {
+  adversarial_verification?: boolean;
+  suppression_detection?: boolean;
+  require_regression_test?: boolean;
+  require_evidence_artifact?: boolean;
+  forbid_test_deletion?: boolean;
+  forbid_out_of_scope_edits?: boolean;
+  max_diff_lines?: number;
+}
+
 export interface CapabilityReference {
   type: string;
   id: string;
@@ -31,7 +41,11 @@ export interface CapabilityReference {
   version?: string;
   source?: string;
   immutable_reference: string;
-  platform_mapping?: Record<string, unknown>;
+  platforms?: {
+    claude_code?: string;
+    codex?: string;
+    gemini_cli?: string;
+  };
 }
 
 export interface PlaybookStep {
@@ -43,6 +57,7 @@ export interface PlaybookStep {
   required?: boolean;
   depends_on?: string[];
   approval?: ApprovalPolicy;
+  validation?: ValidationPolicy;
   verification?: string[];
   success_conditions?: string[];
   stop_conditions?: string[];
@@ -53,7 +68,7 @@ export interface PlaybookStep {
   permissions?: {
     read?: string[];
     write?: string[];
-    network?: boolean;
+    network?: boolean | string[];
     shell?: string[];
     env?: string[];
   };
@@ -84,7 +99,7 @@ export interface DokionPlaybook {
     retry_count?: number;
     maximum_iterations?: number;
     parallel_execution?: boolean;
-    validation?: Record<string, unknown>;
+    validation?: ValidationPolicy;
   };
   stages: PlaybookStage[];
   release_gates?: Array<Record<string, unknown>>;
