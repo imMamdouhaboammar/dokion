@@ -121,6 +121,7 @@ export interface StateInitialization {
   branch?: string;
   worktreeClean?: boolean;
   agent?: DokionState["run"]["agent"];
+  profile?: Record<string, unknown>;
   stages: Array<{
     id: string;
     steps: Array<{ id: string; mode?: string }>;
