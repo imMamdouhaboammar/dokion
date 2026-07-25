@@ -101,4 +101,6 @@ jobs:
             package-smoke.log
             gemini-extension.log
             bun.lock
+            schemas/dokion-playbook.schema.json
+            schemas/dokion-state.schema.json
           if-no-files-found: ignore

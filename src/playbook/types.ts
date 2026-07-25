@@ -24,6 +24,45 @@ export type FailurePolicy =
   | "REQUEST_USER_DECISION"
   | "MARK_BLOCKED";
 
+export type DokionPlatform = "claude_code" | "codex" | "gemini_cli" | "other";
+export type InapplicablePolicy = "SKIP" | "MARK_BLOCKED" | "STOP_STAGE";
+export type CoverageLaneStatus = "ASSIGNED" | "PARTIAL";
+export type ReadinessCap = "NOT_READY" | "CONDITIONALLY_READY" | "READY_FOR_STAGING";
+
+export interface Applicability {
+  when_paths_exist?: string[];
+  when_paths_absent?: string[];
+  when_platform?: Array<Exclude<DokionPlatform, "other">>;
+  when_profile?: Record<string, boolean | string | unknown[]>;
+  on_inapplicable?: InapplicablePolicy;
+}
+
+export interface CoverageLaneAssignment {
+  lane: string;
+  status: CoverageLaneStatus;
+}
+
+export interface CoverageGapAcknowledgement {
+  lane: string;
+  acknowledged_by: string;
+  rationale?: string;
+  acknowledged_at?: string;
+}
+
+export interface CoveragePolicy {
+  blocking_lanes?: string[];
+  acknowledged_gaps?: CoverageGapAcknowledgement[];
+  unassigned_lane_readiness_cap?: ReadinessCap;
+}
+
+export interface ReleaseGateDefinition {
+  id: string;
+  command?: string;
+  condition?: string;
+  blocking: boolean;
+  notes?: string;
+}
+
 export interface ValidationPolicy {
   adversarial_verification?: boolean;
   suppression_detection?: boolean;
@@ -56,6 +95,8 @@ export interface PlaybookStep {
   mode: ExecutionMode;
   required?: boolean;
   depends_on?: string[];
+  applicability?: Applicability;
+  coverage_lanes?: CoverageLaneAssignment[];
   approval?: ApprovalPolicy;
   validation?: ValidationPolicy;
   verification?: string[];
@@ -79,6 +120,7 @@ export interface PlaybookStage {
   name?: string;
   execution: "SEQUENTIAL" | "PARALLEL";
   depends_on?: string[];
+  applicability?: Applicability;
   steps: PlaybookStep[];
 }
 
@@ -87,12 +129,13 @@ export interface DokionPlaybook {
   version: string;
   project: {
     name: string;
-    target: "NOT_READY" | "CONDITIONALLY_READY" | "READY_FOR_STAGING" | "READY_FOR_PRODUCTION";
+    target?: "BASELINE" | "READY_FOR_STAGING" | "READY_FOR_PRODUCTION" | "ENTERPRISE";
+    repository?: string;
     notes?: string;
   };
   authority: Record<string, unknown>;
-  enforcement: Record<string, unknown>;
-  registry: Record<string, unknown>;
+  enforcement?: Record<string, unknown>;
+  registry?: Record<string, unknown>;
   defaults?: {
     approval?: ApprovalPolicy;
     failure_policy?: FailurePolicy;
@@ -102,8 +145,10 @@ export interface DokionPlaybook {
     validation?: ValidationPolicy;
   };
   stages: PlaybookStage[];
-  release_gates?: Array<Record<string, unknown>>;
-  manifest: string;
+  release_gates?: ReleaseGateDefinition[] | undefined;
+  coverage_policy?: CoveragePolicy;
+  manifest?: string;
+  notes?: string;
   [key: string]: unknown;
 }
 

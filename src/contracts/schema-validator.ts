@@ -19,9 +19,10 @@ export interface ValidationSummary {
   errors: ValidationIssue[];
 }
 
-interface SchemaRegistry {
+export interface SchemaRegistry {
   manifest: ValidateFunction;
   playbook: ValidateFunction;
+  coverageAssignment: ValidateFunction;
   state: ValidateFunction;
   finding: ValidateFunction;
   capabilityLock: ValidateFunction;
@@ -42,13 +43,14 @@ async function compileRegistry(): Promise<SchemaRegistry> {
   return {
     manifest: compile(embeddedSchemas.manifest),
     playbook: compile(embeddedSchemas.playbook),
+    coverageAssignment: compile(embeddedSchemas.coverageAssignment),
     state: compile(embeddedSchemas.state),
     finding: compile(embeddedSchemas.finding),
     capabilityLock: compile(embeddedSchemas.capabilityLock)
   };
 }
 
-async function buildRegistry(): Promise<SchemaRegistry> {
+async function buildRegistry(_root?: string): Promise<SchemaRegistry> {
   registryCache ??= compileRegistry().catch((error) => {
     registryCache = undefined;
     throw error;
@@ -60,11 +62,15 @@ export function clearSchemaRegistryCache(_root?: string): void {
   registryCache = undefined;
 }
 
-function normalizeErrors(file: string, errors: ErrorObject[] | null | undefined): ValidationIssue[] {
+function normalizeErrors(
+  file: string,
+  errors: ErrorObject[] | null | undefined,
+  instancePrefix = ""
+): ValidationIssue[] {
   return (errors ?? []).map((error) => ({
     file,
     message: error.message ?? "schema validation failed",
-    instancePath: error.instancePath,
+    instancePath: `${instancePrefix}${error.instancePath}`,
     schemaPath: error.schemaPath
   }));
 }
@@ -76,9 +82,63 @@ async function collectJsonFiles(root: string, pattern: string): Promise<string[]
   return files.sort();
 }
 
-export async function validatePlaybookData(_root: string, data: unknown, file = ".dokion/playbook.json"): Promise<ValidationIssue[]> {
-  const registry = await buildRegistry();
-  return registry.playbook(data) ? [] : normalizeErrors(file, registry.playbook.errors);
+interface CoverageExtension {
+  assignment: unknown;
+  path: string;
+}
+
+function extractCoverageExtensions(data: unknown): { base: unknown; extensions: CoverageExtension[] } {
+  if (typeof data !== "object" || data === null || Array.isArray(data)) {
+    return { base: data, extensions: [] };
+  }
+
+  const base = structuredClone(data) as Record<string, unknown>;
+  const extensions: CoverageExtension[] = [];
+  const stages = Array.isArray(base.stages) ? base.stages : [];
+  for (const [stageIndex, stageValue] of stages.entries()) {
+    if (typeof stageValue !== "object" || stageValue === null || Array.isArray(stageValue)) continue;
+    const stage = stageValue as Record<string, unknown>;
+    const steps = Array.isArray(stage.steps) ? stage.steps : [];
+    for (const [stepIndex, stepValue] of steps.entries()) {
+      if (typeof stepValue !== "object" || stepValue === null || Array.isArray(stepValue)) continue;
+      const step = stepValue as Record<string, unknown>;
+      if (!("coverage_lanes" in step)) continue;
+
+      const assignments = step.coverage_lanes;
+      if (Array.isArray(assignments)) {
+        for (const [assignmentIndex, assignment] of assignments.entries()) {
+          extensions.push({
+            assignment,
+            path: `/stages/${stageIndex}/steps/${stepIndex}/coverage_lanes/${assignmentIndex}`
+          });
+        }
+      } else {
+        extensions.push({
+          assignment: assignments,
+          path: `/stages/${stageIndex}/steps/${stepIndex}/coverage_lanes`
+        });
+      }
+      delete step.coverage_lanes;
+    }
+  }
+  return { base, extensions };
+}
+
+export async function validatePlaybookData(
+  root: string,
+  data: unknown,
+  file = ".dokion/playbook.json"
+): Promise<ValidationIssue[]> {
+  const registry = await buildRegistry(root);
+  const { base, extensions } = extractCoverageExtensions(data);
+  const issues = registry.playbook(base) ? [] : normalizeErrors(file, registry.playbook.errors);
+
+  for (const extension of extensions) {
+    if (!registry.coverageAssignment(extension.assignment)) {
+      issues.push(...normalizeErrors(file, registry.coverageAssignment.errors, extension.path));
+    }
+  }
+  return issues;
 }
 
 export async function validateStateData(_root: string, data: unknown, file = ".dokion/state.json"): Promise<ValidationIssue[]> {
@@ -105,17 +165,29 @@ export async function validateRepositoryContracts(root: string): Promise<Validat
     validateData(path, await readJson<unknown>(join(root, path)), validator);
   };
 
+  const validatePlaybookFile = async (path: string): Promise<void> => {
+    const data = await readJson<unknown>(join(root, path));
+    checkedFiles.push(path);
+    errors.push(...(await validatePlaybookData(root, data, path)));
+  };
+
   if (await Bun.file(join(root, "dokion.json")).exists()) {
     await validateFile("dokion.json", registry.manifest);
   } else {
     validateData("builtin:dokion.json", builtinCatalog, registry.manifest);
   }
 
-  for (const path of await collectJsonFiles(root, "playbooks/**/*.json")) await validateFile(path, registry.playbook);
+  for (const path of await collectJsonFiles(root, "playbooks/**/*.json")) {
+    await validatePlaybookFile(path);
+  }
+
+  for (const path of [".dokion/playbook.json", ".dokion/playbook.proposed.json"]) {
+    if (await Bun.file(join(root, path)).exists()) {
+      await validatePlaybookFile(path);
+    }
+  }
 
   const optionalRuntimeFiles: Array<[string, ValidateFunction]> = [
-    [".dokion/playbook.json", registry.playbook],
-    [".dokion/playbook.proposed.json", registry.playbook],
     [".dokion/state.json", registry.state],
     [".dokion/capabilities.lock.json", registry.capabilityLock]
   ];

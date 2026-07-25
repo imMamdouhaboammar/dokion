@@ -51,8 +51,7 @@ export class StateStore {
         digest: input.playbookDigest,
         verified_at: now
       },
-      ...(baseline ? { baseline } : {}),
-      profile: { platform },
+      ...(input.profile ? { profile: structuredClone(input.profile) } : { profile: { platform } }),
       stages: input.stages.map((stage) => ({
         id: stage.id,
         status: "PENDING",

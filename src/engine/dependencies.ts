@@ -1,14 +1,25 @@
 import { DokionError } from "../core/errors.ts";
 import type { DokionPlaybook, PlaybookStage, PlaybookStep } from "../playbook/types.ts";
-import type { DokionState } from "../state/types.ts";
+import type { DokionState, ExecutionStatus } from "../state/types.ts";
+
+const dependencyCompleteStatuses = new Set<ExecutionStatus>([
+  "SUCCEEDED",
+  "SKIPPED_INAPPLICABLE",
+  "SKIPPED_BY_USER",
+  "STOPPED_BY_POLICY"
+]);
 
 function completedStageIds(state: DokionState): Set<string> {
-  return new Set(state.stages.filter((stage) => stage.status === "SUCCEEDED").map((stage) => stage.id));
+  return new Set(
+    state.stages.filter((stage) => dependencyCompleteStatuses.has(stage.status)).map((stage) => stage.id)
+  );
 }
 
 function completedStepIds(state: DokionState): Set<string> {
   return new Set(
-    state.stages.flatMap((stage) => stage.steps.filter((step) => step.status === "SUCCEEDED").map((step) => step.id))
+    state.stages.flatMap((stage) =>
+      stage.steps.filter((step) => dependencyCompleteStatuses.has(step.status)).map((step) => step.id)
+    )
   );
 }
 
