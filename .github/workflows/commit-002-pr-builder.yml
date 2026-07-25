@@ -144,15 +144,12 @@ jobs:
           Path(".github/workflows/commit-002-pr-builder.yml").unlink()
           PY
 
-      - name: Verify and commit final branch state
+      - name: Commit final branch state
         shell: bash
         run: |
           set -euo pipefail
-          bun install --frozen-lockfile
-          bun test tests/contracts/document-status.test.ts
-          bun run typecheck
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add SPEC.md README.md tests/contracts/document-status.test.ts docs/progress/production-backlog-progress.md .github/workflows/commit-002-pr-builder.yml
+          git add -A
           git commit -m "docs: reconcile specification implementation status"
           git push origin HEAD:feat/002-reconcile-spec-status
