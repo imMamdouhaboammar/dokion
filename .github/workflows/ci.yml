@@ -44,7 +44,10 @@ jobs:
         run: bun run validate:contracts
 
       - name: Tests
-        run: bun test
+        shell: bash
+        run: |
+          set -o pipefail
+          bun test 2>&1 | tee test.log
 
       - name: Typecheck
         shell: bash
@@ -61,6 +64,7 @@ jobs:
         with:
           name: dokion-ci-diagnostics
           path: |
+            test.log
             typecheck.log
             bun.lock
           if-no-files-found: ignore
