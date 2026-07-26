@@ -14,29 +14,31 @@ A user-directed hardening runtime for Claude Code, Codex, Gemini CLI, and ordina
 
 <!-- project-story:start -->
 <details open>
-  <summary><strong>Why I built Dokion</strong></summary>
+  <summary><strong>Problem to project: Why I built Dokion</strong></summary>
   <br />
+  <p align="center"><img src="https://raw.githubusercontent.com/imMamdouhaboammar/imMamdouhaboammar/main/assets/profile/project-badges.svg" width="488" alt="Real friction, building in public, daily pulse" /></p>
   <table>
     <tr>
-      <td width="118" align="center" valign="top">
-        <img src="./assets/readme/project-mark.svg" width="88" alt="Dokion repository mark" />
-      </td>
-      <td valign="top">
-        <p><strong>What is Dokion?</strong> A user-directed hardening runtime that executes an explicit software repair playbook across coding agents.</p>
-        <p><strong>Built from a recurring problem:</strong> Hardening work drifts when agents choose tools, reorder checks, or claim readiness without durable evidence and bounded rollback.</p>
-        <p><strong>Practical goal:</strong> Let the user own the hardening playbook while Dokion validates execution, journals evidence, verifies repairs, and restores rejected changes.</p>
-        <p><strong>Who it is for:</strong> Developers using Claude Code, Codex, Gemini CLI, and shell tools for repeatable software hardening.</p>
-        <p><strong>Topics:</strong> software hardening agent · AI repair validation · user directed agent runtime · evidence based code repair</p>
-      </td>
+      <td width="104" align="center" valign="middle"><img src="./assets/readme/project-mark.svg" width="76" alt="Dokion repository mark" /></td>
+      <td valign="middle"><strong>Dokion</strong><br />A user-directed hardening runtime that executes an explicit software repair playbook across coding agents.</td>
     </tr>
   </table>
-  <p><strong>Daily development summary</strong></p>
+  <table>
+    <tr>
+      <td width="50%" valign="top"><strong>Recurring problem</strong><br />Hardening work drifts when agents choose tools, reorder checks, or claim readiness without durable evidence and bounded rollback.</td>
+      <td width="50%" valign="top"><strong>Practical goal</strong><br />Let the user own the hardening playbook while Dokion validates execution, journals evidence, verifies repairs, and restores rejected changes.</td>
+    </tr>
+    <tr>
+      <td width="50%" valign="top"><strong>Built for</strong><br />Developers using Claude Code, Codex, Gemini CLI, and shell tools for repeatable software hardening.</td>
+      <td width="50%" valign="top"><strong>Search terms</strong><br />software hardening agent · AI repair validation · user directed agent runtime · evidence based code repair</td>
+    </tr>
+  </table>
+  <p><strong>Daily build pulse</strong></p>
   <ul>
-      <li>22 commits landed: security: add repository threat model; docs: add architecture decision record index.</li>
-      <li>28 pull requests updated, led by #28: test: prove atomic commit policy is missing.</li>
-      <li>Daily summary covers 50 public activity items from the last 1 day.</li>
+      <li>23 commits landed: docs: add dynamic project story card; security: add repository threat model.</li>
+      <li>29 pull requests updated, led by #29: docs: add dynamic project story card.</li>
+      <li>Daily summary covers 52 public activity items from the last 1 day.</li>
   </ul>
-  <p><sub>Updated 2026-07-26T06:35:06.228Z · Deterministic public-activity summary</sub></p>
 </details>
 <!-- project-story:end -->
 
