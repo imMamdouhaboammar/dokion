@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import { validateStateData } from "../contracts/schema-validator.ts";
 import { DokionError } from "../core/errors.ts";
 import { readJson, writeJsonAtomic } from "../core/json.ts";
+import { captureRepositoryIdentity } from "../git/repository-identity.ts";
 import { detectAgentPlatform } from "../platform/platform-detector.ts";
 import type { DokionState, StateInitialization } from "./types.ts";
 
@@ -57,6 +58,7 @@ export class StateStore {
           }
         : undefined;
       const platform = input.platform ?? detectAgentPlatform();
+      const repositoryIdentity = input.repositoryIdentity ?? await captureRepositoryIdentity(this.root, input.playbookDigest);
 
       const state: DokionState = {
         $schema: "../schemas/dokion-state.schema.json",
@@ -71,6 +73,7 @@ export class StateStore {
           ...(platform.model ? { model: platform.model } : {}),
           degradations: platform.degradations
         },
+        repository_identity: repositoryIdentity,
         playbook: {
           path: ".dokion/playbook.json",
           digest_algorithm: "sha256",

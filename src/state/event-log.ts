@@ -19,6 +19,7 @@ export type DokionEventType =
   | "STEP_INAPPLICABLE"
   | "APPROVAL_REQUIRED"
   | "PLAYBOOK_TAINTED"
+  | "RUN_STALE"
   | "STEP_FAILED";
 
 export interface DokionEventActor {
@@ -36,6 +37,7 @@ export interface DokionEventPayloadMap {
   STEP_INAPPLICABLE: { stage_id: string; step_id: string; policy: string; reason: string };
   APPROVAL_REQUIRED: { stage_id: string; step_id: string; subject: string };
   PLAYBOOK_TAINTED: { before_step: string; expected: string; observed: string };
+  RUN_STALE: { reason: "REPOSITORY_IDENTITY_CHANGED"; changed_fields: string[] };
   STEP_FAILED: { stage_id: string; step_id: string; reason: string; failure_policy: string };
 }
 

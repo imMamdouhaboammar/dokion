@@ -2,6 +2,7 @@ import { evaluateApplicability, detectPlatform } from "../applicability/evaluate
 import { isApproved, latestDecision } from "../approvals/approval-store.ts";
 import { DokionError } from "../core/errors.ts";
 import { writeCommandEvidence } from "../evidence/evidence-store.ts";
+import { compareRepositoryIdentities, captureRepositoryIdentity, type RepositoryIdentityDifference } from "../git/repository-identity.ts";
 import { inspectProject } from "../inspect/project-inspector.ts";
 import { assertPlaybookUnchanged, loadActivePlaybook } from "../playbook/load-playbook.ts";
 import type { LoadedPlaybook, PlaybookStage, PlaybookStep } from "../playbook/types.ts";
@@ -91,14 +92,20 @@ export class ExecutionEngine {
   protected async startRun(runId: string): Promise<DokionState> {
     const loaded = await loadActivePlaybook(this.root);
     assertSequentialExecution(loaded.data);
-    const [git, profile] = await Promise.all([inspectGit(this.root), inspectProject(this.root)]);
+    const [git, profile, repositoryIdentity] = await Promise.all([
+      inspectGit(this.root),
+      inspectProject(this.root),
+      captureRepositoryIdentity(this.root, loaded.digest)
+    ]);
     const platform = detectPlatform();
+    const branch = repositoryIdentity.branch ?? git.branch;
     const expectedRevision = (await this.store.exists()) ? (await this.store.load()).revision : undefined;
     const state = await this.store.initialize({
       runId,
       playbookDigest: loaded.digest,
-      commitSha: git.commitSha,
-      ...(git.branch ? { branch: git.branch } : {}),
+      repositoryIdentity,
+      commitSha: repositoryIdentity.commit ?? git.commitSha,
+      ...(branch ? { branch } : {}),
       ...(git.worktreeClean !== undefined ? { worktreeClean: git.worktreeClean } : {}),
       agent: platform,
       profile: { ...profile },
@@ -127,8 +134,12 @@ export class ExecutionEngine {
     const loaded = await loadActivePlaybook(this.root);
     assertSequentialExecution(loaded.data);
     let state = await this.store.load();
-    if (state.run.status === "COMPLETED" || state.run.status === "TAINTED") return state;
+    if (["COMPLETED", "TAINTED", "STALE"].includes(state.run.status)) return state;
     if (state.playbook.digest !== loaded.digest) return this.markTainted(state, loaded.digest, "resume");
+
+    const currentIdentity = await captureRepositoryIdentity(this.root, loaded.digest);
+    const identityDifferences = compareRepositoryIdentities(state.repository_identity, currentIdentity);
+    if (identityDifferences.length > 0) return this.markStale(state, identityDifferences);
 
     state = await this.updateState((current) => {
       const run = { ...current.run, status: "RUNNING" as const };
@@ -446,6 +457,39 @@ export class ExecutionEngine {
     const state = await this.store.update(current.revision, mutator);
     await writeHardeningReport(this.root, state);
     return state;
+  }
+
+  private async markStale(
+    state: DokionState,
+    differences: RepositoryIdentityDifference[]
+  ): Promise<DokionState> {
+    const detectedAt = new Date().toISOString();
+    const changedFields = differences.map((difference) => difference.field);
+    const stale = await this.updateState((current) => ({
+      ...current,
+      run: {
+        ...current.run,
+        status: "STALE",
+        ended_at: detectedAt,
+        stale: {
+          reason: "REPOSITORY_IDENTITY_CHANGED",
+          detected_at: detectedAt,
+          changed_fields: changedFields,
+          differences
+        }
+      }
+    }));
+    await appendEvent(this.root, {
+      at: detectedAt,
+      run_id: state.run.id,
+      actor: RUNTIME_EVENT_ACTOR,
+      event: "RUN_STALE",
+      payload: {
+        reason: "REPOSITORY_IDENTITY_CHANGED",
+        changed_fields: changedFields
+      }
+    });
+    return stale;
   }
 
   private async markTainted(state: DokionState, observed: string, beforeStep: string): Promise<DokionState> {

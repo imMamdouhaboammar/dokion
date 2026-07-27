@@ -97,6 +97,10 @@ export function renderHardeningMarkdown(state: DokionState): string {
     lines.push(
       `The run is **TAINTED**. Expected \`${cell(state.playbook.tainted.expected)}\`, observed \`${cell(state.playbook.tainted.observed)}\` before \`${cell(state.playbook.tainted.detected_before_step ?? "unknown step")}\`.`
     );
+  } else if (state.run.stale) {
+    lines.push(
+      `The run is **STALE** because repository identity changed in: ${state.run.stale.changed_fields.map((field) => `\`${cell(field)}\``).join(", ")}. Stored identity values are not rendered in this report.`
+    );
   } else {
     lines.push(`The active playbook digest was stable at the last recorded checkpoint: \`${cell(state.playbook.digest)}\`.`);
   }
