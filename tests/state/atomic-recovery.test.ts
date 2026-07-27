@@ -20,6 +20,12 @@ async function createRoot(): Promise<string> {
   return root;
 }
 
+async function writeExecutablePlaybook(root: string): Promise<void> {
+  const raw = await readFile(join(process.cwd(), "playbooks/example.playbook.json"), "utf8");
+  const pinned = raw.replaceAll("sha256:PLACEHOLDER", `sha256:${"a".repeat(64)}`);
+  await writeFile(join(root, ".dokion/playbook.json"), pinned);
+}
+
 async function stageAtomicWrite(
   root: string,
   targetPath: string,
@@ -120,6 +126,22 @@ describe("interrupted atomic-write recovery", () => {
     expect(await recoverAtomicWrites(root)).toEqual([]);
     expect(await readFile(join(root, "application-data.tmp"), "utf8")).toBe("user-owned");
     await expect(access(join(root, ATOMIC_RECOVERY_LOG_PATH))).rejects.toBeDefined();
+  });
+
+  test("runs recovery before reading an invalid persisted state on resume", async () => {
+    const root = await createRoot();
+    await writeExecutablePlaybook(root);
+    await writeFile(join(root, ".dokion/state.json"), "{ invalid state");
+    const content = `${JSON.stringify({ recovered: "before-state-load" })}
+`;
+    await stageAtomicWrite(root, ".dokion/evidence/resume.json", content, "json");
+
+    await expect(new ExecutionEngine(root).resume()).rejects.toMatchObject({ code: "INVALID_JSON" });
+
+    expect(await readFile(join(root, ".dokion/evidence/resume.json"), "utf8")).toBe(content);
+    expect(await readRecoveryRecords(root)).toEqual([
+      expect.objectContaining({ action: "RECOVERED", target_path: ".dokion/evidence/resume.json" })
+    ]);
   });
 
   test("runs recovery before playbook loading at execution startup", async () => {

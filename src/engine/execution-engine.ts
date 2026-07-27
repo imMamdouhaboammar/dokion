@@ -1,5 +1,6 @@
 import { join } from "node:path";
 
+import { recoverAtomicWrites } from "../core/atomic-file.ts";
 import { readJson } from "../core/json.ts";
 import { listFindings } from "../findings/finding-store.ts";
 import { loadActivePlaybook } from "../playbook/load-playbook.ts";
@@ -16,6 +17,7 @@ export class ExecutionEngine extends RuntimeExecutionEngine {
     const runId = createRunId();
     const lease = await acquireRunLock(this.root, { runId, operation: "run" });
     try {
+      await recoverAtomicWrites(this.root);
       const state = await this.startRun(runId);
       return this.reconcileState(state);
     } finally {
@@ -25,9 +27,17 @@ export class ExecutionEngine extends RuntimeExecutionEngine {
 
   override async resume(): Promise<DokionState> {
     const fallbackRunId = createRunId();
-    const runId = (await this.store.exists()) ? (await this.store.load()).run.id : fallbackRunId;
+    let runId = fallbackRunId;
+    if (await this.store.exists()) {
+      try {
+        runId = (await this.store.load()).run.id;
+      } catch {
+        runId = fallbackRunId;
+      }
+    }
     const lease = await acquireRunLock(this.root, { runId, operation: "resume" });
     try {
+      await recoverAtomicWrites(this.root);
       const state = await this.continueRun(fallbackRunId);
       return this.reconcileState(state);
     } finally {
