@@ -21,6 +21,8 @@ interface GitContext {
 
 type InapplicableOutcome = "CONTINUE" | "STOP_STAGE" | "STOP_RUN";
 
+const RUNTIME_EVENT_ACTOR = { type: "runtime" as const, id: "dokion-runtime" };
+
 async function runGit(root: string, args: string[]): Promise<string | undefined> {
   const child = Bun.spawn(["git", ...args], { cwd: root, stdout: "pipe", stderr: "ignore", stdin: "ignore" });
   const output = child.stdout ? new Response(child.stdout).text() : Promise.resolve("");
@@ -108,8 +110,9 @@ export class ExecutionEngine {
     await appendEvent(this.root, {
       at: new Date().toISOString(),
       run_id: state.run.id,
+      actor: RUNTIME_EVENT_ACTOR,
       event: "RUN_STARTED",
-      data: { playbook_digest: loaded.digest, platform }
+      payload: { playbook_digest: loaded.digest, platform: { detected: platform } }
     });
     await writeHardeningReport(this.root, state);
     return this.execute(loaded);
@@ -132,7 +135,13 @@ export class ExecutionEngine {
       delete run.ended_at;
       return { ...current, run };
     });
-    await appendEvent(this.root, { at: new Date().toISOString(), run_id: state.run.id, event: "RUN_RESUMED" });
+    await appendEvent(this.root, {
+      at: new Date().toISOString(),
+      run_id: state.run.id,
+      actor: RUNTIME_EVENT_ACTOR,
+      event: "RUN_RESUMED",
+      payload: {}
+    });
     return this.execute(loaded);
   }
 
@@ -212,9 +221,9 @@ export class ExecutionEngine {
         await appendEvent(this.root, {
           at: new Date().toISOString(),
           run_id: state.run.id,
+          actor: RUNTIME_EVENT_ACTOR,
           event: "STEP_STARTED",
-          stage_id: stage.id,
-          step_id: step.id
+          payload: { stage_id: stage.id, step_id: step.id }
         });
 
         if (!stepApprovalSatisfied(step, loaded, state) && !["FIX_WITH_APPROVAL", "FIX_AUTOMATICALLY"].includes(step.mode)) {
@@ -256,9 +265,9 @@ export class ExecutionEngine {
         await appendEvent(this.root, {
           at: new Date().toISOString(),
           run_id: state.run.id,
+          actor: RUNTIME_EVENT_ACTOR,
           event: "STEP_SUCCEEDED",
-          stage_id: stage.id,
-          step_id: step.id
+          payload: { stage_id: stage.id, step_id: step.id }
         });
       }
 
@@ -277,7 +286,13 @@ export class ExecutionEngine {
       ...state,
       run: { ...state.run, status: "COMPLETED", ended_at: new Date().toISOString() }
     }));
-    await appendEvent(this.root, { at: new Date().toISOString(), run_id: completed.run.id, event: "RUN_COMPLETED" });
+    await appendEvent(this.root, {
+      at: new Date().toISOString(),
+      run_id: completed.run.id,
+      actor: RUNTIME_EVENT_ACTOR,
+      event: "RUN_COMPLETED",
+      payload: {}
+    });
     return completed;
   }
 
@@ -308,9 +323,9 @@ export class ExecutionEngine {
     await appendEvent(this.root, {
       at: now,
       run_id: state.run.id,
+      actor: RUNTIME_EVENT_ACTOR,
       event: "STAGE_INAPPLICABLE",
-      stage_id: stage.id,
-      detail: `${policy}: ${reason}`
+      payload: { stage_id: stage.id, policy, reason }
     });
     return policy === "MARK_BLOCKED" ? "STOP_RUN" : policy === "STOP_STAGE" ? "STOP_STAGE" : "CONTINUE";
   }
@@ -349,10 +364,9 @@ export class ExecutionEngine {
     await appendEvent(this.root, {
       at: now,
       run_id: state.run.id,
+      actor: RUNTIME_EVENT_ACTOR,
       event: "STEP_INAPPLICABLE",
-      stage_id: stage.id,
-      step_id: step.id,
-      detail: `${policy}: ${reason}`
+      payload: { stage_id: stage.id, step_id: step.id, policy, reason }
     });
     return policy === "MARK_BLOCKED" ? "STOP_RUN" : policy === "STOP_STAGE" ? "STOP_STAGE" : "CONTINUE";
   }
@@ -420,10 +434,9 @@ export class ExecutionEngine {
     await appendEvent(this.root, {
       at: new Date().toISOString(),
       run_id: state.run.id,
+      actor: RUNTIME_EVENT_ACTOR,
       event: "APPROVAL_REQUIRED",
-      stage_id: stage.id,
-      step_id: step.id,
-      detail: subject
+      payload: { stage_id: stage.id, step_id: step.id, subject }
     });
     return state;
   }
@@ -452,9 +465,9 @@ export class ExecutionEngine {
     await appendEvent(this.root, {
       at: new Date().toISOString(),
       run_id: state.run.id,
+      actor: RUNTIME_EVENT_ACTOR,
       event: "PLAYBOOK_TAINTED",
-      step_id: beforeStep,
-      data: { expected: state.playbook.digest, observed }
+      payload: { before_step: beforeStep, expected: state.playbook.digest, observed }
     });
     return tainted;
   }
@@ -486,11 +499,9 @@ export class ExecutionEngine {
     await appendEvent(this.root, {
       at: new Date().toISOString(),
       run_id: state.run.id,
+      actor: RUNTIME_EVENT_ACTOR,
       event: "STEP_FAILED",
-      stage_id: stage.id,
-      step_id: step.id,
-      detail: reason,
-      data: { failure_policy: policy }
+      payload: { stage_id: stage.id, step_id: step.id, reason, failure_policy: policy }
     });
     return state;
   }

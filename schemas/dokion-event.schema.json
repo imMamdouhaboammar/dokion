@@ -1,0 +1,407 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/imMamdouhaboammar/dokion/main/schemas/dokion-event.schema.json",
+  "title": "Dokion Event Record",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "sequence",
+    "at",
+    "run_id",
+    "actor",
+    "event",
+    "payload"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "actor": {
+      "$ref": "#/$defs/actor"
+    },
+    "event": {
+      "type": "string",
+      "enum": [
+        "RUN_STARTED",
+        "RUN_RESUMED",
+        "RUN_COMPLETED",
+        "STEP_STARTED",
+        "STEP_SUCCEEDED",
+        "STAGE_INAPPLICABLE",
+        "STEP_INAPPLICABLE",
+        "APPROVAL_REQUIRED",
+        "PLAYBOOK_TAINTED",
+        "STEP_FAILED"
+      ]
+    },
+    "payload": {
+      "type": "object"
+    }
+  },
+  "$defs": {
+    "actor": {
+      "type": "object",
+      "required": [
+        "type",
+        "id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "runtime",
+            "user",
+            "capability",
+            "system"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "empty": {
+      "type": "object",
+      "additionalProperties": false
+    },
+    "runStarted": {
+      "type": "object",
+      "required": [
+        "playbook_digest",
+        "platform"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "playbook_digest": {
+          "type": "string",
+          "minLength": 1
+        },
+        "platform": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "required": [
+        "stage_id",
+        "step_id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "stage_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "step_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "stageInapplicable": {
+      "type": "object",
+      "required": [
+        "stage_id",
+        "policy",
+        "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "stage_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "stepInapplicable": {
+      "type": "object",
+      "required": [
+        "stage_id",
+        "step_id",
+        "policy",
+        "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "stage_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "step_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "approvalRequired": {
+      "type": "object",
+      "required": [
+        "stage_id",
+        "step_id",
+        "subject"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "stage_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "step_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "playbookTainted": {
+      "type": "object",
+      "required": [
+        "before_step",
+        "expected",
+        "observed"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "before_step": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expected": {
+          "type": "string",
+          "minLength": 1
+        },
+        "observed": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "stepFailed": {
+      "type": "object",
+      "required": [
+        "stage_id",
+        "step_id",
+        "reason",
+        "failure_policy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "stage_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "step_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "failure_policy": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "RUN_STARTED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/runStarted"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "RUN_RESUMED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/empty"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "RUN_COMPLETED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/empty"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "STEP_STARTED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/step"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "STEP_SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/step"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "STAGE_INAPPLICABLE"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/stageInapplicable"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "STEP_INAPPLICABLE"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/stepInapplicable"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "APPROVAL_REQUIRED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/approvalRequired"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "PLAYBOOK_TAINTED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/playbookTainted"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "STEP_FAILED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/stepFailed"
+          }
+        }
+      }
+    }
+  ]
+}
