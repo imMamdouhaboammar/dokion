@@ -11,6 +11,7 @@ import { writeCliDiagnostic, writeCliResult } from "./cli/output.ts";
 import { parseCliInvocation, requestedCliOutputFormat } from "./cli/parser.ts";
 import type { CliInvocation, CliOutputFormat } from "./cli/types.ts";
 import { validateRepositoryContracts } from "./contracts/schema-validator.ts";
+import { recoverAtomicWrites } from "./core/atomic-file.ts";
 import { readJson } from "./core/json.ts";
 import { ExecutionEngine } from "./engine/execution-engine.ts";
 import { listFindings } from "./findings/finding-store.ts";
@@ -30,9 +31,17 @@ function print(value: unknown, format: CliOutputFormat): void {
 
 async function withProjectRunLock<T>(operation: RunLockOperation, action: () => Promise<T>): Promise<T> {
   const store = new StateStore(root);
-  const runId = (await store.exists()) ? (await store.load()).run.id : createRunId();
+  let runId = createRunId();
+  if (await store.exists()) {
+    try {
+      runId = (await store.load()).run.id;
+    } catch {
+      runId = createRunId();
+    }
+  }
   const lease = await acquireRunLock(root, { runId, operation });
   try {
+    await recoverAtomicWrites(root);
     return await action();
   } finally {
     await lease.release();
@@ -49,6 +58,7 @@ function help(format: CliOutputFormat): void {
 }
 
 async function initialize(format: CliOutputFormat): Promise<void> {
+  await recoverAtomicWrites(root);
   for (const path of [".dokion/findings", ".dokion/evidence", ".dokion/reports", ".dokion/runs"]) {
     await mkdir(join(root, path), { recursive: true });
   }
