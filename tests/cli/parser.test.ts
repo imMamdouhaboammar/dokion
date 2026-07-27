@@ -35,7 +35,8 @@ describe("typed CLI argument parser", () => {
   test("parses implemented boolean and decision options", () => {
     expect(parseCliInvocation(["validate", "--catalog-only"])).toEqual({
       command: "validate",
-      catalogOnly: true
+      catalogOnly: true,
+      format: "human"
     });
 
     expect(parseCliInvocation(["approve", "finding:DK-1", "--by", "mamdouh", "--notes", "Scoped repair"])).toEqual({
@@ -43,7 +44,8 @@ describe("typed CLI argument parser", () => {
       subject: "finding:DK-1",
       subjectType: "finding",
       by: "mamdouh",
-      notes: "Scoped repair"
+      notes: "Scoped repair",
+      format: "human"
     });
   });
 
@@ -80,7 +82,7 @@ describe("typed CLI argument parser", () => {
   });
 
   test("renders parser failures as JSON without stack traces", async () => {
-    const result = await runCli("approve", "not-a-subject", "--by", "mamdouh");
+    const result = await runCli("approve", "not-a-subject", "--by", "mamdouh", "--format", "json");
 
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toBe("");

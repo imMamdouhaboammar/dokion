@@ -61,7 +61,7 @@ export async function smokeTestPackage(root = process.cwd()): Promise<void> {
       throw new Error(`Installed help output was incomplete:\n${help.stdout}`);
     }
 
-    const validateBeforeInit = await run([executable, "validate", "--catalog-only"], project);
+    const validateBeforeInit = await run([executable, "validate", "--catalog-only", "--format", "json"], project);
     requireSuccess(validateBeforeInit, "installed dokion validate --catalog-only before init");
     const validation = parseJson(validateBeforeInit.stdout, "catalog validation");
     if (validation.valid !== true) throw new Error("Built-in catalog did not validate in a clean project");
@@ -73,7 +73,7 @@ export async function smokeTestPackage(root = process.cwd()): Promise<void> {
     await assertAbsent(join(project, ".dokion"), ".dokion directory");
     await assertAbsent(join(project, "HARDENING.md"), "hardening report");
 
-    const init = await run([executable, "init"], project);
+    const init = await run([executable, "init", "--format", "json"], project);
     requireSuccess(init, "installed dokion init");
     const initialized = parseJson(init.stdout, "init");
     if (initialized.active_playbook_created !== false) throw new Error("dokion init claimed it created an active playbook");
@@ -86,12 +86,12 @@ export async function smokeTestPackage(root = process.cwd()): Promise<void> {
     const state = JSON.parse(await readFile(join(project, ".dokion", "state.json"), "utf8")) as { run?: { status?: string } };
     if (state.run?.status !== "STOPPED") throw new Error(`Initialized run status was ${String(state.run?.status)} instead of STOPPED`);
 
-    const doctor = await run([executable, "doctor"], project);
+    const doctor = await run([executable, "doctor", "--format", "json"], project);
     requireSuccess(doctor, "installed dokion doctor");
     const health = parseJson(doctor.stdout, "doctor");
     if (health.healthy !== true) throw new Error(`Installed doctor was unhealthy: ${doctor.stdout}`);
 
-    const tools = await run([executable, "tools", "list"], project);
+    const tools = await run([executable, "tools", "list", "--format", "json"], project);
     requireSuccess(tools, "installed dokion tools list");
     const catalogTools = JSON.parse(tools.stdout) as unknown[];
     if (!Array.isArray(catalogTools) || catalogTools.length === 0) throw new Error("Installed CLI could not read the built-in catalog");

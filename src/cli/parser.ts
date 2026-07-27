@@ -1,7 +1,7 @@
 import type { ApprovalSubjectType } from "../approvals/approval-store.ts";
 import { DokionError } from "../core/errors.ts";
 import { resolveCliCommand } from "./command-registry.ts";
-import type { CliCatalogCommand, CliInvocation, CliSimpleCommand } from "./types.ts";
+import type { CliCatalogCommand, CliInvocation, CliOutputFormat, CliSimpleCommand } from "./types.ts";
 
 interface OptionSpec {
   kind: "boolean" | "value";
@@ -26,6 +26,7 @@ const SIMPLE_COMMANDS = new Set<CliSimpleCommand>([
   "init",
   "inspect",
   "doctor",
+  "plan",
   "run",
   "resume",
   "verify",
@@ -35,6 +36,7 @@ const SIMPLE_COMMANDS = new Set<CliSimpleCommand>([
 ]);
 
 const CATALOG_COMMANDS = new Set<CliCatalogCommand>(["tools", "skills", "plugins", "loops"]);
+const GLOBAL_OPTION_SPECS: Readonly<Record<string, OptionSpec>> = { "--format": { kind: "value" } };
 
 function parseTokens(command: string, tokens: readonly string[], specs: Readonly<Record<string, OptionSpec>>): ParsedTokens {
   const positionals: string[] = [];
@@ -47,7 +49,7 @@ function parseTokens(command: string, tokens: readonly string[], specs: Readonly
       continue;
     }
 
-    const spec = specs[token];
+    const spec = specs[token] ?? GLOBAL_OPTION_SPECS[token];
     if (!spec) {
       throw new DokionError("CLI_UNKNOWN_OPTION", `Unknown option for ${command}: ${token}`, {
         command,
@@ -119,12 +121,30 @@ function requiredOption(command: string, options: ReadonlyMap<string, true | str
   });
 }
 
+function outputFormat(command: string, options: ReadonlyMap<string, true | string>): CliOutputFormat {
+  const value = options.get("--format");
+  if (value === undefined) return "human";
+  if (value === "human" || value === "json") return value;
+  throw new DokionError("CLI_INVALID_ARGUMENT", `Unsupported output format: ${String(value)}`, {
+    command,
+    option: "--format",
+    value
+  });
+}
+
+export function requestedCliOutputFormat(argv: readonly string[]): CliOutputFormat {
+  for (let index = 0; index < argv.length - 1; index += 1) {
+    if (argv[index] === "--format" && argv[index + 1] === "json") return "json";
+  }
+  return "human";
+}
+
 export function parseCliInvocation(argv: readonly string[]): CliInvocation {
   const [rawCommand = "help", ...tokens] = argv;
   if (["help", "--help", "-h"].includes(rawCommand)) {
     const parsed = parseTokens("help", tokens, {});
     requireNoPositionals("help", parsed.positionals);
-    return { command: "help" };
+    return { command: "help", format: outputFormat("help", parsed.options) };
   }
 
   const descriptor = resolveCliCommand(rawCommand);
@@ -143,7 +163,11 @@ export function parseCliInvocation(argv: readonly string[]): CliInvocation {
   if (rawCommand === "validate") {
     const parsed = parseTokens(rawCommand, tokens, { "--catalog-only": { kind: "boolean" } });
     requireNoPositionals(rawCommand, parsed.positionals);
-    return { command: "validate", catalogOnly: parsed.options.get("--catalog-only") === true };
+    return {
+      command: "validate",
+      catalogOnly: parsed.options.get("--catalog-only") === true,
+      format: outputFormat(rawCommand, parsed.options)
+    };
   }
 
   if (rawCommand === "approve" || rawCommand === "reject") {
@@ -164,7 +188,8 @@ export function parseCliInvocation(argv: readonly string[]): CliInvocation {
       command: rawCommand,
       ...approval,
       by,
-      ...(typeof notes === "string" ? { notes } : {})
+      ...(typeof notes === "string" ? { notes } : {}),
+      format: outputFormat(rawCommand, parsed.options)
     };
   }
 
@@ -176,13 +201,17 @@ export function parseCliInvocation(argv: readonly string[]): CliInvocation {
         arguments: parsed.positionals
       });
     }
-    return { command: rawCommand as CliCatalogCommand, action: "list" };
+    return {
+      command: rawCommand as CliCatalogCommand,
+      action: "list",
+      format: outputFormat(rawCommand, parsed.options)
+    };
   }
 
   if (SIMPLE_COMMANDS.has(rawCommand as CliSimpleCommand)) {
     const parsed = parseTokens(rawCommand, tokens, {});
     requireNoPositionals(rawCommand, parsed.positionals);
-    return { command: rawCommand as CliSimpleCommand };
+    return { command: rawCommand as CliSimpleCommand, format: outputFormat(rawCommand, parsed.options) };
   }
 
   throw new DokionError("UNSUPPORTED_EXECUTION", `Runtime parser missing for registered command: ${rawCommand}`, {

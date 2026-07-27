@@ -227,6 +227,7 @@ Observe
 
 Configure
   dokion init
+  dokion plan
   dokion validate
   dokion validate --catalog-only
 
@@ -288,6 +289,12 @@ Validate before execution:
 
 ```bash
 dokion validate
+```
+
+Preview the exact read-only execution plan:
+
+```bash
+dokion plan
 ```
 
 Run the approved playbook:

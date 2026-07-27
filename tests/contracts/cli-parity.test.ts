@@ -61,8 +61,8 @@ describe("canonical CLI command registry", () => {
       CLI_COMMAND_REGISTRY.map((command) => command.manifestCommand)
     );
     expect(new Set(CLI_COMMAND_REGISTRY.map((command) => command.id)).size).toBe(CLI_COMMAND_REGISTRY.length);
-    expect(implementedCliCommands()).toHaveLength(16);
-    expect(plannedCliCommands()).toHaveLength(5);
+    expect(implementedCliCommands()).toHaveLength(17);
+    expect(plannedCliCommands()).toHaveLength(4);
   });
 
   test("records source-specific manifest usage without hiding current differences", async () => {
@@ -95,7 +95,7 @@ describe("canonical CLI command registry", () => {
 
     expect(sorted(new Set(observedCases))).toEqual(sorted(new Set(expectedCases)));
     for (const builtin of CLI_BUILTIN_CASES) {
-      expect(parseCliInvocation([builtin])).toEqual({ command: "help" });
+      expect(parseCliInvocation([builtin])).toEqual({ command: "help", format: "human" });
     }
 
     for (const command of plannedCliCommands()) {

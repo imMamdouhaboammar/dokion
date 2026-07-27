@@ -1,9 +1,12 @@
 import type { ApprovalSubjectType } from "../approvals/approval-store.ts";
 
+export type CliOutputFormat = "human" | "json";
+
 export type CliSimpleCommand =
   | "init"
   | "inspect"
   | "doctor"
+  | "plan"
   | "run"
   | "resume"
   | "verify"
@@ -13,7 +16,7 @@ export type CliSimpleCommand =
 
 export type CliCatalogCommand = "tools" | "skills" | "plugins" | "loops";
 
-export type CliInvocation =
+type CliCommandInvocation =
   | { command: "help" }
   | { command: CliSimpleCommand }
   | { command: "validate"; catalogOnly: boolean }
@@ -25,3 +28,5 @@ export type CliInvocation =
       notes?: string;
     }
   | { command: CliCatalogCommand; action: "list" };
+
+export type CliInvocation = CliCommandInvocation & { format: CliOutputFormat };
