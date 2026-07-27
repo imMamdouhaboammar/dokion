@@ -2,12 +2,13 @@ import { evaluateApplicability, detectPlatform } from "../applicability/evaluate
 import { isApproved, latestDecision } from "../approvals/approval-store.ts";
 import { DokionError } from "../core/errors.ts";
 import { writeCommandEvidence } from "../evidence/evidence-store.ts";
+import { compareRepositoryIdentities, captureRepositoryIdentity, type RepositoryIdentityDifference } from "../git/repository-identity.ts";
 import { inspectProject } from "../inspect/project-inspector.ts";
 import { assertPlaybookUnchanged, loadActivePlaybook } from "../playbook/load-playbook.ts";
 import type { LoadedPlaybook, PlaybookStage, PlaybookStep } from "../playbook/types.ts";
 import { writeHardeningReport } from "../report/render-hardening.ts";
 import { appendEvent } from "../state/event-log.ts";
-import { StateStore } from "../state/state-store.ts";
+import { createRunId, StateStore } from "../state/state-store.ts";
 import type { DokionState, StageState, StepState, VerificationResult } from "../state/types.ts";
 import { runAnalyzeCapability, runRemediationCapability, type CapabilityRunResult } from "./capability-runner.ts";
 import { runCommand } from "./command-runner.ts";
@@ -20,6 +21,8 @@ interface GitContext {
 }
 
 type InapplicableOutcome = "CONTINUE" | "STOP_STAGE" | "STOP_RUN";
+
+const RUNTIME_EVENT_ACTOR = { type: "runtime" as const, id: "dokion-runtime" };
 
 async function runGit(root: string, args: string[]): Promise<string | undefined> {
   const child = Bun.spawn(["git", ...args], { cwd: root, stdout: "pipe", stderr: "ignore", stdin: "ignore" });
@@ -83,14 +86,26 @@ export class ExecutionEngine {
   }
 
   async run(): Promise<DokionState> {
+    return this.startRun(createRunId());
+  }
+
+  protected async startRun(runId: string): Promise<DokionState> {
     const loaded = await loadActivePlaybook(this.root);
     assertSequentialExecution(loaded.data);
-    const [git, profile] = await Promise.all([inspectGit(this.root), inspectProject(this.root)]);
+    const [git, profile, repositoryIdentity] = await Promise.all([
+      inspectGit(this.root),
+      inspectProject(this.root),
+      captureRepositoryIdentity(this.root, loaded.digest)
+    ]);
     const platform = detectPlatform();
+    const branch = repositoryIdentity.branch ?? git.branch;
+    const expectedRevision = (await this.store.exists()) ? (await this.store.load()).revision : undefined;
     const state = await this.store.initialize({
+      runId,
       playbookDigest: loaded.digest,
-      commitSha: git.commitSha,
-      ...(git.branch ? { branch: git.branch } : {}),
+      repositoryIdentity,
+      commitSha: repositoryIdentity.commit ?? git.commitSha,
+      ...(branch ? { branch } : {}),
       ...(git.worktreeClean !== undefined ? { worktreeClean: git.worktreeClean } : {}),
       agent: platform,
       profile: { ...profile },
@@ -98,31 +113,46 @@ export class ExecutionEngine {
         id: stage.id,
         steps: stage.steps.map((step) => ({ id: step.id, mode: step.mode }))
       }))
-    });
+    }, expectedRevision);
     await appendEvent(this.root, {
       at: new Date().toISOString(),
       run_id: state.run.id,
+      actor: RUNTIME_EVENT_ACTOR,
       event: "RUN_STARTED",
-      data: { playbook_digest: loaded.digest, platform }
+      payload: { playbook_digest: loaded.digest, platform: { detected: platform } }
     });
     await writeHardeningReport(this.root, state);
     return this.execute(loaded);
   }
 
   async resume(): Promise<DokionState> {
-    if (!(await this.store.exists())) return this.run();
+    return this.continueRun(createRunId());
+  }
+
+  protected async continueRun(fallbackRunId: string): Promise<DokionState> {
+    if (!(await this.store.exists())) return this.startRun(fallbackRunId);
     const loaded = await loadActivePlaybook(this.root);
     assertSequentialExecution(loaded.data);
     let state = await this.store.load();
-    if (state.run.status === "COMPLETED" || state.run.status === "TAINTED") return state;
+    if (["COMPLETED", "TAINTED", "STALE"].includes(state.run.status)) return state;
     if (state.playbook.digest !== loaded.digest) return this.markTainted(state, loaded.digest, "resume");
+
+    const currentIdentity = await captureRepositoryIdentity(this.root, loaded.digest);
+    const identityDifferences = compareRepositoryIdentities(state.repository_identity, currentIdentity);
+    if (identityDifferences.length > 0) return this.markStale(state, identityDifferences);
 
     state = await this.updateState((current) => {
       const run = { ...current.run, status: "RUNNING" as const };
       delete run.ended_at;
       return { ...current, run };
     });
-    await appendEvent(this.root, { at: new Date().toISOString(), run_id: state.run.id, event: "RUN_RESUMED" });
+    await appendEvent(this.root, {
+      at: new Date().toISOString(),
+      run_id: state.run.id,
+      actor: RUNTIME_EVENT_ACTOR,
+      event: "RUN_RESUMED",
+      payload: {}
+    });
     return this.execute(loaded);
   }
 
@@ -202,9 +232,9 @@ export class ExecutionEngine {
         await appendEvent(this.root, {
           at: new Date().toISOString(),
           run_id: state.run.id,
+          actor: RUNTIME_EVENT_ACTOR,
           event: "STEP_STARTED",
-          stage_id: stage.id,
-          step_id: step.id
+          payload: { stage_id: stage.id, step_id: step.id }
         });
 
         if (!stepApprovalSatisfied(step, loaded, state) && !["FIX_WITH_APPROVAL", "FIX_AUTOMATICALLY"].includes(step.mode)) {
@@ -246,9 +276,9 @@ export class ExecutionEngine {
         await appendEvent(this.root, {
           at: new Date().toISOString(),
           run_id: state.run.id,
+          actor: RUNTIME_EVENT_ACTOR,
           event: "STEP_SUCCEEDED",
-          stage_id: stage.id,
-          step_id: step.id
+          payload: { stage_id: stage.id, step_id: step.id }
         });
       }
 
@@ -267,7 +297,13 @@ export class ExecutionEngine {
       ...state,
       run: { ...state.run, status: "COMPLETED", ended_at: new Date().toISOString() }
     }));
-    await appendEvent(this.root, { at: new Date().toISOString(), run_id: completed.run.id, event: "RUN_COMPLETED" });
+    await appendEvent(this.root, {
+      at: new Date().toISOString(),
+      run_id: completed.run.id,
+      actor: RUNTIME_EVENT_ACTOR,
+      event: "RUN_COMPLETED",
+      payload: {}
+    });
     return completed;
   }
 
@@ -298,9 +334,9 @@ export class ExecutionEngine {
     await appendEvent(this.root, {
       at: now,
       run_id: state.run.id,
+      actor: RUNTIME_EVENT_ACTOR,
       event: "STAGE_INAPPLICABLE",
-      stage_id: stage.id,
-      detail: `${policy}: ${reason}`
+      payload: { stage_id: stage.id, policy, reason }
     });
     return policy === "MARK_BLOCKED" ? "STOP_RUN" : policy === "STOP_STAGE" ? "STOP_STAGE" : "CONTINUE";
   }
@@ -339,10 +375,9 @@ export class ExecutionEngine {
     await appendEvent(this.root, {
       at: now,
       run_id: state.run.id,
+      actor: RUNTIME_EVENT_ACTOR,
       event: "STEP_INAPPLICABLE",
-      stage_id: stage.id,
-      step_id: step.id,
-      detail: `${policy}: ${reason}`
+      payload: { stage_id: stage.id, step_id: step.id, policy, reason }
     });
     return policy === "MARK_BLOCKED" ? "STOP_RUN" : policy === "STOP_STAGE" ? "STOP_STAGE" : "CONTINUE";
   }
@@ -410,18 +445,51 @@ export class ExecutionEngine {
     await appendEvent(this.root, {
       at: new Date().toISOString(),
       run_id: state.run.id,
+      actor: RUNTIME_EVENT_ACTOR,
       event: "APPROVAL_REQUIRED",
-      stage_id: stage.id,
-      step_id: step.id,
-      detail: subject
+      payload: { stage_id: stage.id, step_id: step.id, subject }
     });
     return state;
   }
 
   private async updateState(mutator: (state: DokionState) => DokionState): Promise<DokionState> {
-    const state = await this.store.update(mutator);
+    const current = await this.store.load();
+    const state = await this.store.update(current.revision, mutator);
     await writeHardeningReport(this.root, state);
     return state;
+  }
+
+  private async markStale(
+    state: DokionState,
+    differences: RepositoryIdentityDifference[]
+  ): Promise<DokionState> {
+    const detectedAt = new Date().toISOString();
+    const changedFields = differences.map((difference) => difference.field);
+    const stale = await this.updateState((current) => ({
+      ...current,
+      run: {
+        ...current.run,
+        status: "STALE",
+        ended_at: detectedAt,
+        stale: {
+          reason: "REPOSITORY_IDENTITY_CHANGED",
+          detected_at: detectedAt,
+          changed_fields: changedFields,
+          differences
+        }
+      }
+    }));
+    await appendEvent(this.root, {
+      at: detectedAt,
+      run_id: state.run.id,
+      actor: RUNTIME_EVENT_ACTOR,
+      event: "RUN_STALE",
+      payload: {
+        reason: "REPOSITORY_IDENTITY_CHANGED",
+        changed_fields: changedFields
+      }
+    });
+    return stale;
   }
 
   private async markTainted(state: DokionState, observed: string, beforeStep: string): Promise<DokionState> {
@@ -441,9 +509,9 @@ export class ExecutionEngine {
     await appendEvent(this.root, {
       at: new Date().toISOString(),
       run_id: state.run.id,
+      actor: RUNTIME_EVENT_ACTOR,
       event: "PLAYBOOK_TAINTED",
-      step_id: beforeStep,
-      data: { expected: state.playbook.digest, observed }
+      payload: { before_step: beforeStep, expected: state.playbook.digest, observed }
     });
     return tainted;
   }
@@ -475,11 +543,9 @@ export class ExecutionEngine {
     await appendEvent(this.root, {
       at: new Date().toISOString(),
       run_id: state.run.id,
+      actor: RUNTIME_EVENT_ACTOR,
       event: "STEP_FAILED",
-      stage_id: stage.id,
-      step_id: step.id,
-      detail: reason,
-      data: { failure_policy: policy }
+      payload: { stage_id: stage.id, step_id: step.id, reason, failure_policy: policy }
     });
     return state;
   }

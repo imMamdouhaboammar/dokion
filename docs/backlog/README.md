@@ -15,10 +15,10 @@ Both sources remain inert until the user explicitly selects and activates a play
 
 1. `SPEC.md` defines product semantics and authority boundaries.
 2. `docs/architecture/` defines normative safety and readiness rules.
-3. `docs/backlog/promotion-readiness.md` defines the public promotion gate.
+3. [`promotion-readiness.md`](promotion-readiness.md) defines the public promotion gate.
 4. The workstream backlogs in this directory define deliverables and acceptance criteria.
-5. Root `tasks.md` is the active implementation tracker.
-6. `docs/progress/production-backlog-progress.md` records merged evidence.
+5. Root [`tasks.md`](../../tasks.md) is the active implementation tracker.
+6. [`docs/progress/production-backlog-progress.md`](../progress/production-backlog-progress.md) records merged evidence.
 
 The older 100-item plan remains a useful engineering inventory. It is not a commit quota and must not force artificial commit splitting. This directory is the operational roadmap.
 
@@ -32,12 +32,16 @@ The older 100-item plan remains a useful engineering inventory. It is not a comm
 
 ## Workstreams
 
-- Core runtime and bounded autopilot
-- Built-in and custom playbook library
-- Capability provenance and module lifecycle
-- State integrity, recovery, and secure execution
-- Evidence, audit, reporting, and readiness
-- Product experience, adapters, distribution, and launch operations
+- [`core-autopilot.md`](core-autopilot.md): deterministic decisions, approvals, retries, budgets, step execution, verify, stale-run handling, and bounded-autopilot proof.
+- [`playbook-library.md`](playbook-library.md): built-in registry, inspection, proposals, explicit activation, custom authoring, and curated web, API, and library playbooks.
+- [`capability-modules.md`](capability-modules.md): capability lock, provenance, executable resolution, typed module lifecycle, permissions, and assurance packs.
+- [`state-execution-security.md`](state-execution-security.md): run locking, revisions, events, recovery, repository identity, process containment, path policy, snapshots, and repair transactions.
+- [`evidence-audit-readiness.md`](evidence-audit-readiness.md): completion, qualified claims, reports, manifests, exports, independent audit, and promotion sign-off.
+- [`product-distribution.md`](product-distribution.md): adapter parity, platform guarantees, package and binary validation, fixtures, CI, release integrity, onboarding, and launch.
+
+## Implementation plan
+
+The cross-workstream execution sequence, verification protocol, and wave gates are defined in [`docs/superpowers/plans/2026-07-27-promotion-ready-delivery-plan.md`](../superpowers/plans/2026-07-27-promotion-ready-delivery-plan.md).
 
 ## Execution rules
 

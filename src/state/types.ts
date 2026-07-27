@@ -1,6 +1,7 @@
+import type { RepositoryIdentity, RepositoryIdentityDifference } from "../git/repository-identity.ts";
 import type { AgentPlatform, PlatformDegradation, PlatformProfile } from "../platform/types.ts";
 
-export type RunStatus = "RUNNING" | "AWAITING_USER" | "COMPLETED" | "STOPPED" | "BLOCKED" | "FAILED" | "TAINTED";
+export type RunStatus = "RUNNING" | "AWAITING_USER" | "COMPLETED" | "STOPPED" | "BLOCKED" | "FAILED" | "TAINTED" | "STALE";
 
 export type ExecutionStatus =
   | "PENDING"
@@ -91,6 +92,7 @@ export interface StageState {
 export interface DokionState {
   $schema?: string;
   schema_version: 1;
+  revision: number;
   run: {
     id: string;
     started_at: string;
@@ -100,8 +102,15 @@ export interface DokionState {
     agent_version?: string;
     model?: string;
     resumed_from?: string;
+    stale?: {
+      reason: "REPOSITORY_IDENTITY_CHANGED";
+      detected_at: string;
+      changed_fields: string[];
+      differences: RepositoryIdentityDifference[];
+    };
     degradations?: PlatformDegradation[];
   };
+  repository_identity: RepositoryIdentity;
   playbook: {
     path: string;
     digest_algorithm?: "sha256" | "sha512";
@@ -139,7 +148,9 @@ export interface DokionState {
 }
 
 export interface StateInitialization {
+  runId?: string;
   playbookDigest: string;
+  repositoryIdentity?: RepositoryIdentity;
   commitSha?: string;
   branch?: string;
   worktreeClean?: boolean;

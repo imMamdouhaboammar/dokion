@@ -11,6 +11,7 @@ import { writeCliDiagnostic, writeCliResult } from "./cli/output.ts";
 import { parseCliInvocation, requestedCliOutputFormat } from "./cli/parser.ts";
 import type { CliInvocation, CliOutputFormat } from "./cli/types.ts";
 import { validateRepositoryContracts } from "./contracts/schema-validator.ts";
+import { recoverAtomicWrites } from "./core/atomic-file.ts";
 import { readJson } from "./core/json.ts";
 import { ExecutionEngine } from "./engine/execution-engine.ts";
 import { listFindings } from "./findings/finding-store.ts";
@@ -19,12 +20,32 @@ import { detectAgentPlatform } from "./platform/platform-detector.ts";
 import { loadActivePlaybook } from "./playbook/load-playbook.ts";
 import { writeHardeningReport } from "./report/render-hardening.ts";
 import { DOKION_VERSION } from "./runtime/package-metadata.ts";
-import { StateStore } from "./state/state-store.ts";
+import { acquireRunLock, type RunLockOperation } from "./state/run-lock.ts";
+import { createRunId, StateStore } from "./state/state-store.ts";
 
 const root = process.cwd();
 
 function print(value: unknown, format: CliOutputFormat): void {
   writeCliResult(value, format);
+}
+
+async function withProjectRunLock<T>(operation: RunLockOperation, action: () => Promise<T>): Promise<T> {
+  const store = new StateStore(root);
+  let runId = createRunId();
+  if (await store.exists()) {
+    try {
+      runId = (await store.load()).run.id;
+    } catch {
+      runId = createRunId();
+    }
+  }
+  const lease = await acquireRunLock(root, { runId, operation });
+  try {
+    await recoverAtomicWrites(root);
+    return await action();
+  } finally {
+    await lease.release();
+  }
 }
 
 function help(format: CliOutputFormat): void {
@@ -37,6 +58,7 @@ function help(format: CliOutputFormat): void {
 }
 
 async function initialize(format: CliOutputFormat): Promise<void> {
+  await recoverAtomicWrites(root);
   for (const path of [".dokion/findings", ".dokion/evidence", ".dokion/reports", ".dokion/runs"]) {
     await mkdir(join(root, path), { recursive: true });
   }
@@ -47,7 +69,7 @@ async function initialize(format: CliOutputFormat): Promise<void> {
     state = await store.load();
   } else {
     state = await store.initialize({ playbookDigest: "unconfigured", stages: [] });
-    state = await store.update((current) => ({
+    state = await store.update(state.revision, (current) => ({
       ...current,
       run: { ...current.run, status: "STOPPED", ended_at: new Date().toISOString() }
     }));
@@ -186,7 +208,7 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
       print(await new ExecutionEngine(root).resume(), invocation.format);
       return;
     case "verify":
-      await validate(false, invocation.format);
+      await withProjectRunLock("verify", async () => validate(false, invocation.format));
       return;
     case "approve":
     case "reject":

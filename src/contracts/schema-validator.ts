@@ -24,6 +24,7 @@ export interface SchemaRegistry {
   playbook: ValidateFunction;
   coverageAssignment: ValidateFunction;
   state: ValidateFunction;
+  event: ValidateFunction;
   finding: ValidateFunction;
   capabilityLock: ValidateFunction;
 }
@@ -45,6 +46,7 @@ async function compileRegistry(): Promise<SchemaRegistry> {
     playbook: compile(embeddedSchemas.playbook),
     coverageAssignment: compile(embeddedSchemas.coverageAssignment),
     state: compile(embeddedSchemas.state),
+    event: compile(embeddedSchemas.event),
     finding: compile(embeddedSchemas.finding),
     capabilityLock: compile(embeddedSchemas.capabilityLock)
   };
@@ -144,6 +146,11 @@ export async function validatePlaybookData(
 export async function validateStateData(_root: string, data: unknown, file = ".dokion/state.json"): Promise<ValidationIssue[]> {
   const registry = await buildRegistry();
   return registry.state(data) ? [] : normalizeErrors(file, registry.state.errors);
+}
+
+export async function validateEventData(_root: string, data: unknown, file = ".dokion/events.ndjson"): Promise<ValidationIssue[]> {
+  const registry = await buildRegistry();
+  return registry.event(data) ? [] : normalizeErrors(file, registry.event.errors);
 }
 
 export async function validateFindingData(_root: string, data: unknown, file = ".dokion/findings/unknown.json"): Promise<ValidationIssue[]> {

@@ -59,10 +59,20 @@ function playbook(): DokionPlaybook {
 function state(): DokionState {
   return {
     schema_version: 1,
+    revision: 0,
     run: {
       id: "run-gates",
       started_at: "2026-07-25T12:00:00.000Z",
       status: "RUNNING"
+    },
+    repository_identity: {
+      schema_version: 1,
+      kind: "directory",
+      canonical_root: "/fixture",
+      root_digest: `sha256:${"1".repeat(64)}`,
+      worktree_id: `sha256:${"1".repeat(64)}`,
+      playbook_digest: `sha256:${"2".repeat(64)}`,
+      captured_at: "2026-07-27T00:00:00.000Z"
     },
     playbook: {
       path: ".dokion/playbook.json",
