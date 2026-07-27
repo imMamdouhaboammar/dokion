@@ -7,7 +7,7 @@ import { assertPlaybookUnchanged, loadActivePlaybook } from "../playbook/load-pl
 import type { LoadedPlaybook, PlaybookStage, PlaybookStep } from "../playbook/types.ts";
 import { writeHardeningReport } from "../report/render-hardening.ts";
 import { appendEvent } from "../state/event-log.ts";
-import { StateStore } from "../state/state-store.ts";
+import { createRunId, StateStore } from "../state/state-store.ts";
 import type { DokionState, StageState, StepState, VerificationResult } from "../state/types.ts";
 import { runAnalyzeCapability, runRemediationCapability, type CapabilityRunResult } from "./capability-runner.ts";
 import { runCommand } from "./command-runner.ts";
@@ -83,11 +83,16 @@ export class ExecutionEngine {
   }
 
   async run(): Promise<DokionState> {
+    return this.startRun(createRunId());
+  }
+
+  protected async startRun(runId: string): Promise<DokionState> {
     const loaded = await loadActivePlaybook(this.root);
     assertSequentialExecution(loaded.data);
     const [git, profile] = await Promise.all([inspectGit(this.root), inspectProject(this.root)]);
     const platform = detectPlatform();
     const state = await this.store.initialize({
+      runId,
       playbookDigest: loaded.digest,
       commitSha: git.commitSha,
       ...(git.branch ? { branch: git.branch } : {}),
@@ -110,7 +115,11 @@ export class ExecutionEngine {
   }
 
   async resume(): Promise<DokionState> {
-    if (!(await this.store.exists())) return this.run();
+    return this.continueRun(createRunId());
+  }
+
+  protected async continueRun(fallbackRunId: string): Promise<DokionState> {
+    if (!(await this.store.exists())) return this.startRun(fallbackRunId);
     const loaded = await loadActivePlaybook(this.root);
     assertSequentialExecution(loaded.data);
     let state = await this.store.load();

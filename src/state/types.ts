@@ -139,6 +139,7 @@ export interface DokionState {
 }
 
 export interface StateInitialization {
+  runId?: string;
   playbookDigest: string;
   commitSha?: string;
   branch?: string;

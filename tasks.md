@@ -120,7 +120,7 @@ Detailed acceptance criteria: `docs/backlog/capability-modules.md`.
 
 Detailed acceptance criteria: `docs/backlog/state-execution-security.md`.
 
-- [ ] **STATE-001** Add exclusive project run locking · P0
+- [x] **STATE-001** Add exclusive project run locking · P0
 - [ ] **STATE-002** Add monotonic revisions and compare-and-swap · P0
 - [ ] **STATE-003** Validate typed event records · P0
 - [ ] **STATE-004** Hash-chain the append-only event journal · P0

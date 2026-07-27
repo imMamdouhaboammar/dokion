@@ -6,19 +6,33 @@ import { loadActivePlaybook } from "../playbook/load-playbook.ts";
 import { evaluateCoverage, type CoverageManifest } from "../readiness/coverage.ts";
 import { evaluateReleaseGates } from "../readiness/release-gates.ts";
 import { writeHardeningReport } from "../report/render-hardening.ts";
-import { StateStore } from "../state/state-store.ts";
+import { acquireRunLock } from "../state/run-lock.ts";
+import { createRunId, StateStore } from "../state/state-store.ts";
 import type { DokionState } from "../state/types.ts";
 import { ExecutionEngine as RuntimeExecutionEngine } from "./runtime-engine.ts";
 
 export class ExecutionEngine extends RuntimeExecutionEngine {
   override async run(): Promise<DokionState> {
-    const state = await super.run();
-    return this.reconcileState(state);
+    const runId = createRunId();
+    const lease = await acquireRunLock(this.root, { runId, operation: "run" });
+    try {
+      const state = await this.startRun(runId);
+      return this.reconcileState(state);
+    } finally {
+      await lease.release();
+    }
   }
 
   override async resume(): Promise<DokionState> {
-    const state = await super.resume();
-    return this.reconcileState(state);
+    const fallbackRunId = createRunId();
+    const runId = (await this.store.exists()) ? (await this.store.load()).run.id : fallbackRunId;
+    const lease = await acquireRunLock(this.root, { runId, operation: "resume" });
+    try {
+      const state = await this.continueRun(fallbackRunId);
+      return this.reconcileState(state);
+    } finally {
+      await lease.release();
+    }
   }
 
   private async reconcileState(state: DokionState): Promise<DokionState> {

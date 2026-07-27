@@ -8,6 +8,10 @@ import type { DokionState, StateInitialization } from "./types.ts";
 
 export const STATE_PATH = ".dokion/state.json";
 
+export function createRunId(): string {
+  return `run-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+}
+
 export class StateStore {
   readonly root: string;
   readonly path: string;
@@ -37,7 +41,7 @@ export class StateStore {
       $schema: "../schemas/dokion-state.schema.json",
       schema_version: 1,
       run: {
-        id: `run-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
+        id: input.runId ?? createRunId(),
         started_at: now,
         status: "RUNNING",
         agent: platform.agent,
