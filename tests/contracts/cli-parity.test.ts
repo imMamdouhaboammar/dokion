@@ -9,6 +9,7 @@ import {
   implementedCliCommands,
   plannedCliCommands
 } from "../../src/cli/command-registry.ts";
+import { parseCliInvocation } from "../../src/cli/parser.ts";
 
 const root = process.cwd();
 
@@ -90,12 +91,12 @@ describe("canonical CLI command registry", () => {
   test("keeps implemented and planned runtime cases explicit", async () => {
     const cliSource = await read("src/cli.ts");
     const observedCases = Array.from(cliSource.matchAll(/case "([^"]+)":/g), (match) => match[1]!);
-    const expectedCases = [
-      ...CLI_BUILTIN_CASES,
-      ...implementedCliCommands().map((command) => command.runtimeCase)
-    ];
+    const expectedCases = ["help", ...implementedCliCommands().map((command) => command.runtimeCase)];
 
     expect(sorted(new Set(observedCases))).toEqual(sorted(new Set(expectedCases)));
+    for (const builtin of CLI_BUILTIN_CASES) {
+      expect(parseCliInvocation([builtin])).toEqual({ command: "help" });
+    }
 
     for (const command of plannedCliCommands()) {
       expect(observedCases).not.toContain(command.runtimeCase);
