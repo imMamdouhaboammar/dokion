@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { hostname, tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 
+import { ExecutionEngine } from "../../src/engine/execution-engine.ts";
 import {
   RUN_LOCK_PATH,
   RUN_LOCK_RECOVERY_LOG_PATH,
@@ -97,6 +98,69 @@ describe("exclusive project run locking", () => {
 
     const lease = await acquireRunLock(root, { runId: "run-new", operation: "run" });
     await lease.release();
+  });
+
+  test("guards run and resume before playbook loading or state mutation", async () => {
+    const root = await createRoot();
+    const lease = await acquireRunLock(root, { runId: "run-owner", operation: "run" });
+
+    await expect(new ExecutionEngine(root).run()).rejects.toMatchObject({
+      code: "RUN_LOCKED",
+      details: { run_id: "run-owner" }
+    });
+    await expect(new ExecutionEngine(root).resume()).rejects.toMatchObject({
+      code: "RUN_LOCKED",
+      details: { run_id: "run-owner" }
+    });
+
+    await lease.release();
+  });
+
+  test("guards the verify CLI operation before validation", async () => {
+    const root = await createRoot();
+    const lease = await acquireRunLock(root, { runId: "run-owner", operation: "run" });
+    const cliPath = join(process.cwd(), "src/cli.ts");
+    const child = Bun.spawn([process.execPath, "run", cliPath, "verify", "--format", "json"], {
+      cwd: root,
+      stdout: "pipe",
+      stderr: "pipe",
+      stdin: "ignore"
+    });
+    const [exitCode, stderr] = await Promise.all([
+      child.exited,
+      child.stderr ? new Response(child.stderr).text() : ""
+    ]);
+
+    expect(exitCode).toBe(1);
+    expect(JSON.parse(stderr)).toMatchObject({
+      error: "RUN_LOCKED",
+      details: { run_id: "run-owner", operation: "run" }
+    });
+
+    await lease.release();
+  });
+
+  test("rejects tampered lock metadata instead of archiving outside the project", async () => {
+    const root = await createRoot();
+    const tampered = await writeStaleLock(root);
+    const escapeName = `${basename(root)}-outside`;
+    const escapePath = join(root, "..", escapeName);
+    temporaryRoots.push(escapePath);
+    await writeFile(join(root, RUN_LOCK_PATH), `${JSON.stringify({
+      ...tampered,
+      operation: "deploy",
+      recovery: { ...tampered.recovery, archive_directory: `../${escapeName}` }
+    }, null, 2)}
+`);
+
+    await expect(recoverStaleRunLock(root, {
+      by: "operator",
+      reason: "attempt recovery"
+    })).rejects.toMatchObject({ code: "INVALID_RUN_LOCK" });
+
+    await access(join(root, RUN_LOCK_PATH));
+    await expect(access(escapePath)).rejects.toBeDefined();
+    await expect(access(join(root, RUN_LOCK_RECOVERY_LOG_PATH))).rejects.toBeDefined();
   });
 
   test("refuses stale recovery while the recorded process is still live", async () => {

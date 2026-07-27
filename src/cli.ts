@@ -19,12 +19,24 @@ import { detectAgentPlatform } from "./platform/platform-detector.ts";
 import { loadActivePlaybook } from "./playbook/load-playbook.ts";
 import { writeHardeningReport } from "./report/render-hardening.ts";
 import { DOKION_VERSION } from "./runtime/package-metadata.ts";
-import { StateStore } from "./state/state-store.ts";
+import { acquireRunLock, type RunLockOperation } from "./state/run-lock.ts";
+import { createRunId, StateStore } from "./state/state-store.ts";
 
 const root = process.cwd();
 
 function print(value: unknown, format: CliOutputFormat): void {
   writeCliResult(value, format);
+}
+
+async function withProjectRunLock<T>(operation: RunLockOperation, action: () => Promise<T>): Promise<T> {
+  const store = new StateStore(root);
+  const runId = (await store.exists()) ? (await store.load()).run.id : createRunId();
+  const lease = await acquireRunLock(root, { runId, operation });
+  try {
+    return await action();
+  } finally {
+    await lease.release();
+  }
 }
 
 function help(format: CliOutputFormat): void {
@@ -186,7 +198,7 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
       print(await new ExecutionEngine(root).resume(), invocation.format);
       return;
     case "verify":
-      await validate(false, invocation.format);
+      await withProjectRunLock("verify", async () => validate(false, invocation.format));
       return;
     case "approve":
     case "reject":
