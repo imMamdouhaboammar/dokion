@@ -123,7 +123,7 @@ Detailed acceptance criteria: `docs/backlog/state-execution-security.md`.
 - [x] **STATE-001** Add exclusive project run locking · P0
 - [x] **STATE-002** Add monotonic revisions and compare-and-swap · P0
 - [x] **STATE-003** Validate typed event records · P0
-- [ ] **STATE-004** Hash-chain the append-only event journal · P0
+- [x] **STATE-004** Hash-chain the append-only event journal · P0
 - [ ] **STATE-005** Recover interrupted atomic writes · P0
 - [ ] **STATE-006** Bind runs to repository identity · P0
 - [ ] **STATE-007** Enforce declared dirty-worktree policy · P0

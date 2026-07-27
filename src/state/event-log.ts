@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 
 import { validateEventData } from "../contracts/schema-validator.ts";
 import { DokionError } from "../core/errors.ts";
+import { createChainedEvent, readVerifiedEvents, writeEventChainHead } from "./event-chain.ts";
 
 export const EVENTS_PATH = ".dokion/events.ndjson";
 const EVENT_APPEND_LOCK_PATH = ".dokion/events.append.lock";
@@ -46,9 +47,14 @@ export type DokionEvent<T extends DokionEventType = DokionEventType> = {
   actor: DokionEventActor;
   event: T;
   payload: DokionEventPayloadMap[T];
+  previous_digest: string | null;
+  digest: string;
 };
 
-export type DokionEventInput<T extends DokionEventType = DokionEventType> = Omit<DokionEvent<T>, "schema_version" | "sequence">;
+export type DokionEventInput<T extends DokionEventType = DokionEventType> = Omit<
+  DokionEvent<T>,
+  "schema_version" | "sequence" | "previous_digest" | "digest"
+>;
 
 interface AppendLockRecord {
   token: string;
@@ -64,36 +70,7 @@ async function validateEvent(root: string, event: unknown, file = EVENTS_PATH): 
 }
 
 async function readEventsFromDisk(root: string): Promise<DokionEvent[]> {
-  const path = join(root, EVENTS_PATH);
-  if (!(await Bun.file(path).exists())) return [];
-  const raw = await readFile(path, "utf8");
-  const events: DokionEvent[] = [];
-  for (const [index, line] of raw.split("\n").filter(Boolean).entries()) {
-    let event: unknown;
-    try {
-      event = JSON.parse(line);
-    } catch (error) {
-      throw new DokionError("INVALID_EVENT", "Dokion event journal contains invalid JSON", {
-        line: index + 1,
-        cause: error instanceof Error ? error.message : String(error)
-      });
-    }
-    await validateEvent(root, event, `${EVENTS_PATH}:${index + 1}`);
-    events.push(event as DokionEvent);
-  }
-  const lastByRun = new Map<string, number>();
-  for (const event of events) {
-    const expected = (lastByRun.get(event.run_id) ?? 0) + 1;
-    if (event.sequence !== expected) {
-      throw new DokionError("INVALID_EVENT", "Dokion event sequence is not monotonic", {
-        run_id: event.run_id,
-        expected_sequence: expected,
-        actual_sequence: event.sequence
-      });
-    }
-    lastByRun.set(event.run_id, event.sequence);
-  }
-  return events;
+  return readVerifiedEvents(root);
 }
 
 function isProcessLive(pid: number): boolean {
@@ -147,11 +124,13 @@ export async function appendEvent<T extends DokionEventType>(root: string, input
   return withAppendLock(root, async () => {
     const existing = await readEventsFromDisk(root);
     const sequence = Math.max(0, ...existing.filter((event) => event.run_id === input.run_id).map((event) => event.sequence)) + 1;
-    const event: DokionEvent<T> = { schema_version: 1, sequence, ...input };
+    const event = createChainedEvent(input, sequence, existing.at(-1)?.digest ?? null);
     await validateEvent(root, event);
     const path = join(root, EVENTS_PATH);
     await mkdir(dirname(path), { recursive: true });
-    await appendFile(path, `${JSON.stringify(event)}\n`, "utf8");
+    await appendFile(path, `${JSON.stringify(event)}
+`, "utf8");
+    await writeEventChainHead(root, [...existing, event]);
     return event;
   });
 }
