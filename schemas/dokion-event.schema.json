@@ -10,7 +10,9 @@
     "run_id",
     "actor",
     "event",
-    "payload"
+    "payload",
+    "previous_digest",
+    "digest"
   ],
   "additionalProperties": false,
   "properties": {
@@ -50,6 +52,21 @@
     },
     "payload": {
       "type": "object"
+    },
+    "previous_digest": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      ]
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
     }
   },
   "$defs": {
