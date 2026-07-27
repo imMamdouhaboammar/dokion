@@ -10,7 +10,14 @@ export type DokionErrorCode =
   | "APPROVAL_REQUIRED"
   | "COMMAND_FAILED"
   | "DEPENDENCY_UNMET"
-  | "UNSUPPORTED_EXECUTION";
+  | "UNSUPPORTED_EXECUTION"
+  | "CLI_UNKNOWN_COMMAND"
+  | "CLI_PLANNED_COMMAND"
+  | "CLI_UNKNOWN_OPTION"
+  | "CLI_MISSING_OPTION_VALUE"
+  | "CLI_DUPLICATE_OPTION"
+  | "CLI_MISSING_ARGUMENT"
+  | "CLI_INVALID_ARGUMENT";
 
 export class DokionError extends Error {
   readonly code: DokionErrorCode;

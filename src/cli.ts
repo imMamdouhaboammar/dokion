@@ -3,9 +3,11 @@
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
-import { recordApproval, type ApprovalSubjectType } from "./approvals/approval-store.ts";
+import { recordApproval } from "./approvals/approval-store.ts";
 import { builtinCatalog } from "./catalog/builtin-catalog.ts";
-import { renderCliHelp, resolveCliCommand } from "./cli/command-registry.ts";
+import { renderCliHelp } from "./cli/command-registry.ts";
+import { parseCliInvocation } from "./cli/parser.ts";
+import type { CliInvocation } from "./cli/types.ts";
 import { validateRepositoryContracts } from "./contracts/schema-validator.ts";
 import { DokionError } from "./core/errors.ts";
 import { readJson } from "./core/json.ts";
@@ -19,15 +21,9 @@ import { DOKION_VERSION } from "./runtime/package-metadata.ts";
 import { StateStore } from "./state/state-store.ts";
 
 const root = process.cwd();
-const [command = "help", ...args] = process.argv.slice(2);
 
 function print(value: unknown): void {
   console.log(JSON.stringify(value, null, 2));
-}
-
-function optionValue(name: string): string | undefined {
-  const index = args.indexOf(name);
-  return index >= 0 ? args[index + 1] : undefined;
 }
 
 function help(): void {
@@ -140,48 +136,28 @@ async function doctor(): Promise<void> {
   print({ checks, platform, healthy: Boolean(checks.git) });
 }
 
-function inferSubjectType(subject: string): ApprovalSubjectType {
-  const prefix = subject.split(":", 1)[0];
-  const supported: ApprovalSubjectType[] = ["step", "finding", "fix", "commit", "install", "suggestion", "deferral"];
-  if (!supported.includes(prefix as ApprovalSubjectType)) throw new Error(`Unsupported approval subject: ${subject}`);
-  return prefix as ApprovalSubjectType;
-}
+type DecisionInvocation = Extract<CliInvocation, { command: "approve" | "reject" }>;
 
-async function decide(decision: "APPROVED" | "REJECTED"): Promise<void> {
-  const subject = args[0];
-  const by = optionValue("--by");
-  const notes = optionValue("--notes");
-  if (!subject || !by) {
-    throw new Error(`Usage: dokion ${decision === "APPROVED" ? "approve" : "reject"} <subject> --by <identity> [--notes <text>]`);
-  }
+async function decide(invocation: DecisionInvocation): Promise<void> {
   const record = await recordApproval(root, {
-    subject,
-    subjectType: inferSubjectType(subject),
-    decision,
-    by,
-    ...(notes ? { notes } : {})
+    subject: invocation.subject,
+    subjectType: invocation.subjectType,
+    decision: invocation.command === "approve" ? "APPROVED" : "REJECTED",
+    by: invocation.by,
+    ...(invocation.notes ? { notes: invocation.notes } : {})
   });
   const state = await new StateStore(root).load();
   await writeHardeningReport(root, state);
   print(record);
 }
 
-async function main(): Promise<void> {
-  switch (command) {
+async function main(argv: readonly string[] = process.argv.slice(2)): Promise<void> {
+  const invocation = parseCliInvocation(argv);
+
+  switch (invocation.command) {
     case "help":
-    case "--help":
-    case "-h":
       help();
       return;
-  }
-
-  const registeredCommand = resolveCliCommand(command);
-  if (!registeredCommand) throw new Error(`Unknown command: ${command}`);
-  if (registeredCommand.status === "PLANNED") {
-    throw new Error(`Command is planned but not implemented: ${registeredCommand.manifestCommand}`);
-  }
-
-  switch (registeredCommand.runtimeCase) {
     case "init":
       await initialize();
       return;
@@ -192,7 +168,7 @@ async function main(): Promise<void> {
       await doctor();
       return;
     case "validate":
-      await validate(args.includes("--catalog-only"));
+      await validate(invocation.catalogOnly);
       return;
     case "run":
       print(await new ExecutionEngine(root).run());
@@ -204,10 +180,8 @@ async function main(): Promise<void> {
       await validate(false);
       return;
     case "approve":
-      await decide("APPROVED");
-      return;
     case "reject":
-      await decide("REJECTED");
+      await decide(invocation);
       return;
     case "status":
       await status();
@@ -219,23 +193,17 @@ async function main(): Promise<void> {
       print(await listFindings(root));
       return;
     case "tools":
-      if (args[0] !== "list") throw new Error("Usage: dokion tools list");
       await listCatalog("tools");
       return;
     case "skills":
-      if (args[0] !== "list") throw new Error("Usage: dokion skills list");
       await listCatalog("skills");
       return;
     case "plugins":
-      if (args[0] !== "list") throw new Error("Usage: dokion plugins list");
       await listCatalog("plugins");
       return;
     case "loops":
-      if (args[0] !== "list") throw new Error("Usage: dokion loops list");
       await listCatalog("loops");
       return;
-    default:
-      throw new Error(`Runtime handler missing for registered command: ${registeredCommand.manifestCommand}`);
   }
 }
 
