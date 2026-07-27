@@ -49,7 +49,7 @@ export class ExecutionEngine extends RuntimeExecutionEngine {
     });
 
     const store = new StateStore(this.root);
-    const updated = await store.update((current) => ({
+    const updated = await store.update(state.revision, (current) => ({
       ...current,
       coverage: evaluation.lanes,
       release_gates: releaseGates

@@ -27,7 +27,8 @@ export async function recordApproval(root: string, input: ApprovalInput): Promis
   };
 
   const store = new StateStore(root);
-  await store.update((state) => ({
+  const current = await store.load();
+  await store.update(current.revision, (state) => ({
     ...state,
     approvals: [...approvals(state), record]
   }));

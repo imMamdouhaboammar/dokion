@@ -6,6 +6,7 @@
   "type": "object",
   "required": [
     "schema_version",
+    "revision",
     "run",
     "playbook",
     "stages"
@@ -18,6 +19,11 @@
     "schema_version": {
       "type": "integer",
       "const": 1
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Monotonic compare-and-swap revision. Every accepted state transition increments this value by exactly one."
     },
     "run": {
       "type": "object",

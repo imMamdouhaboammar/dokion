@@ -106,7 +106,7 @@ describe("state persistence", () => {
     });
 
     expect(initial.run.status).toBe("RUNNING");
-    const updated = await store.update((state) => ({
+    const updated = await store.update(initial.revision, (state) => ({
       ...state,
       stages: state.stages.map((stage) => ({
         ...stage,

@@ -91,6 +91,7 @@ export class ExecutionEngine {
     assertSequentialExecution(loaded.data);
     const [git, profile] = await Promise.all([inspectGit(this.root), inspectProject(this.root)]);
     const platform = detectPlatform();
+    const expectedRevision = (await this.store.exists()) ? (await this.store.load()).revision : undefined;
     const state = await this.store.initialize({
       runId,
       playbookDigest: loaded.digest,
@@ -103,7 +104,7 @@ export class ExecutionEngine {
         id: stage.id,
         steps: stage.steps.map((step) => ({ id: step.id, mode: step.mode }))
       }))
-    });
+    }, expectedRevision);
     await appendEvent(this.root, {
       at: new Date().toISOString(),
       run_id: state.run.id,
@@ -428,7 +429,8 @@ export class ExecutionEngine {
   }
 
   private async updateState(mutator: (state: DokionState) => DokionState): Promise<DokionState> {
-    const state = await this.store.update(mutator);
+    const current = await this.store.load();
+    const state = await this.store.update(current.revision, mutator);
     await writeHardeningReport(this.root, state);
     return state;
   }

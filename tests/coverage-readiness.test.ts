@@ -90,6 +90,7 @@ function playbook(): DokionPlaybook {
 function state(): DokionState {
   return {
     schema_version: 1,
+    revision: 0,
     run: {
       id: "run-coverage",
       started_at: "2026-07-25T12:00:00.000Z",
