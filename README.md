@@ -37,7 +37,7 @@ A user-directed hardening runtime for Claude Code, Codex, Gemini CLI, and ordina
   <ul>
       <li>23 commits landed: docs: add dynamic project story card; security: add repository threat model.</li>
       <li>29 pull requests updated, led by #29: docs: add dynamic project story card.</li>
-      <li>Daily summary covers 52 public activity items from the last 1 day.</li>
+      <li>Daily summary covers 52 public activity items from the last 7 days.</li>
   </ul>
 </details>
 <!-- project-story:end -->
