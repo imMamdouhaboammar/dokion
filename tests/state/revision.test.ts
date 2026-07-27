@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { StateStore } from "../../src/state/state-store.ts";
+import { STATE_TRANSITION_LOCK_PATH, StateStore } from "../../src/state/state-store.ts";
 
 const roots: string[] = [];
 
@@ -66,6 +66,57 @@ describe("monotonic state revisions", () => {
     const persisted = await store.load();
     expect(persisted.revision).toBe(current.revision);
     expect(persisted.run.status).toBe("STOPPED");
+  });
+
+  test("allows only one concurrent writer to claim the same revision", async () => {
+    const root = await createRoot();
+    const storeA = new StateStore(root);
+    const storeB = new StateStore(root);
+    const initial = await storeA.initialize(initialization());
+
+    const results = await Promise.allSettled([
+      storeA.update(initial.revision, async (state) => {
+        await Bun.sleep(25);
+        return { ...state, run: { ...state.run, status: "STOPPED", ended_at: new Date().toISOString() } };
+      }),
+      storeB.update(initial.revision, (state) => ({
+        ...state,
+        run: { ...state.run, status: "FAILED", ended_at: new Date().toISOString() }
+      }))
+    ]);
+
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    const rejected = results.find((result) => result.status === "rejected");
+    expect(rejected).toMatchObject({
+      status: "rejected",
+      reason: {
+        code: "STATE_REVISION_CONFLICT",
+        details: { expected_revision: 0, actual_revision: 1 }
+      }
+    });
+    expect((await storeA.load()).revision).toBe(1);
+  });
+
+  test("does not write state or remove a lock after transition ownership is lost", async () => {
+    const root = await createRoot();
+    const store = new StateStore(root);
+    const initial = await store.initialize(initialization());
+    const foreignLock = {
+      owner_token: "foreign-owner",
+      pid: process.pid,
+      host: "foreign-host",
+      acquired_at: new Date().toISOString()
+    };
+
+    await expect(store.update(initial.revision, async (state) => {
+      await writeFile(join(root, STATE_TRANSITION_LOCK_PATH), `${JSON.stringify(foreignLock)}
+`);
+      return { ...state, run: { ...state.run, status: "FAILED", ended_at: new Date().toISOString() } };
+    })).rejects.toMatchObject({ code: "STATE_WRITE_LOCKED" });
+
+    expect((await store.load()).revision).toBe(0);
+    expect((await store.load()).run.status).toBe("RUNNING");
+    expect(JSON.parse(await readFile(join(root, STATE_TRANSITION_LOCK_PATH), "utf8"))).toEqual(foreignLock);
   });
 
   test("requires the current revision before replacing an existing run state", async () => {

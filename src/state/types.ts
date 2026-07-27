@@ -91,6 +91,7 @@ export interface StageState {
 export interface DokionState {
   $schema?: string;
   schema_version: 1;
+  revision: number;
   run: {
     id: string;
     started_at: string;

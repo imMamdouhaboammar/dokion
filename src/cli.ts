@@ -59,7 +59,7 @@ async function initialize(format: CliOutputFormat): Promise<void> {
     state = await store.load();
   } else {
     state = await store.initialize({ playbookDigest: "unconfigured", stages: [] });
-    state = await store.update((current) => ({
+    state = await store.update(state.revision, (current) => ({
       ...current,
       run: { ...current.run, status: "STOPPED", ended_at: new Date().toISOString() }
     }));
