@@ -50,6 +50,8 @@ Production hardening backlog: in progress.
 
 Dokion is an executable Bun CLI with cross-agent packaging, adversarial repair validation, clean-install reproduction, package validation, and a protected Bun-only release pipeline. The audited baseline is recorded in [`docs/architecture/current-baseline.md`](docs/architecture/current-baseline.md), and the active production backlog is recorded in [the 100-commit implementation plan](docs/superpowers/plans/2026-07-25-production-grade-bounded-autopilot-backlog.md). This status does not assert general production readiness.
 
+Support claims are separated by host, delivery mode, and agent adapter in the [support and compatibility matrix](docs/compatibility.md). Cross-compilation and packaging are not presented as native host execution.
+
 Implemented:
 
 - M0: schemas, conformance tests, and CI validation
