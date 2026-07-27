@@ -47,7 +47,8 @@
         "STEP_INAPPLICABLE",
         "APPROVAL_REQUIRED",
         "PLAYBOOK_TAINTED",
-        "STEP_FAILED"
+        "STEP_FAILED",
+        "RUN_STALE"
       ]
     },
     "payload": {
@@ -257,6 +258,37 @@
           "minLength": 1
         }
       }
+    },
+    "runStale": {
+      "type": "object",
+      "required": [
+        "reason",
+        "changed_fields"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "type": "string",
+          "const": "REPOSITORY_IDENTITY_CHANGED"
+        },
+        "changed_fields": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "canonical_root",
+              "root_digest",
+              "worktree_id",
+              "remote",
+              "commit",
+              "branch",
+              "playbook_digest"
+            ]
+          }
+        }
+      }
     }
   },
   "allOf": [
@@ -416,6 +448,22 @@
         "properties": {
           "payload": {
             "$ref": "#/$defs/stepFailed"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "RUN_STALE"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/runStale"
           }
         }
       }
