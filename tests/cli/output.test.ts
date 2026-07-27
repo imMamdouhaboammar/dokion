@@ -40,6 +40,7 @@ describe("CLI output selection", () => {
       ["init"],
       ["inspect"],
       ["doctor"],
+      ["plan"],
       ["validate"],
       ["run"],
       ["resume"],

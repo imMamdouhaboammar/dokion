@@ -133,7 +133,7 @@ export const CLI_COMMAND_REGISTRY = [
     helpLine: "  plan",
     helpGroup: "Configure",
     helpOrder: 2,
-    status: "PLANNED",
+    status: "IMPLEMENTED",
     executionMode: "READ_ONLY",
     writeScope: [],
     approvalClass: "NONE",

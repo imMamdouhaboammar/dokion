@@ -66,6 +66,7 @@ Observe:
 
 Configure:
   init
+  plan
   validate [--catalog-only]
 
 Execute:

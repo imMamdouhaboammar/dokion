@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { recordApproval } from "./approvals/approval-store.ts";
 import { builtinCatalog } from "./catalog/builtin-catalog.ts";
 import { renderCliHelp } from "./cli/command-registry.ts";
+import { handlePlan } from "./cli/handlers/plan.ts";
 import { writeCliDiagnostic, writeCliResult } from "./cli/output.ts";
 import { parseCliInvocation, requestedCliOutputFormat } from "./cli/parser.ts";
 import type { CliInvocation, CliOutputFormat } from "./cli/types.ts";
@@ -171,6 +172,9 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
       return;
     case "doctor":
       await doctor(invocation.format);
+      return;
+    case "plan":
+      print(await handlePlan(root), invocation.format);
       return;
     case "validate":
       await validate(invocation.catalogOnly, invocation.format);

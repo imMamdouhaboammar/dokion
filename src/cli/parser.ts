@@ -26,6 +26,7 @@ const SIMPLE_COMMANDS = new Set<CliSimpleCommand>([
   "init",
   "inspect",
   "doctor",
+  "plan",
   "run",
   "resume",
   "verify",
