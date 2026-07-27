@@ -51,7 +51,7 @@ describe("registry-driven CLI metadata", () => {
     const registry = await registryApi();
     const expected = `Dokion 9.9.9
 
-Usage: dokion <command>
+Usage: dokion <command> [--format human|json]
 
 Observe:
   inspect

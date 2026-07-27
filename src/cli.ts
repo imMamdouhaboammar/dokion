@@ -6,10 +6,10 @@ import { join } from "node:path";
 import { recordApproval } from "./approvals/approval-store.ts";
 import { builtinCatalog } from "./catalog/builtin-catalog.ts";
 import { renderCliHelp } from "./cli/command-registry.ts";
-import { parseCliInvocation } from "./cli/parser.ts";
-import type { CliInvocation } from "./cli/types.ts";
+import { writeCliDiagnostic, writeCliResult } from "./cli/output.ts";
+import { parseCliInvocation, requestedCliOutputFormat } from "./cli/parser.ts";
+import type { CliInvocation, CliOutputFormat } from "./cli/types.ts";
 import { validateRepositoryContracts } from "./contracts/schema-validator.ts";
-import { DokionError } from "./core/errors.ts";
 import { readJson } from "./core/json.ts";
 import { ExecutionEngine } from "./engine/execution-engine.ts";
 import { listFindings } from "./findings/finding-store.ts";
@@ -22,15 +22,20 @@ import { StateStore } from "./state/state-store.ts";
 
 const root = process.cwd();
 
-function print(value: unknown): void {
-  console.log(JSON.stringify(value, null, 2));
+function print(value: unknown, format: CliOutputFormat): void {
+  writeCliResult(value, format);
 }
 
-function help(): void {
-  console.log(renderCliHelp(DOKION_VERSION));
+function help(format: CliOutputFormat): void {
+  const content = renderCliHelp(DOKION_VERSION);
+  if (format === "human") {
+    console.log(content);
+    return;
+  }
+  print({ version: DOKION_VERSION, usage: "dokion <command>", help: content }, format);
 }
 
-async function initialize(): Promise<void> {
+async function initialize(format: CliOutputFormat): Promise<void> {
   for (const path of [".dokion/findings", ".dokion/evidence", ".dokion/reports", ".dokion/runs"]) {
     await mkdir(join(root, path), { recursive: true });
   }
@@ -55,13 +60,13 @@ async function initialize(): Promise<void> {
     report: "HARDENING.md",
     platform: state.profile?.platform,
     next: "Create or copy .dokion/playbook.json, pin every capability digest, then run dokion validate."
-  });
+  }, format);
 }
 
-async function validate(catalogOnly: boolean): Promise<void> {
+async function validate(catalogOnly: boolean, format: CliOutputFormat): Promise<void> {
   const summary = await validateRepositoryContracts(root);
   if (!summary.valid) {
-    print(summary);
+    print(summary, format);
     process.exitCode = 1;
     return;
   }
@@ -72,10 +77,10 @@ async function validate(catalogOnly: boolean): Promise<void> {
     ...summary,
     ...(activePlaybook ? { active_playbook_digest: activePlaybook.digest } : {}),
     executable: catalogOnly ? undefined : true
-  });
+  }, format);
 }
 
-async function status(): Promise<void> {
+async function status(format: CliOutputFormat): Promise<void> {
   const state = await new StateStore(root).load();
   print({
     run_id: state.run.id,
@@ -89,13 +94,13 @@ async function status(): Promise<void> {
       status: stage.status,
       steps: stage.steps.map((step) => ({ id: step.id, status: step.status, findings: step.findings ?? [] }))
     }))
-  });
+  }, format);
 }
 
-async function report(): Promise<void> {
+async function report(format: CliOutputFormat): Promise<void> {
   const state = await new StateStore(root).load();
   await writeHardeningReport(root, state);
-  print({ report: "HARDENING.md", run_id: state.run.id, status: state.run.status });
+  print({ report: "HARDENING.md", run_id: state.run.id, status: state.run.status }, format);
 }
 
 interface DokionManifest {
@@ -113,17 +118,17 @@ async function projectCatalog(): Promise<DokionManifest> {
   return builtinCatalog as DokionManifest;
 }
 
-async function listCatalog(kind: "skills" | "tools" | "plugins" | "loops"): Promise<void> {
+async function listCatalog(kind: "skills" | "tools" | "plugins" | "loops", format: CliOutputFormat): Promise<void> {
   const manifest = await projectCatalog();
   if (kind === "loops") {
-    print(manifest.loops?.definitions ?? []);
+    print(manifest.loops?.definitions ?? [], format);
     return;
   }
   const key = kind === "plugins" ? "plugins_and_adapters" : kind;
-  print(manifest.capability_catalog?.[key] ?? []);
+  print(manifest.capability_catalog?.[key] ?? [], format);
 }
 
-async function doctor(): Promise<void> {
+async function doctor(format: CliOutputFormat): Promise<void> {
   const platform = detectAgentPlatform();
   const checks = {
     bun: Bun.version,
@@ -133,7 +138,7 @@ async function doctor(): Promise<void> {
     state: await Bun.file(join(root, ".dokion/state.json")).exists(),
     catalog: (await Bun.file(join(root, "dokion.json")).exists()) ? "project:dokion.json" : "builtin:dokion.json"
   };
-  print({ checks, platform, healthy: Boolean(checks.git) });
+  print({ checks, platform, healthy: Boolean(checks.git) }, format);
 }
 
 type DecisionInvocation = Extract<CliInvocation, { command: "approve" | "reject" }>;
@@ -148,7 +153,7 @@ async function decide(invocation: DecisionInvocation): Promise<void> {
   });
   const state = await new StateStore(root).load();
   await writeHardeningReport(root, state);
-  print(record);
+  print(record, invocation.format);
 }
 
 async function main(argv: readonly string[] = process.argv.slice(2)): Promise<void> {
@@ -156,53 +161,53 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
 
   switch (invocation.command) {
     case "help":
-      help();
+      help(invocation.format);
       return;
     case "init":
-      await initialize();
+      await initialize(invocation.format);
       return;
     case "inspect":
-      print(await inspectProject(root));
+      print(await inspectProject(root), invocation.format);
       return;
     case "doctor":
-      await doctor();
+      await doctor(invocation.format);
       return;
     case "validate":
-      await validate(invocation.catalogOnly);
+      await validate(invocation.catalogOnly, invocation.format);
       return;
     case "run":
-      print(await new ExecutionEngine(root).run());
+      print(await new ExecutionEngine(root).run(), invocation.format);
       return;
     case "resume":
-      print(await new ExecutionEngine(root).resume());
+      print(await new ExecutionEngine(root).resume(), invocation.format);
       return;
     case "verify":
-      await validate(false);
+      await validate(false, invocation.format);
       return;
     case "approve":
     case "reject":
       await decide(invocation);
       return;
     case "status":
-      await status();
+      await status(invocation.format);
       return;
     case "report":
-      await report();
+      await report(invocation.format);
       return;
     case "findings":
-      print(await listFindings(root));
+      print(await listFindings(root), invocation.format);
       return;
     case "tools":
-      await listCatalog("tools");
+      await listCatalog("tools", invocation.format);
       return;
     case "skills":
-      await listCatalog("skills");
+      await listCatalog("skills", invocation.format);
       return;
     case "plugins":
-      await listCatalog("plugins");
+      await listCatalog("plugins", invocation.format);
       return;
     case "loops":
-      await listCatalog("loops");
+      await listCatalog("loops", invocation.format);
       return;
   }
 }
@@ -210,10 +215,6 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
 try {
   await main();
 } catch (error) {
-  if (error instanceof DokionError) {
-    console.error(JSON.stringify({ error: error.code, message: error.message, details: error.details }, null, 2));
-  } else {
-    console.error(error instanceof Error ? error.stack ?? error.message : String(error));
-  }
+  writeCliDiagnostic(error, requestedCliOutputFormat(process.argv.slice(2)));
   process.exitCode = 1;
 }

@@ -95,7 +95,7 @@ describe("canonical CLI command registry", () => {
 
     expect(sorted(new Set(observedCases))).toEqual(sorted(new Set(expectedCases)));
     for (const builtin of CLI_BUILTIN_CASES) {
-      expect(parseCliInvocation([builtin])).toEqual({ command: "help" });
+      expect(parseCliInvocation([builtin])).toEqual({ command: "help", format: "human" });
     }
 
     for (const command of plannedCliCommands()) {

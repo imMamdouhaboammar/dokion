@@ -412,7 +412,7 @@ export function renderCliHelp(version: string): string {
     return `${group}:\n${lines.join("\n")}`;
   });
 
-  return `Dokion ${version}\n\nUsage: dokion <command>\n\n${sections.join("\n\n")}\n\nDokion never installs, selects, substitutes, reorders, or enables capabilities.`;
+  return `Dokion ${version}\n\nUsage: dokion <command> [--format human|json]\n\n${sections.join("\n\n")}\n\nDokion never installs, selects, substitutes, reorders, or enables capabilities.`;
 }
 
 export function manifestCliCommands(): ManifestCliCommand[] {
