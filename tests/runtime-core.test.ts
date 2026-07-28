@@ -3,6 +3,8 @@ import { access, cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/pro
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { initializeGitFixture } from "./helpers/git-fixture.ts";
+
 import { validateRepositoryContracts } from "../src/contracts/schema-validator.ts";
 import { ExecutionEngine } from "../src/engine/execution-engine.ts";
 import { assertPlaybookUnchanged, loadActivePlaybook } from "../src/playbook/load-playbook.ts";
@@ -16,6 +18,7 @@ async function createFixtureRoot(): Promise<string> {
   await mkdir(join(root, ".dokion"), { recursive: true });
   await cp(join(process.cwd(), "schemas"), join(root, "schemas"), { recursive: true });
   await cp(join(process.cwd(), "dokion.json"), join(root, "dokion.json"));
+  await initializeGitFixture(root);
   return root;
 }
 

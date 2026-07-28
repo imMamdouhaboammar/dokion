@@ -74,6 +74,7 @@ export class StateStore {
           degradations: platform.degradations
         },
         repository_identity: repositoryIdentity,
+        ...(baseline ? { baseline } : {}),
         playbook: {
           path: ".dokion/playbook.json",
           digest_algorithm: "sha256",

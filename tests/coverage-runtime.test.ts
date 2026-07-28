@@ -3,6 +3,8 @@ import { cp, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { initializeGitFixture } from "./helpers/git-fixture.ts";
+
 import { ExecutionEngine } from "../src/engine/execution-engine.ts";
 import { StateStore } from "../src/state/state-store.ts";
 
@@ -17,6 +19,7 @@ async function fixture(): Promise<string> {
   await cp(join(process.cwd(), "dokion.json"), join(root, "dokion.json"));
   await writeFile(join(root, "package.json"), JSON.stringify({ name: "coverage-runtime" }, null, 2));
   await writeFile(join(root, "src/index.ts"), "export const api = true;\n");
+  await initializeGitFixture(root);
 
   const digest = (character: string) => `sha256:${character.repeat(64)}`;
   const command = "printf 'verified\\n' >> .dokion/coverage.log";
