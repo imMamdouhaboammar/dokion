@@ -301,6 +301,22 @@
         "worktree_clean": {
           "type": "boolean"
         },
+        "worktree_policy": {
+          "type": "string",
+          "enum": [
+            "clean-only",
+            "allow-existing-dirty",
+            "snapshot-existing-dirty"
+          ]
+        },
+        "worktree_project_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "worktree_snapshot_digest": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
         "captured_at": {
           "type": "string",
           "format": "date-time"

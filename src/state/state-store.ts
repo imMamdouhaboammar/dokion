@@ -49,11 +49,21 @@ export class StateStore {
       }
 
       const now = new Date().toISOString();
-      const baseline = input.commitSha || input.branch || input.worktreeClean !== undefined
+      const baseline = input.commitSha
+        || input.branch
+        || input.worktreeClean !== undefined
+        || input.worktreePolicy
+        || input.worktreeProjectPath
+        || input.worktreeSnapshotDigest
         ? {
             ...(input.commitSha ? { commit: input.commitSha } : {}),
             ...(input.branch ? { branch: input.branch } : {}),
             ...(input.worktreeClean !== undefined ? { worktree_clean: input.worktreeClean } : {}),
+            ...(input.worktreePolicy ? { worktree_policy: input.worktreePolicy } : {}),
+            ...(input.worktreeProjectPath ? { worktree_project_path: input.worktreeProjectPath } : {}),
+            ...(input.worktreeSnapshotDigest
+              ? { worktree_snapshot_digest: input.worktreeSnapshotDigest }
+              : {}),
             captured_at: now
           }
         : undefined;

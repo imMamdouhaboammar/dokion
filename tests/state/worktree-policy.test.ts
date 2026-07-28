@@ -121,7 +121,12 @@ describe("declared dirty-worktree policy", () => {
     );
 
     expect(state.run.status).toBe("AWAITING_USER");
-    expect(state.baseline?.worktree_clean).toBe(true);
+    expect(state.baseline).toMatchObject({
+      worktree_clean: true,
+      worktree_policy: "clean-only",
+      worktree_project_path: ".",
+      worktree_snapshot_digest: baseline.snapshot_digest
+    });
     expect(baseline).toMatchObject({
       schema_version: 1,
       policy: "clean-only",
@@ -296,6 +301,25 @@ describe("declared dirty-worktree policy", () => {
     await expect(access(join(root, ".dokion/state.json"))).rejects.toBeDefined();
   });
 
+  test("rechecks clean-only before resume and preserves the paused state", async () => {
+    const root = await createGitRoot();
+    await writePausedPlaybook(root, "clean-only");
+    const engine = new ExecutionEngine(root);
+    const awaiting = await engine.run();
+    expect(awaiting.run.status).toBe("AWAITING_USER");
+    await writeFile(join(root, "tracked.txt"), "changed while paused\n");
+
+    await expect(engine.resume()).rejects.toMatchObject({
+      code: "DIRTY_WORKTREE_BLOCKED",
+      details: { policy: "clean-only", paths: ["tracked.txt"] }
+    });
+
+    const persisted = JSON.parse(await readFile(join(root, ".dokion/state.json"), "utf8"));
+    expect(persisted.run.status).toBe("AWAITING_USER");
+    expect(persisted.revision).toBe(awaiting.revision);
+    await expect(access(join(root, "policy.log"))).rejects.toBeDefined();
+  });
+
   test("scopes a nested project to its Git-relative paths and ignores siblings", async () => {
     const { gitRoot, projectRoot } = await createGitSubdirectory();
     await writePausedPlaybook(projectRoot, "snapshot-existing-dirty");
@@ -363,6 +387,57 @@ describe("declared dirty-worktree policy", () => {
       }
     })).rejects.toMatchObject({ code: "WORKTREE_SNAPSHOT_FAILED" });
     await expect(access(join(root, ".dokion/worktree-baseline.json"))).rejects.toBeDefined();
+  });
+
+  test("rejects a symlinked worktree baseline on resume", async () => {
+    const root = await createGitRoot();
+    await writePausedPlaybook(root, "clean-only");
+    const engine = new ExecutionEngine(root);
+    const awaiting = await engine.run();
+    expect(awaiting.run.status).toBe("AWAITING_USER");
+
+    const baselinePath = join(root, ".dokion/worktree-baseline.json");
+    const externalRoot = await mkdtemp(join(tmpdir(), "dokion-worktree-baseline-copy-"));
+    roots.push(externalRoot);
+    const externalBaseline = join(externalRoot, "baseline.json");
+    await writeFile(externalBaseline, await readFile(baselinePath));
+    await rm(baselinePath);
+    await symlink(externalBaseline, baselinePath);
+
+    await expect(engine.resume()).rejects.toMatchObject({
+      code: "WORKTREE_SNAPSHOT_FAILED"
+    });
+  });
+
+  test("rejects a self-consistent baseline replaced after the run started", async () => {
+    const root = await createGitRoot();
+    const playbook = await writePausedPlaybook(root, "allow-existing-dirty");
+    await writeFile(join(root, "tracked.txt"), "original dirty state\n");
+    const engine = new ExecutionEngine(root);
+    const awaiting = await engine.run();
+    expect(awaiting.run.status).toBe("AWAITING_USER");
+
+    await writeFile(join(root, "tracked.txt"), "replacement dirty state\n");
+    const policyModule = await import("../../src/git/worktree-policy.ts");
+    await policyModule.enforceWorktreePolicy(root, playbook as any);
+
+    await expect(engine.resume()).rejects.toMatchObject({
+      code: "WORKTREE_SNAPSHOT_FAILED"
+    });
+  });
+
+  test("rejects a worktree changed during resume verification", async () => {
+    const root = await createGitRoot();
+    const playbook = await writePausedPlaybook(root, "allow-existing-dirty");
+    await writeFile(join(root, "tracked.txt"), "pre-existing dirty\n");
+    const policyModule = await import("../../src/git/worktree-policy.ts");
+    await policyModule.enforceWorktreePolicy(root, playbook as any);
+
+    await expect(policyModule.verifyWorktreePolicyOnResume(root, playbook as any, {
+      afterInitialCapture: async () => {
+        await writeFile(join(root, "tracked.txt"), "changed during resume\n");
+      }
+    })).rejects.toMatchObject({ code: "WORKTREE_SNAPSHOT_FAILED" });
   });
 
   test("accepts only the three declared worktree policies", async () => {

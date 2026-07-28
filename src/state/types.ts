@@ -1,4 +1,5 @@
 import type { RepositoryIdentity, RepositoryIdentityDifference } from "../git/repository-identity.ts";
+import type { WorktreePolicy } from "../playbook/types.ts";
 import type { AgentPlatform, PlatformDegradation, PlatformProfile } from "../platform/types.ts";
 
 export type RunStatus = "RUNNING" | "AWAITING_USER" | "COMPLETED" | "STOPPED" | "BLOCKED" | "FAILED" | "TAINTED" | "STALE";
@@ -128,6 +129,9 @@ export interface DokionState {
     commit?: string;
     branch?: string;
     worktree_clean?: boolean;
+    worktree_policy?: WorktreePolicy;
+    worktree_project_path?: string;
+    worktree_snapshot_digest?: string;
     captured_at?: string;
   };
   profile?: {
@@ -154,6 +158,9 @@ export interface StateInitialization {
   commitSha?: string;
   branch?: string;
   worktreeClean?: boolean;
+  worktreePolicy?: WorktreePolicy;
+  worktreeProjectPath?: string;
+  worktreeSnapshotDigest?: string;
   platform?: PlatformProfile;
   agent?: AgentPlatform;
   profile?: Record<string, unknown>;
