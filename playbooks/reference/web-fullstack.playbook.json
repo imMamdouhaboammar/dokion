@@ -25,7 +25,8 @@
     "protected_paths": [
       ".dokion/playbook.json",
       "schemas/**"
-    ]
+    ],
+    "worktree_policy": "clean-only"
   },
   "registry": {
     "sources": [

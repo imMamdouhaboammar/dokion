@@ -137,6 +137,16 @@
             "schemas/**"
           ],
           "description": "Paths the orchestrator must never write. Enforced by PreToolUse hook where available, by digest comparison everywhere."
+        },
+        "worktree_policy": {
+          "type": "string",
+          "enum": [
+            "clean-only",
+            "allow-existing-dirty",
+            "snapshot-existing-dirty"
+          ],
+          "default": "clean-only",
+          "description": "Controls whether write-capable execution may begin with pre-existing user changes and whether their exact content is captured."
         }
       }
     },

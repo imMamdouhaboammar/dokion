@@ -3,6 +3,8 @@ import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { initializeGitFixture } from "./helpers/git-fixture.ts";
+
 import { evaluateApplicability } from "../src/applicability/evaluate-applicability.ts";
 import { ExecutionEngine } from "../src/engine/execution-engine.ts";
 import type { ProjectProfile } from "../src/inspect/project-inspector.ts";
@@ -39,6 +41,7 @@ async function runtimeFixture(): Promise<string> {
   await cp(join(process.cwd(), "schemas"), join(root, "schemas"), { recursive: true });
   await cp(join(process.cwd(), "dokion.json"), join(root, "dokion.json"));
   await writeFile(join(root, "package.json"), JSON.stringify({ name: "applicability-fixture", scripts: {} }, null, 2));
+  await initializeGitFixture(root);
 
   const raw = await readFile(join(process.cwd(), "playbooks/example.playbook.json"), "utf8");
   const playbook = JSON.parse(raw.replaceAll("sha256:PLACEHOLDER", `sha256:${"a".repeat(64)}`));

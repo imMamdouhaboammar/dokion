@@ -361,7 +361,22 @@ On Claude Code this is enforced by running the step in a subagent whose tool gra
 derived from the declared scope ([§8](#8-subagents-as-permission-enforcement)). Elsewhere it
 degrades to detection, recorded as `NO_SUBAGENT_ISOLATION`.
 
-### 5.4 What each agent actually gets
+### 5.4 Dirty worktree policy
+
+Before a write-capable run creates state, Dokion evaluates `enforcement.worktree_policy`.
+The allowed values are `clean-only`, `allow-existing-dirty`, and
+`snapshot-existing-dirty`; an omitted value defaults to `clean-only`.
+
+`clean-only` blocks before state mutation when Git reports pre-existing user changes.
+`allow-existing-dirty` records paths, status, mode, and digests without copying file content.
+`snapshot-existing-dirty` additionally records exact file bytes and symlink targets so the
+pre-run tree can be distinguished from later Dokion changes. The baseline is written
+atomically to `.dokion/worktree-baseline.json`; Dokion-owned runtime paths are excluded.
+Capture is bounded to 10,000 dirty entries, 64 MiB for one dirty file or Git output, and
+128 MiB of raw exact-snapshot data. Exceeding a bound, losing Git state, or failing to
+obtain an exact requested snapshot stops before state mutation.
+
+### 5.5 What each agent actually gets
 
 | Guarantee | Claude Code | Codex | Gemini CLI |
 |---|---|---|---|

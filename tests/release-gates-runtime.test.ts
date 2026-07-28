@@ -3,6 +3,8 @@ import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { initializeGitFixture } from "./helpers/git-fixture.ts";
+
 import { ExecutionEngine } from "../src/engine/execution-engine.ts";
 import { StateStore } from "../src/state/state-store.ts";
 
@@ -15,6 +17,7 @@ async function fixture(): Promise<string> {
   await cp(join(process.cwd(), "schemas"), join(root, "schemas"), { recursive: true });
   await cp(join(process.cwd(), "dokion.json"), join(root, "dokion.json"));
   await writeFile(join(root, "package.json"), JSON.stringify({ name: "gates-runtime" }, null, 2));
+  await initializeGitFixture(root);
 
   const verify = "printf 'step\\n' >> .dokion/order.log";
   const gate = "printf 'gate\\n' >> .dokion/gate.log";

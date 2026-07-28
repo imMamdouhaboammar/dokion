@@ -28,6 +28,16 @@ export type DokionPlatform = "claude_code" | "codex" | "gemini_cli" | "other";
 export type InapplicablePolicy = "SKIP" | "MARK_BLOCKED" | "STOP_STAGE";
 export type CoverageLaneStatus = "ASSIGNED" | "PARTIAL";
 export type ReadinessCap = "NOT_READY" | "CONDITIONALLY_READY" | "READY_FOR_STAGING";
+export type WorktreePolicy = "clean-only" | "allow-existing-dirty" | "snapshot-existing-dirty";
+
+export interface PlaybookEnforcement {
+  playbook_immutable?: boolean;
+  hash_algorithm?: "sha256" | "sha512";
+  verify_before_each_step?: boolean;
+  on_mutation?: "ABORT_TAINTED" | "REQUEST_USER_DECISION";
+  protected_paths?: string[];
+  worktree_policy?: WorktreePolicy;
+}
 
 export interface Applicability {
   when_paths_exist?: string[];
@@ -134,7 +144,7 @@ export interface DokionPlaybook {
     notes?: string;
   };
   authority: Record<string, unknown>;
-  enforcement?: Record<string, unknown>;
+  enforcement?: PlaybookEnforcement;
   registry?: Record<string, unknown>;
   defaults?: {
     approval?: ApprovalPolicy;

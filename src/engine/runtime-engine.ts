@@ -3,6 +3,7 @@ import { isApproved, latestDecision } from "../approvals/approval-store.ts";
 import { DokionError } from "../core/errors.ts";
 import { writeCommandEvidence } from "../evidence/evidence-store.ts";
 import { compareRepositoryIdentities, captureRepositoryIdentity, type RepositoryIdentityDifference } from "../git/repository-identity.ts";
+import { enforceWorktreePolicy } from "../git/worktree-policy.ts";
 import { inspectProject } from "../inspect/project-inspector.ts";
 import { assertPlaybookUnchanged, loadActivePlaybook } from "../playbook/load-playbook.ts";
 import type { LoadedPlaybook, PlaybookStage, PlaybookStep } from "../playbook/types.ts";
@@ -17,7 +18,6 @@ import { assertSequentialExecution, assertStageDependencies, assertStepDependenc
 interface GitContext {
   commitSha: string;
   branch?: string;
-  worktreeClean?: boolean;
 }
 
 type InapplicableOutcome = "CONTINUE" | "STOP_STAGE" | "STOP_RUN";
@@ -34,11 +34,9 @@ async function runGit(root: string, args: string[]): Promise<string | undefined>
 async function inspectGit(root: string): Promise<GitContext> {
   const commitSha = await runGit(root, ["rev-parse", "HEAD"]);
   const branch = await runGit(root, ["branch", "--show-current"]);
-  const status = await runGit(root, ["status", "--porcelain"]);
   return {
     commitSha: commitSha && /^[a-fA-F0-9]{7,40}$/.test(commitSha) ? commitSha : "0000000",
-    ...(branch ? { branch } : {}),
-    ...(status !== undefined ? { worktreeClean: status.length === 0 } : {})
+    ...(branch ? { branch } : {})
   };
 }
 
@@ -92,6 +90,7 @@ export class ExecutionEngine {
   protected async startRun(runId: string): Promise<DokionState> {
     const loaded = await loadActivePlaybook(this.root);
     assertSequentialExecution(loaded.data);
+    const worktreeBaseline = await enforceWorktreePolicy(this.root, loaded.data);
     const [git, profile, repositoryIdentity] = await Promise.all([
       inspectGit(this.root),
       inspectProject(this.root),
@@ -106,7 +105,7 @@ export class ExecutionEngine {
       repositoryIdentity,
       commitSha: repositoryIdentity.commit ?? git.commitSha,
       ...(branch ? { branch } : {}),
-      ...(git.worktreeClean !== undefined ? { worktreeClean: git.worktreeClean } : {}),
+      worktreeClean: !worktreeBaseline.dirty,
       agent: platform,
       profile: { ...profile },
       stages: loaded.data.stages.map((stage) => ({
