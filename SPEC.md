@@ -370,11 +370,16 @@ The allowed values are `clean-only`, `allow-existing-dirty`, and
 `clean-only` blocks before state mutation when Git reports pre-existing user changes.
 `allow-existing-dirty` records paths, status, mode, and digests without copying file content.
 `snapshot-existing-dirty` additionally records exact file bytes and symlink targets so the
-pre-run tree can be distinguished from later Dokion changes. The baseline is written
-atomically to `.dokion/worktree-baseline.json`; Dokion-owned runtime paths are excluded.
+pre-run tree can be distinguished from later Dokion changes. The baseline is scoped to the
+project path relative to the Git top level and written atomically to
+`.dokion/worktree-baseline.json`; sibling projects and Dokion-owned runtime paths are
+excluded. Status, staged and unstaged patches, and entry digests are recaptured before the
+baseline is accepted, including untracked files and symlinks.
+
 Capture is bounded to 10,000 dirty entries, 64 MiB for one dirty file or Git output, and
 128 MiB of raw exact-snapshot data. Exceeding a bound, losing Git state, or failing to
-obtain an exact requested snapshot stops before state mutation.
+obtain an exact requested snapshot stops before state mutation. Resume-time attribution of
+post-baseline Dokion changes remains part of checkpointed side-effect tracking.
 
 ### 5.5 What each agent actually gets
 
