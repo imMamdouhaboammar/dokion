@@ -3,7 +3,7 @@ import { isApproved, latestDecision } from "../approvals/approval-store.ts";
 import { DokionError } from "../core/errors.ts";
 import { writeCommandEvidence } from "../evidence/evidence-store.ts";
 import { compareRepositoryIdentities, captureRepositoryIdentity, type RepositoryIdentityDifference } from "../git/repository-identity.ts";
-import { enforceWorktreePolicy, verifyWorktreePolicyOnResume } from "../git/worktree-policy.ts";
+import { enforceWorktreePolicy } from "../git/worktree-policy.ts";
 import { inspectProject } from "../inspect/project-inspector.ts";
 import { assertPlaybookUnchanged, loadActivePlaybook } from "../playbook/load-playbook.ts";
 import type { LoadedPlaybook, PlaybookStage, PlaybookStep } from "../playbook/types.ts";
@@ -106,9 +106,6 @@ export class ExecutionEngine {
       commitSha: repositoryIdentity.commit ?? git.commitSha,
       ...(branch ? { branch } : {}),
       worktreeClean: !worktreeBaseline.dirty,
-      worktreePolicy: worktreeBaseline.policy,
-      worktreeProjectPath: worktreeBaseline.project_path,
-      worktreeSnapshotDigest: worktreeBaseline.snapshot_digest,
       agent: platform,
       profile: { ...profile },
       stages: loaded.data.stages.map((stage) => ({
@@ -142,22 +139,6 @@ export class ExecutionEngine {
     const currentIdentity = await captureRepositoryIdentity(this.root, loaded.digest);
     const identityDifferences = compareRepositoryIdentities(state.repository_identity, currentIdentity);
     if (identityDifferences.length > 0) return this.markStale(state, identityDifferences);
-    const expectedWorktreeDigest = state.baseline?.worktree_snapshot_digest;
-    if (!expectedWorktreeDigest) {
-      throw new DokionError(
-        "WORKTREE_SNAPSHOT_FAILED",
-        "Persisted state does not bind the run to a worktree baseline"
-      );
-    }
-    await verifyWorktreePolicyOnResume(this.root, loaded.data, {
-      expectedSnapshotDigest: expectedWorktreeDigest,
-      ...(state.baseline?.worktree_policy
-        ? { expectedPolicy: state.baseline.worktree_policy }
-        : {}),
-      ...(state.baseline?.worktree_project_path
-        ? { expectedProjectPath: state.baseline.worktree_project_path }
-        : {})
-    });
 
     state = await this.updateState((current) => {
       const run = { ...current.run, status: "RUNNING" as const };

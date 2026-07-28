@@ -12,7 +12,6 @@ export const MAX_WORKTREE_ENTRIES = 10_000;
 export const MAX_WORKTREE_FILE_BYTES = 64 * 1024 * 1024;
 export const MAX_GIT_CAPTURE_BYTES = 64 * 1024 * 1024;
 export const MAX_WORKTREE_SNAPSHOT_BYTES = 128 * 1024 * 1024;
-export const MAX_WORKTREE_BASELINE_BYTES = 192 * 1024 * 1024;
 
 type WorktreeEntryKind = "file" | "symlink" | "missing";
 
@@ -63,9 +62,6 @@ interface FileIdentity {
 }
 
 interface WorktreePolicyCaptureHooks {
-  expectedSnapshotDigest?: string;
-  expectedPolicy?: WorktreePolicy;
-  expectedProjectPath?: string;
   afterInitialStatusAndPatches?: () => Promise<void>;
   afterInitialCapture?: () => Promise<void>;
 }
@@ -421,42 +417,6 @@ function baselineDigest(input: Omit<WorktreeBaseline, "schema_version" | "captur
   return sha256(JSON.stringify(input));
 }
 
-async function readStoredBaseline(path: string): Promise<WorktreeBaseline> {
-  const snapshot = await readRegularFileSnapshot(
-    path,
-    undefined,
-    MAX_WORKTREE_BASELINE_BYTES
-  );
-  try {
-    const text = new TextDecoder("utf-8", { fatal: true }).decode(snapshot.bytes);
-    const value: unknown = JSON.parse(text);
-    if (!value || typeof value !== "object" || Array.isArray(value)) {
-      throw new Error("baseline root must be an object");
-    }
-    return value as WorktreeBaseline;
-  } catch (error) {
-    throw new DokionError(
-      "WORKTREE_SNAPSHOT_FAILED",
-      "Stored worktree baseline is not valid UTF-8 JSON",
-      { cause: error instanceof Error ? error.message : String(error) }
-    );
-  }
-}
-
-function assertBaselineIntegrity(baseline: WorktreeBaseline): void {
-  const {
-    schema_version: schemaVersion,
-    captured_at: _capturedAt,
-    snapshot_digest: observedDigest,
-    ...content
-  } = baseline;
-  if (schemaVersion !== 1 || observedDigest !== baselineDigest(content)) {
-    throw new DokionError(
-      "WORKTREE_SNAPSHOT_FAILED",
-      "Stored worktree baseline failed integrity validation"
-    );
-  }
-}
 
 export async function enforceWorktreePolicy(
   root: string,
@@ -521,92 +481,4 @@ export async function enforceWorktreePolicy(
 
   await writeJsonAtomic(join(scope.projectRoot, WORKTREE_BASELINE_PATH), baseline);
   return baseline;
-}
-
-export async function verifyWorktreePolicyOnResume(
-  root: string,
-  playbook: DokionPlaybook,
-  hooks: WorktreePolicyCaptureHooks = {}
-): Promise<void> {
-  const scope = await resolveGitScope(root);
-  const baseline = await readStoredBaseline(
-    join(scope.projectRoot, WORKTREE_BASELINE_PATH)
-  );
-  assertBaselineIntegrity(baseline);
-  if (
-    (hooks.expectedSnapshotDigest && baseline.snapshot_digest !== hooks.expectedSnapshotDigest)
-    || (hooks.expectedPolicy && baseline.policy !== hooks.expectedPolicy)
-    || (hooks.expectedProjectPath && baseline.project_path !== hooks.expectedProjectPath)
-  ) {
-    throw new DokionError(
-      "WORKTREE_SNAPSHOT_FAILED",
-      "Stored worktree baseline does not match the run state binding",
-      {
-        expected_snapshot_digest: hooks.expectedSnapshotDigest ?? null,
-        observed_snapshot_digest: baseline.snapshot_digest,
-        expected_policy: hooks.expectedPolicy ?? null,
-        observed_policy: baseline.policy,
-        expected_project_path: hooks.expectedProjectPath ?? null,
-        observed_project_path: baseline.project_path
-      }
-    );
-  }
-
-  const policy = resolvePolicy(playbook);
-  if (baseline.policy !== policy || baseline.project_path !== scope.projectPath) {
-    throw new DokionError(
-      "WORKTREE_SNAPSHOT_FAILED",
-      "Stored worktree baseline does not match the active project policy",
-      {
-        expected_policy: policy,
-        observed_policy: baseline.policy,
-        expected_project_path: scope.projectPath,
-        observed_project_path: baseline.project_path
-      }
-    );
-  }
-
-  const [statusEntries, patches] = await Promise.all([
-    readStatus(scope),
-    capturePatches(scope)
-  ]);
-  if (policy === "clean-only" && statusEntries.length > 0) {
-    throw new DokionError(
-      "DIRTY_WORKTREE_BLOCKED",
-      "Write-capable execution requires a clean worktree before resume",
-      { policy, paths: statusEntries.map((entry) => entry.path) }
-    );
-  }
-
-  const entries = await captureEntries(scope.projectRoot, statusEntries, false);
-  await hooks.afterInitialCapture?.();
-  const [finalStatus, finalPatches] = await Promise.all([
-    readStatus(scope),
-    capturePatches(scope)
-  ]);
-  const finalEntries = await captureEntries(scope.projectRoot, finalStatus, false);
-  if (
-    JSON.stringify(statusEntries) !== JSON.stringify(finalStatus)
-    || sha256(patches.index) !== sha256(finalPatches.index)
-    || sha256(patches.worktree) !== sha256(finalPatches.worktree)
-    || entriesDigest(entries) !== entriesDigest(finalEntries)
-  ) {
-    throw new DokionError(
-      "WORKTREE_SNAPSHOT_FAILED",
-      "Worktree changed during resume verification",
-      { policy, paths: finalStatus.map((entry) => entry.path) }
-    );
-  }
-
-  if (
-    baseline.index_patch_digest !== sha256(patches.index)
-    || baseline.worktree_patch_digest !== sha256(patches.worktree)
-    || entriesDigest(baseline.entries) !== entriesDigest(entries)
-  ) {
-    throw new DokionError(
-      "WORKTREE_SNAPSHOT_FAILED",
-      "Worktree changed after the run baseline was captured",
-      { policy, paths: statusEntries.map((entry) => entry.path) }
-    );
-  }
 }

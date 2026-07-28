@@ -126,7 +126,7 @@ Detailed acceptance criteria: `docs/backlog/state-execution-security.md`.
 - [x] **STATE-004** Hash-chain the append-only event journal · P0
 - [x] **STATE-005** Recover interrupted atomic writes · P0
 - [x] **STATE-006** Bind runs to repository identity · P0
-- [~] **STATE-007** Enforce declared dirty-worktree policy · P0
+- [x] **STATE-007** Enforce declared dirty-worktree policy · P0
 - [ ] **STATE-008** Handle termination signals safely · P0
 - [ ] **STATE-009** Checkpoint every external side effect · P0
 - [ ] **STATE-010** Add versioned state migrations · P1
