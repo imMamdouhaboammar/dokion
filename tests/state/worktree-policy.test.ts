@@ -5,25 +5,11 @@ import { join } from "node:path";
 
 import { validatePlaybookData } from "../../src/contracts/schema-validator.ts";
 import { ExecutionEngine } from "../../src/engine/execution-engine.ts";
-import { parseWorktreeStatus, readRegularFileSnapshot } from "../../src/git/worktree-policy.ts";
+import { enforceWorktreePolicy, parseWorktreeStatus, readRegularFileSnapshot } from "../../src/git/worktree-policy.ts";
+import { runGit } from "../helpers/git-fixture.ts";
 
 const roots: string[] = [];
 
-async function runGit(root: string, args: string[]): Promise<string> {
-  const child = Bun.spawn(["git", ...args], {
-    cwd: root,
-    stdout: "pipe",
-    stderr: "pipe",
-    stdin: "ignore"
-  });
-  const [exitCode, stdout, stderr] = await Promise.all([
-    child.exited,
-    child.stdout ? new Response(child.stdout).text() : "",
-    child.stderr ? new Response(child.stderr).text() : ""
-  ]);
-  if (exitCode !== 0) throw new Error(`git ${args.join(" ")} failed: ${stderr}`);
-  return stdout.trim();
-}
 async function createGitRoot(): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), "dokion-worktree-policy-"));
   roots.push(root);
@@ -38,6 +24,23 @@ async function createGitRoot(): Promise<string> {
   await runGit(root, ["add", "tracked.txt", "delete-me.txt", "dokion.json", ".gitignore"]);
   await runGit(root, ["commit", "-m", "baseline"]);
   return root;
+}
+
+async function createGitSubdirectory(projectName = "app"): Promise<{ gitRoot: string; projectRoot: string }> {
+  const gitRoot = await mkdtemp(join(tmpdir(), "dokion-worktree-policy-parent-"));
+  roots.push(gitRoot);
+  const projectRoot = join(gitRoot, projectName);
+  await mkdir(join(projectRoot, ".dokion"), { recursive: true });
+  await cp(join(process.cwd(), "dokion.json"), join(projectRoot, "dokion.json"));
+  await runGit(gitRoot, ["init", "-b", "main"]);
+  await runGit(gitRoot, ["config", "user.name", "Dokion Tests"]);
+  await runGit(gitRoot, ["config", "user.email", "dokion@example.invalid"]);
+  await writeFile(join(projectRoot, ".gitignore"), ".dokion/\nHARDENING.md\n");
+  await writeFile(join(projectRoot, "tracked.txt"), "project baseline\n");
+  await writeFile(join(gitRoot, "sibling.txt"), "sibling baseline\n");
+  await runGit(gitRoot, ["add", "-A"]);
+  await runGit(gitRoot, ["commit", "-m", "subdirectory baseline"]);
+  return { gitRoot, projectRoot };
 }
 
 async function readFixturePlaybook(): Promise<Record<string, any>> {
@@ -238,6 +241,14 @@ describe("declared dirty-worktree policy", () => {
     ]);
   });
 
+  test("preserves literal backslashes in Git paths on POSIX", () => {
+    const bytes = new TextEncoder().encode("?? folder\\name.txt\0");
+
+    expect(parseWorktreeStatus(bytes)).toEqual([
+      { path: "folder\\name.txt", status: "??" }
+    ]);
+  });
+
   test("fails closed when dirty entry count exceeds the configured capture bound", () => {
     const bytes = new TextEncoder().encode("?? one.txt\0?? two.txt\0");
 
@@ -283,6 +294,75 @@ describe("declared dirty-worktree policy", () => {
       details: { exit_code: 128 }
     });
     await expect(access(join(root, ".dokion/state.json"))).rejects.toBeDefined();
+  });
+
+  test("scopes a nested project to its Git-relative paths and ignores siblings", async () => {
+    const { gitRoot, projectRoot } = await createGitSubdirectory();
+    await writePausedPlaybook(projectRoot, "snapshot-existing-dirty");
+    await writeFile(join(projectRoot, "tracked.txt"), "project dirty\n");
+    await writeFile(join(gitRoot, "sibling.txt"), "sibling dirty\n");
+
+    const state = await new ExecutionEngine(projectRoot).run();
+    const baseline = JSON.parse(
+      await readFile(join(projectRoot, ".dokion/worktree-baseline.json"), "utf8")
+    );
+
+    expect(state.run.status).toBe("AWAITING_USER");
+    expect(baseline.project_path).toBe("app");
+    expect(baseline.entries).toEqual([
+      expect.objectContaining({
+        path: "tracked.txt",
+        status: " M",
+        content: Buffer.from("project dirty\n").toString("base64")
+      })
+    ]);
+    expect(JSON.stringify(baseline)).not.toContain("sibling.txt");
+  });
+
+  test("treats Git pathspec characters in a nested project name literally", async () => {
+    const { projectRoot } = await createGitSubdirectory(":(glob)app*");
+    await writePausedPlaybook(projectRoot, "snapshot-existing-dirty");
+    await writeFile(join(projectRoot, "tracked.txt"), "literal path dirty\n");
+
+    const state = await new ExecutionEngine(projectRoot).run();
+    const baseline = JSON.parse(
+      await readFile(join(projectRoot, ".dokion/worktree-baseline.json"), "utf8")
+    );
+
+    expect(state.run.status).toBe("AWAITING_USER");
+    expect(baseline.project_path).toBe(":(glob)app*");
+    expect(baseline.entries).toEqual([
+      expect.objectContaining({
+        path: "tracked.txt",
+        content: Buffer.from("literal path dirty\n").toString("base64")
+      })
+    ]);
+  });
+
+  test("rejects content changed after initial status and patches are captured", async () => {
+    const root = await createGitRoot();
+    const playbook = await writePausedPlaybook(root, "snapshot-existing-dirty");
+    await writeFile(join(root, "tracked.txt"), "first dirty version\n");
+
+    await expect(enforceWorktreePolicy(root, playbook as any, {
+      afterInitialStatusAndPatches: async () => {
+        await writeFile(join(root, "tracked.txt"), "second dirty version\n");
+      }
+    })).rejects.toMatchObject({ code: "WORKTREE_SNAPSHOT_FAILED" });
+    await expect(access(join(root, ".dokion/worktree-baseline.json"))).rejects.toBeDefined();
+  });
+
+  test("rejects an untracked file changed after its initial capture", async () => {
+    const root = await createGitRoot();
+    const playbook = await writePausedPlaybook(root, "snapshot-existing-dirty");
+    await writeFile(join(root, "generated.txt"), "first version\n");
+
+    await expect(enforceWorktreePolicy(root, playbook as any, {
+      afterInitialCapture: async () => {
+        await writeFile(join(root, "generated.txt"), "second version\n");
+      }
+    })).rejects.toMatchObject({ code: "WORKTREE_SNAPSHOT_FAILED" });
+    await expect(access(join(root, ".dokion/worktree-baseline.json"))).rejects.toBeDefined();
   });
 
   test("accepts only the three declared worktree policies", async () => {
