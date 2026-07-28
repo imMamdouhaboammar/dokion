@@ -35,9 +35,9 @@ A user-directed hardening runtime for Claude Code, Codex, Gemini CLI, and ordina
   </table>
   <p><strong>Daily build pulse</strong></p>
   <ul>
-      <li>23 commits landed: docs: add dynamic project story card; security: add repository threat model.</li>
-      <li>29 pull requests updated, led by #29: docs: add dynamic project story card.</li>
-      <li>Daily summary covers 52 public activity items from the last 7 days.</li>
+      <li>11 commits landed: docs: detail production readiness workstreams (#40); feat: bind resume to repository identity (#39).</li>
+      <li>11 pull requests updated, led by #40: docs: detail production readiness workstreams.</li>
+      <li>Daily summary covers 22 public activity items from the last 1 day.</li>
   </ul>
 </details>
 <!-- project-story:end -->
