@@ -1,6 +1,6 @@
 import { constants } from "node:fs";
-import { lstat, open, readlink } from "node:fs/promises";
-import { isAbsolute, join } from "node:path";
+import { lstat, open, readlink, realpath } from "node:fs/promises";
+import { isAbsolute, join, relative, sep } from "node:path";
 
 import { sha256 } from "../core/digest.ts";
 import { DokionError } from "../core/errors.ts";
@@ -28,6 +28,7 @@ export interface WorktreeBaselineEntry {
 
 export interface WorktreeBaseline {
   schema_version: 1;
+  project_path: string;
   policy: WorktreePolicy;
   captured_at: string;
   dirty: boolean;
@@ -44,12 +45,38 @@ export interface WorktreeStatusEntry {
   path: string;
 }
 
+interface GitScope {
+  gitRoot: string;
+  projectRoot: string;
+  projectPath: string;
+}
+
+interface WorktreePatches {
+  index: Uint8Array;
+  worktree: Uint8Array;
+}
+
+interface FileIdentity {
+  dev: number;
+  ino: number;
+}
+
+interface WorktreePolicyCaptureHooks {
+  afterInitialStatusAndPatches?: () => Promise<void>;
+  afterInitialCapture?: () => Promise<void>;
+}
+
 function isMissing(error: unknown): boolean {
   return error instanceof Error && "code" in error && error.code === "ENOENT";
 }
 
+function nativeRelativeToGitPath(path: string): string {
+  return sep === "/" ? path : path.split(sep).join("/");
+}
+
 function assertRepositoryPath(path: string): void {
-  if (!path || isAbsolute(path) || path.split("/").includes("..")) {
+  const traversalPath = process.platform === "win32" ? path.replaceAll("\\", "/") : path;
+  if (!path || isAbsolute(path) || traversalPath.split("/").includes("..")) {
     throw new DokionError("WORKTREE_SNAPSHOT_FAILED", "Git returned an unsafe repository path", {
       path
     });
@@ -62,6 +89,16 @@ function isDokionOwned(path: string): boolean {
     || path === "HARDENING.md"
     || path === ".git"
     || path.startsWith(".git/");
+}
+
+function decodeGitText(output: Uint8Array, operation: string): string {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(output);
+  } catch (error) {
+    throw new DokionError("WORKTREE_POLICY_UNAVAILABLE", `Git returned invalid UTF-8 while attempting to ${operation}`, {
+      cause: error instanceof Error ? error.message : String(error)
+    });
+  }
 }
 
 export function parseWorktreeStatus(
@@ -83,8 +120,7 @@ export function parseWorktreeStatus(
     const status = field.slice(0, 2);
     const path = field.slice(3);
     assertRepositoryPath(path);
-
-    if (!isDokionOwned(path)) entries.push({ status, path });
+    entries.push({ status, path });
     if (!status.includes("R") && !status.includes("C")) continue;
 
     const originalPath = fields[index + 1];
@@ -94,10 +130,9 @@ export function parseWorktreeStatus(
       });
     }
     index += 1;
-    assertRepositoryPath(originalPath);
-    if (status.includes("R") && !isDokionOwned(originalPath)) {
-      entries.push({ status: " D", path: originalPath });
-    }
+    const normalizedOriginal = originalPath;
+    assertRepositoryPath(normalizedOriginal);
+    if (status.includes("R")) entries.push({ status: " D", path: normalizedOriginal });
   }
 
   const uniqueEntries = Array.from(new Map(entries.map((entry) => [entry.path, entry])).values())
@@ -112,68 +147,121 @@ export function parseWorktreeStatus(
 }
 
 async function runGitBytes(root: string, args: string[], operation: string): Promise<Uint8Array> {
-  const child = Bun.spawn(["git", ...args], {
-    cwd: root,
-    stdout: "pipe",
-    stderr: "pipe",
-    stdin: "ignore",
-    maxBuffer: MAX_GIT_CAPTURE_BYTES
-  });
-  const [stdout, stderr, exitCode] = await Promise.all([
-    child.stdout ? new Response(child.stdout).arrayBuffer() : new ArrayBuffer(0),
-    child.stderr ? new Response(child.stderr).text() : "",
-    child.exited
-  ]);
-  if (stdout.byteLength > MAX_GIT_CAPTURE_BYTES) {
-    throw new DokionError("WORKTREE_SNAPSHOT_FAILED", "Git output exceeds the capture limit", {
-      operation,
-      bytes: stdout.byteLength,
-      max_bytes: MAX_GIT_CAPTURE_BYTES
+  let child;
+  try {
+    child = Bun.spawn(["git", ...args], {
+      cwd: root,
+      stdout: "pipe",
+      stderr: "pipe",
+      stdin: "ignore",
+      maxBuffer: MAX_GIT_CAPTURE_BYTES
     });
-  }
-  if (exitCode !== 0) {
+    const [stdout, stderr, exitCode] = await Promise.all([
+      child.stdout ? new Response(child.stdout).arrayBuffer() : new ArrayBuffer(0),
+      child.stderr ? new Response(child.stderr).text() : "",
+      child.exited
+    ]);
+    if (stdout.byteLength > MAX_GIT_CAPTURE_BYTES) {
+      throw new DokionError("WORKTREE_SNAPSHOT_FAILED", "Git output exceeds the capture limit", {
+        operation,
+        bytes: stdout.byteLength,
+        max_bytes: MAX_GIT_CAPTURE_BYTES
+      });
+    }
+    if (exitCode !== 0) {
+      throw new DokionError("WORKTREE_POLICY_UNAVAILABLE", `Unable to ${operation}`, {
+        exit_code: exitCode,
+        error: stderr.trim() || `git ${args[0] ?? "command"} failed`
+      });
+    }
+    return new Uint8Array(stdout);
+  } catch (error) {
+    if (error instanceof DokionError) throw error;
     throw new DokionError("WORKTREE_POLICY_UNAVAILABLE", `Unable to ${operation}`, {
-      exit_code: exitCode,
-      error: stderr.trim() || `git ${args[0] ?? "command"} failed`
+      cause: error instanceof Error ? error.message : String(error)
     });
   }
-  return new Uint8Array(stdout);
 }
 
-async function readStatus(root: string): Promise<WorktreeStatusEntry[]> {
+async function resolveGitScope(root: string): Promise<GitScope> {
+  const projectRoot = await realpath(root);
+  const topLevelOutput = await runGitBytes(projectRoot, ["rev-parse", "--show-toplevel"], "resolve the Git top level");
+  const topLevel = decodeGitText(topLevelOutput, "resolve the Git top level").trim();
+  const gitRoot = await realpath(topLevel);
+  const relativeProject = nativeRelativeToGitPath(relative(gitRoot, projectRoot));
+  if (isAbsolute(relativeProject) || relativeProject === ".." || relativeProject.startsWith("../")) {
+    throw new DokionError("WORKTREE_POLICY_UNAVAILABLE", "Project root is outside the resolved Git worktree", {
+      project_root: projectRoot
+    });
+  }
+  return {
+    gitRoot,
+    projectRoot,
+    projectPath: relativeProject || "."
+  };
+}
+
+function scopeStatusEntries(
+  entries: WorktreeStatusEntry[],
+  scope: GitScope
+): WorktreeStatusEntry[] {
+  const scoped: WorktreeStatusEntry[] = [];
+  for (const entry of entries) {
+    let path: string | undefined;
+    if (scope.projectPath === ".") path = entry.path;
+    else if (entry.path.startsWith(`${scope.projectPath}/`)) path = entry.path.slice(scope.projectPath.length + 1);
+    if (!path) continue;
+    assertRepositoryPath(path);
+    if (!isDokionOwned(path)) scoped.push({ ...entry, path });
+  }
+  const unique = Array.from(new Map(scoped.map((entry) => [entry.path, entry])).values())
+    .sort((left, right) => left.path.localeCompare(right.path));
+  if (unique.length > MAX_WORKTREE_ENTRIES) {
+    throw new DokionError("WORKTREE_SNAPSHOT_FAILED", "Dirty worktree exceeds the entry capture limit", {
+      entries: unique.length,
+      max_entries: MAX_WORKTREE_ENTRIES
+    });
+  }
+  return unique;
+}
+
+async function readStatus(scope: GitScope): Promise<WorktreeStatusEntry[]> {
   const output = await runGitBytes(
-    root,
-    ["status", "--porcelain=v1", "-z", "--untracked-files=all"],
+    scope.gitRoot,
+    ["status", "--porcelain=v1", "-z", "--untracked-files=all", ...scopedPathspec(scope)],
     "inspect the Git worktree"
   );
-  return parseWorktreeStatus(output);
+  return scopeStatusEntries(parseWorktreeStatus(output), scope);
 }
 
-interface WorktreePatches {
-  index: Uint8Array;
-  worktree: Uint8Array;
+function scopedPathspec(scope: GitScope): string[] {
+  const prefix = scope.projectPath === "." ? "" : `${scope.projectPath}/`;
+  const project = scope.projectPath === "."
+    ? ":(top,glob)**"
+    : `:(top,literal)${scope.projectPath}`;
+  return [
+    "--",
+    project,
+    `:(top,exclude,glob)${prefix}.dokion/**`,
+    `:(top,exclude,literal)${prefix}HARDENING.md`
+  ];
 }
 
-async function capturePatches(root: string): Promise<WorktreePatches> {
-  const pathspec = ["--", ".", ":(exclude).dokion/**", ":(exclude)HARDENING.md"];
+async function capturePatches(scope: GitScope): Promise<WorktreePatches> {
+  const pathspec = scopedPathspec(scope);
   const [index, worktree] = await Promise.all([
     runGitBytes(
-      root,
-      ["diff", "--cached", "--binary", "--full-index", "--no-ext-diff", "--no-renames", ...pathspec],
+      scope.gitRoot,
+      ["diff", "--cached", "--binary", "--full-index", "--no-ext-diff", "--no-textconv", "--no-renames", ...pathspec],
       "capture the staged worktree patch"
     ),
     runGitBytes(
-      root,
-      ["diff", "--binary", "--full-index", "--no-ext-diff", "--no-renames", ...pathspec],
+      scope.gitRoot,
+      ["diff", "--binary", "--full-index", "--no-ext-diff", "--no-textconv", "--no-renames", ...pathspec],
       "capture the unstaged worktree patch"
     )
   ]);
   return { index, worktree };
-}
-
-interface FileIdentity {
-  dev: number;
-  ino: number;
 }
 
 export async function readRegularFileSnapshot(
@@ -289,16 +377,58 @@ async function captureEntry(
   }
 }
 
+async function captureEntries(
+  root: string,
+  statusEntries: WorktreeStatusEntry[],
+  includeContent: boolean
+): Promise<WorktreeBaselineEntry[]> {
+  const entries: WorktreeBaselineEntry[] = [];
+  for (const entry of statusEntries) entries.push(await captureEntry(root, entry, includeContent));
+  return entries;
+}
+
+function comparableEntries(entries: WorktreeBaselineEntry[]): Array<Omit<WorktreeBaselineEntry, "content" | "target">> {
+  return entries.map(({ content: _content, target: _target, ...entry }) => entry);
+}
+
+function entriesDigest(entries: WorktreeBaselineEntry[]): string {
+  return sha256(JSON.stringify(comparableEntries(entries)));
+}
+
 function resolvePolicy(playbook: DokionPlaybook): WorktreePolicy {
   return playbook.enforcement?.worktree_policy ?? "clean-only";
 }
 
+function patchFields(patches: WorktreePatches, includeContent: boolean): Pick<
+  WorktreeBaseline,
+  "index_patch_digest" | "worktree_patch_digest" | "index_patch" | "worktree_patch"
+> {
+  return {
+    index_patch_digest: sha256(patches.index),
+    worktree_patch_digest: sha256(patches.worktree),
+    ...(includeContent ? {
+      index_patch: Buffer.from(patches.index).toString("base64"),
+      worktree_patch: Buffer.from(patches.worktree).toString("base64")
+    } : {})
+  };
+}
+
+function baselineDigest(input: Omit<WorktreeBaseline, "schema_version" | "captured_at" | "snapshot_digest">): string {
+  return sha256(JSON.stringify(input));
+}
+
+
 export async function enforceWorktreePolicy(
   root: string,
-  playbook: DokionPlaybook
+  playbook: DokionPlaybook,
+  hooks: WorktreePolicyCaptureHooks = {}
 ): Promise<WorktreeBaseline> {
   const policy = resolvePolicy(playbook);
-  const statusEntries = await readStatus(root);
+  const scope = await resolveGitScope(root);
+  const [statusEntries, initialPatches] = await Promise.all([
+    readStatus(scope),
+    capturePatches(scope)
+  ]);
   if (policy === "clean-only" && statusEntries.length > 0) {
     throw new DokionError(
       "DIRTY_WORKTREE_BLOCKED",
@@ -308,21 +438,19 @@ export async function enforceWorktreePolicy(
   }
 
   const includeContent = policy === "snapshot-existing-dirty";
-  const initialPatches = await capturePatches(root);
-  const entries: WorktreeBaselineEntry[] = [];
-  for (const entry of statusEntries) {
-    entries.push(await captureEntry(root, entry, includeContent));
-  }
-  const [finalStatus, finalPatches] = await Promise.all([
-    readStatus(root),
-    capturePatches(root)
-  ]);
-  const indexPatchDigest = sha256(initialPatches.index);
-  const worktreePatchDigest = sha256(initialPatches.worktree);
+  await hooks.afterInitialStatusAndPatches?.();
+  const entries = await captureEntries(scope.projectRoot, statusEntries, includeContent);
+  await hooks.afterInitialCapture?.();
+  const finalStatus = await readStatus(scope);
+  const finalPatches = await capturePatches(scope);
+  const finalEntries = await captureEntries(scope.projectRoot, finalStatus, false);
+  const initialPatchFields = patchFields(initialPatches, includeContent);
+  const finalPatchFields = patchFields(finalPatches, false);
   if (
     JSON.stringify(statusEntries) !== JSON.stringify(finalStatus)
-    || indexPatchDigest !== sha256(finalPatches.index)
-    || worktreePatchDigest !== sha256(finalPatches.worktree)
+    || initialPatchFields.index_patch_digest !== finalPatchFields.index_patch_digest
+    || initialPatchFields.worktree_patch_digest !== finalPatchFields.worktree_patch_digest
+    || entriesDigest(entries) !== entriesDigest(finalEntries)
   ) {
     throw new DokionError("WORKTREE_SNAPSHOT_FAILED", "Dirty worktree changed during baseline capture");
   }
@@ -337,25 +465,20 @@ export async function enforceWorktreePolicy(
       max_bytes: MAX_WORKTREE_SNAPSHOT_BYTES
     });
   }
-  const patchFields = {
-    index_patch_digest: indexPatchDigest,
-    worktree_patch_digest: worktreePatchDigest,
-    ...(includeContent ? {
-      index_patch: Buffer.from(initialPatches.index).toString("base64"),
-      worktree_patch: Buffer.from(initialPatches.worktree).toString("base64")
-    } : {})
-  };
-  const snapshotDigest = sha256(JSON.stringify({ policy, dirty, entries, ...patchFields }));
-  const baseline: WorktreeBaseline = {
-    schema_version: 1,
+  const content = {
+    project_path: scope.projectPath,
     policy,
-    captured_at: new Date().toISOString(),
     dirty,
     entries,
-    ...patchFields,
-    snapshot_digest: snapshotDigest
+    ...initialPatchFields
+  };
+  const baseline: WorktreeBaseline = {
+    schema_version: 1,
+    ...content,
+    captured_at: new Date().toISOString(),
+    snapshot_digest: baselineDigest(content)
   };
 
-  await writeJsonAtomic(join(root, WORKTREE_BASELINE_PATH), baseline);
+  await writeJsonAtomic(join(scope.projectRoot, WORKTREE_BASELINE_PATH), baseline);
   return baseline;
 }
