@@ -1,5 +1,5 @@
-import { runCapabilityAudit, type CapabilityAuditReport } from '../../inspect/doctor';
+import { runDoctorAudit, type DoctorAuditReport } from "../../inspect/doctor.ts";
 
-export function handleDoctorCommand(): CapabilityAuditReport {
-  return runCapabilityAudit();
+export async function handleDoctorCommand(root = process.cwd()): Promise<DoctorAuditReport> {
+  return runDoctorAudit(root);
 }

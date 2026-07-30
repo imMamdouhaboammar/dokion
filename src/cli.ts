@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { recordApproval } from "./approvals/approval-store.ts";
 import { builtinCatalog } from "./catalog/builtin-catalog.ts";
 import { renderCliHelp } from "./cli/command-registry.ts";
+import { handleDoctorCommand } from "./cli/handlers/doctor.ts";
 import { handlePlan } from "./cli/handlers/plan.ts";
 import { writeCliDiagnostic, writeCliResult } from "./cli/output.ts";
 import { parseCliInvocation, requestedCliOutputFormat } from "./cli/parser.ts";
@@ -16,7 +17,6 @@ import { readJson } from "./core/json.ts";
 import { ExecutionEngine } from "./engine/execution-engine.ts";
 import { listFindings } from "./findings/finding-store.ts";
 import { inspectProject } from "./inspect/project-inspector.ts";
-import { detectAgentPlatform } from "./platform/platform-detector.ts";
 import { loadActivePlaybook } from "./playbook/load-playbook.ts";
 import { writeHardeningReport } from "./report/render-hardening.ts";
 import { DOKION_VERSION } from "./runtime/package-metadata.ts";
@@ -151,19 +151,6 @@ async function listCatalog(kind: "skills" | "tools" | "plugins" | "loops", forma
   print(manifest.capability_catalog?.[key] ?? [], format);
 }
 
-async function doctor(format: CliOutputFormat): Promise<void> {
-  const platform = detectAgentPlatform();
-  const checks = {
-    bun: Bun.version,
-    git: Bun.which("git") ?? null,
-    python3_optional: Bun.which("python3") ?? null,
-    active_playbook: await Bun.file(join(root, ".dokion/playbook.json")).exists(),
-    state: await Bun.file(join(root, ".dokion/state.json")).exists(),
-    catalog: (await Bun.file(join(root, "dokion.json")).exists()) ? "project:dokion.json" : "builtin:dokion.json"
-  };
-  print({ checks, platform, healthy: Boolean(checks.git) }, format);
-}
-
 type DecisionInvocation = Extract<CliInvocation, { command: "approve" | "reject" }>;
 
 async function decide(invocation: DecisionInvocation): Promise<void> {
@@ -192,9 +179,12 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
     case "inspect":
       print(await inspectProject(root), invocation.format);
       return;
-    case "doctor":
-      await doctor(invocation.format);
+    case "doctor": {
+      const audit = await handleDoctorCommand(root);
+      print(audit, invocation.format);
+      if (!audit.healthy) process.exitCode = 1;
       return;
+    }
     case "plan":
       print(await handlePlan(root), invocation.format);
       return;
