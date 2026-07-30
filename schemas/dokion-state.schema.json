@@ -785,69 +785,183 @@
     },
     "completion": {
       "type": "object",
-      "description": "A completion claim is valid only when every criterion below is true. Criteria are recorded individually so the claim is auditable rather than asserted.",
+      "description": "Versioned criterion-by-criterion completion evaluation. A claim is valid only when every required criterion is present, fresh, and passing.",
       "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "evaluator_version",
+        "evaluated_at",
+        "claimed",
+        "criteria",
+        "missing_required",
+        "failing_required"
+      ],
       "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "evaluator_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evaluated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
         "claimed": {
-          "type": "boolean",
-          "default": false
+          "type": "boolean"
         },
         "claimed_at": {
           "type": "string",
           "format": "date-time"
         },
         "final_commit": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{40}$"
         },
         "criteria": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "all_required_steps_succeeded": {
-              "type": "boolean"
-            },
-            "all_verification_commands_passed": {
-              "type": "boolean"
-            },
-            "all_release_gates_passed": {
-              "type": "boolean"
-            },
-            "no_blocking_findings_open": {
-              "type": "boolean"
-            },
-            "required_approvals_recorded": {
-              "type": "boolean"
-            },
-            "declared_manual_reviews_complete": {
-              "type": "boolean"
-            },
-            "results_tied_to_commit": {
-              "type": "boolean"
-            },
-            "capability_manifest_reported": {
-              "type": "boolean"
-            },
-            "execution_order_reported": {
-              "type": "boolean"
-            },
-            "skipped_steps_reported": {
-              "type": "boolean"
-            },
-            "unapplied_recommendations_reported": {
-              "type": "boolean"
-            },
-            "playbook_digest_stable": {
-              "type": "boolean"
-            },
-            "no_unacknowledged_blocking_lane": {
-              "type": "boolean"
-            },
-            "readiness_statement_qualified": {
-              "type": "boolean"
+          "type": "array",
+          "minItems": 14,
+          "maxItems": 14,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "status",
+              "required",
+              "evaluator_version",
+              "evaluated_at",
+              "freshness",
+              "evidence"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "enum": [
+                  "all_required_steps_succeeded",
+                  "all_verification_commands_passed",
+                  "all_release_gates_passed",
+                  "no_blocking_findings_open",
+                  "required_approvals_recorded",
+                  "declared_manual_reviews_complete",
+                  "results_tied_to_commit",
+                  "capability_manifest_reported",
+                  "execution_order_reported",
+                  "skipped_steps_reported",
+                  "unapplied_recommendations_reported",
+                  "playbook_digest_stable",
+                  "no_unacknowledged_blocking_lane",
+                  "readiness_statement_qualified"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "PASS",
+                  "FAIL",
+                  "BLOCKED",
+                  "NOT_APPLICABLE"
+                ]
+              },
+              "required": {
+                "const": true
+              },
+              "evaluator_version": {
+                "type": "string",
+                "minLength": 1
+              },
+              "evaluated_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "freshness": {
+                "type": "string",
+                "enum": [
+                  "FRESH",
+                  "STALE",
+                  "UNKNOWN"
+                ]
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "uniqueItems": true
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           }
+        },
+        "missing_required": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "all_required_steps_succeeded",
+              "all_verification_commands_passed",
+              "all_release_gates_passed",
+              "no_blocking_findings_open",
+              "required_approvals_recorded",
+              "declared_manual_reviews_complete",
+              "results_tied_to_commit",
+              "capability_manifest_reported",
+              "execution_order_reported",
+              "skipped_steps_reported",
+              "unapplied_recommendations_reported",
+              "playbook_digest_stable",
+              "no_unacknowledged_blocking_lane",
+              "readiness_statement_qualified"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "failing_required": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "all_required_steps_succeeded",
+              "all_verification_commands_passed",
+              "all_release_gates_passed",
+              "no_blocking_findings_open",
+              "required_approvals_recorded",
+              "declared_manual_reviews_complete",
+              "results_tied_to_commit",
+              "capability_manifest_reported",
+              "execution_order_reported",
+              "skipped_steps_reported",
+              "unapplied_recommendations_reported",
+              "playbook_digest_stable",
+              "no_unacknowledged_blocking_lane",
+              "readiness_statement_qualified"
+            ]
+          },
+          "uniqueItems": true
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "claimed": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "claimed_at",
+              "final_commit"
+            ]
+          }
+        }
+      ]
     },
     "log": {
       "type": "array",
