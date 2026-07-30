@@ -35,9 +35,9 @@ A user-directed hardening runtime for Claude Code, Codex, Gemini CLI, and ordina
   </table>
   <p><strong>Daily build pulse</strong></p>
   <ul>
-      <li>3 commits landed: Feat/state 007 dirty worktree policy (#43); fix: harden dirty-worktree baseline capture (#42).</li>
-      <li>3 pull requests updated, led by #43: Feat/state 007 dirty worktree policy.</li>
-      <li>Daily summary covers 6 public activity items from the last 1 day.</li>
+      <li>37 commits landed: Feat/state 007 dirty worktree policy (#43); fix: harden dirty-worktree baseline capture (#42).</li>
+      <li>43 pull requests updated, led by #43: Feat/state 007 dirty worktree policy.</li>
+      <li>Daily summary covers 80 public activity items from the last 7 days.</li>
   </ul>
 </details>
 <!-- project-story:end -->
