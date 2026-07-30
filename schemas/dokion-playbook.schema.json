@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/imMamdouhaboammar/dokion/main/schemas/dokion-playbook.schema.json",
   "title": "Dokion Playbook",
-  "description": "Validates `.dokion/playbook.json` \u2014 the user's approved selection, ordering, permissions and gates. This is the only file that authorises execution. `dokion.json` is a catalog of what exists; this is the record of what you chose. The orchestrator executes this file and may never edit it.",
+  "description": "Validates `.dokion/playbook.json` — the user's approved selection, ordering, permissions and gates. This is the only file that authorises execution. `dokion.json` is a catalog of what exists; this is the record of what you chose. The orchestrator executes this file and may never edit it.",
   "type": "object",
   "required": [
     "version",
@@ -377,7 +377,7 @@
         "immutable_reference": {
           "type": "string",
           "pattern": "^(sha256:[a-fA-F0-9]{64}|sha512:[a-fA-F0-9]{128}|git:[a-fA-F0-9]{40}|sha256:PLACEHOLDER)$",
-          "description": "Content digest or 40-char git commit SHA. Required when registry.require_digest is true. The literal 'sha256:PLACEHOLDER' is a template sentinel: it is schema-legal so reference playbooks can be structurally validated in CI, and it MUST be rejected by the runtime loader. Structural validity is not executability \u2014 a playbook containing any sentinel cannot run."
+          "description": "Content digest or 40-char git commit SHA. Required when registry.require_digest is true. The literal 'sha256:PLACEHOLDER' is a template sentinel: it is schema-legal so reference playbooks can be structurally validated in CI, and it MUST be rejected by the runtime loader. Structural validity is not executability — a playbook containing any sentinel cannot run."
         },
         "platforms": {
           "type": "object",
@@ -598,9 +598,9 @@
         "verification": {
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/$defs/commandSpec"
           },
-          "description": "Commands that must exit 0 before this step may report success. Evidence is stored per command."
+          "description": "Command specifications that must exit 0 before this step may report success. Argument vectors bypass shell parsing; legacy strings remain explicit higher-risk shell commands."
         },
         "success_conditions": {
           "type": "array",
@@ -715,8 +715,8 @@
           "pattern": "^[a-z0-9][a-z0-9-]*$"
         },
         "command": {
-          "type": "string",
-          "description": "Must exit 0 to pass."
+          "$ref": "#/$defs/commandSpec",
+          "description": "Must exit 0 to pass. Argument-vector form is preferred; a string is an explicit legacy shell command."
         },
         "condition": {
           "type": "string",
@@ -729,6 +729,40 @@
           "type": "string"
         }
       }
+    },
+    "commandSpec": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!.*\\u0000).*\\S.*$",
+          "description": "Legacy shell command. Accepted for compatibility and treated as higher risk."
+        },
+        {
+          "type": "object",
+          "required": [
+            "executable"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "executable": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^(?!.*\\u0000).*\\S.*$",
+              "description": "Executable identity, kept separate from its argument vector."
+            },
+            "args": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^(?!.*\\u0000).*$"
+              },
+              "default": [],
+              "description": "Ordered arguments passed without shell parsing."
+            }
+          }
+        }
+      ]
     }
   }
 }
