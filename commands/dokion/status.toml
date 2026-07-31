@@ -1,6 +1,6 @@
 description = "Report Dokion state, findings, evidence, and platform degradations"
 prompt = """
-Read skills/dokion-hardening/SKILL.md. Run `dokion status`, `dokion findings`, `dokion report`, `dokion loop`, and `dokion goal`.
+Read skills/dokion-hardening/SKILL.md. Run `dokion status`, `dokion findings`, `dokion report`, `dokion loop`, `dokion memory`, and `dokion goal`.
 
-Summarize the active run, approval subjects, failed or blocked steps, verified findings, evidence paths, playbook integrity, loop readiness, and every platform degradation. Do not imply platform parity or general production readiness.
+Summarize the active run, approval subjects, failed or blocked steps, verified findings, evidence paths, playbook integrity, loop readiness, memory posture, goal objective status, and every platform degradation. Do not imply platform parity or general production readiness.
 """

@@ -270,6 +270,33 @@ export function parseCliInvocation(argv: readonly string[]): CliInvocation {
     };
   }
 
+  if (rawCommand === "memory") {
+    const parsed = parseTokens(rawCommand, tokens, {
+      "--pattern": { kind: "value" },
+      "--tool": { kind: "value" },
+      "--force": { kind: "boolean" },
+      "--with-loop": { kind: "boolean" },
+      "--suggest": { kind: "boolean" }
+    });
+    const subArg = parsed.positionals[0];
+    const isSub = subArg && ["audit", "init", "status", "patterns"].includes(subArg);
+    const subcommand = (isSub ? subArg : "audit") as "audit" | "init" | "status" | "patterns";
+    const targetDir = isSub ? parsed.positionals[1] : subArg;
+    const pattern = parsed.options.get("--pattern");
+    const tool = parsed.options.get("--tool");
+    return {
+      command: "memory",
+      subcommand,
+      ...(targetDir ? { targetDir } : {}),
+      ...(typeof pattern === "string" ? { pattern } : {}),
+      ...(typeof tool === "string" ? { tool } : {}),
+      force: parsed.options.get("--force") === true,
+      withLoop: parsed.options.get("--with-loop") === true,
+      suggest: parsed.options.get("--suggest") === true,
+      format: outputFormat(rawCommand, parsed.options)
+    };
+  }
+
   if (SIMPLE_COMMANDS.has(rawCommand as CliSimpleCommand)) {
     const parsed = parseTokens(rawCommand, tokens, {});
     requireNoPositionals(rawCommand, parsed.positionals);

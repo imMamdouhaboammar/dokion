@@ -422,6 +422,24 @@ export const CLI_COMMAND_REGISTRY = [
     geminiOrder: 5
   },
   {
+    id: "memory",
+    manifestCommand: "dokion memory",
+    purpose: "Run memory engineering tools: audit, init, status, patterns.",
+    manifestMode: "READ_ONLY",
+    specMarker: "`dokion memory`",
+    runtimeCase: "memory",
+    helpLine: "  memory <audit|init|status|patterns>",
+    helpGroup: "Observe",
+    helpOrder: 12,
+    status: "IMPLEMENTED",
+    executionMode: "READ_ONLY",
+    writeScope: [".dokion/**", "HARDENING.md", "MEMORY.md", "MEMORY-STATE.md", "memory-budget.md"],
+    approvalClass: "BEFORE_WRITE",
+    geminiFiles: ["status.toml"],
+    geminiOrder: 6
+  },
+
+  {
     id: "reset-state",
     manifestCommand: "dokion reset --state-only",
     purpose: "Reset execution state without deleting findings, evidence, or the user playbook.",

@@ -9,7 +9,9 @@ import { renderCliHelp } from "./cli/command-registry.ts";
 import { handleDoctorCommand } from "./cli/handlers/doctor.ts";
 import { handleGoalCommand } from "./cli/handlers/goal.ts";
 import { handleLoopCommand } from "./cli/handlers/loop.ts";
+import { handleMemoryCommand } from "./cli/handlers/memory.ts";
 import { handlePlan } from "./cli/handlers/plan.ts";
+
 import { writeCliDiagnostic, writeCliResult } from "./cli/output.ts";
 import { parseCliInvocation, requestedCliOutputFormat } from "./cli/parser.ts";
 import type { CliInvocation, CliOutputFormat } from "./cli/types.ts";
@@ -252,8 +254,22 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
         invocation.format
       );
       return;
+    case "memory":
+      process.exitCode = await handleMemoryCommand({
+        subcommand: invocation.subcommand,
+        targetDir: invocation.targetDir || root,
+        ...(invocation.pattern ? { pattern: invocation.pattern } : {}),
+        ...(invocation.tool ? { tool: invocation.tool } : {}),
+        ...(invocation.force !== undefined ? { force: invocation.force } : {}),
+        ...(invocation.withLoop !== undefined ? { withLoop: invocation.withLoop } : {}),
+        ...(invocation.suggest !== undefined ? { suggest: invocation.suggest } : {}),
+        json: invocation.format === "json"
+      });
+      return;
+
   }
 }
+
 
 try {
   await main();
