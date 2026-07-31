@@ -133,8 +133,10 @@ interface DokionManifest {
     skills?: unknown[];
     tools?: unknown[];
     plugins_and_adapters?: unknown[];
+    goals?: unknown[];
   };
   loops?: { definitions?: unknown[] };
+  goals?: { definitions?: unknown[] };
 }
 
 async function projectCatalog(): Promise<DokionManifest> {
@@ -143,10 +145,14 @@ async function projectCatalog(): Promise<DokionManifest> {
   return builtinCatalog as DokionManifest;
 }
 
-async function listCatalog(kind: "skills" | "tools" | "plugins" | "loops", format: CliOutputFormat): Promise<void> {
+async function listCatalog(kind: "skills" | "tools" | "plugins" | "loops" | "goals", format: CliOutputFormat): Promise<void> {
   const manifest = await projectCatalog();
   if (kind === "loops") {
     print(manifest.loops?.definitions ?? [], format);
+    return;
+  }
+  if (kind === "goals") {
+    print(manifest.goals?.definitions ?? manifest.capability_catalog?.goals ?? [], format);
     return;
   }
   const key = kind === "plugins" ? "plugins_and_adapters" : kind;

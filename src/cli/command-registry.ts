@@ -4,7 +4,7 @@ export type CliExecutionMode = "READ_ONLY" | "CONFIGURE" | "EXECUTE" | "DECIDE" 
 export type CliApprovalClass = "NONE" | "BEFORE_WRITE" | "FROM_PLAYBOOK" | "ALWAYS" | "DECISION_RECORD";
 export type ManifestCommandMode = "READ_ONLY" | "VERIFY_ONLY" | "REPORT_ONLY";
 export type ManifestApprovalClass = "BEFORE_WRITE" | "FROM_PLAYBOOK" | "ALWAYS";
-export type GeminiCommandFile = "run.toml" | "status.toml";
+export type GeminiCommandFile = "run.toml" | "status.toml" | "goal.toml";
 
 export interface ManifestCliCommand {
   command: `dokion ${string}`;
