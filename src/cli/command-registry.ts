@@ -4,7 +4,7 @@ export type CliExecutionMode = "READ_ONLY" | "CONFIGURE" | "EXECUTE" | "DECIDE" 
 export type CliApprovalClass = "NONE" | "BEFORE_WRITE" | "FROM_PLAYBOOK" | "ALWAYS" | "DECISION_RECORD";
 export type ManifestCommandMode = "READ_ONLY" | "VERIFY_ONLY" | "REPORT_ONLY";
 export type ManifestApprovalClass = "BEFORE_WRITE" | "FROM_PLAYBOOK" | "ALWAYS";
-export type GeminiCommandFile = "run.toml" | "status.toml";
+export type GeminiCommandFile = "run.toml" | "status.toml" | "goal.toml" | "playbooks.toml" | "hooks.toml";
 
 export interface ManifestCliCommand {
   command: `dokion ${string}`;
@@ -420,6 +420,40 @@ export const CLI_COMMAND_REGISTRY = [
     approvalClass: "BEFORE_WRITE",
     geminiFiles: ["goal.toml", "status.toml"],
     geminiOrder: 5
+  },
+  {
+    id: "playbooks",
+    manifestCommand: "dokion playbooks",
+    purpose: "Manage playbooks and skills ecosystem: import, validate, sync, and list.",
+    manifestMode: "READ_ONLY",
+    specMarker: "`dokion playbooks`",
+    runtimeCase: "playbooks",
+    helpLine: "  playbooks <import|validate|sync|list>",
+    helpGroup: "Configure",
+    helpOrder: 6,
+    status: "IMPLEMENTED",
+    executionMode: "READ_ONLY",
+    writeScope: [".dokion/**", "skills/**", "playbooks/**"],
+    approvalClass: "BEFORE_WRITE",
+    geminiFiles: ["playbooks.toml"],
+    geminiOrder: 1
+  },
+  {
+    id: "hooks",
+    manifestCommand: "dokion hooks",
+    purpose: "Manage lifecycle hook follow-ups and background automation: run and status.",
+    manifestMode: "READ_ONLY",
+    specMarker: "`dokion hooks`",
+    runtimeCase: "hooks",
+    helpLine: "  hooks <run|status>",
+    helpGroup: "Observe",
+    helpOrder: 12,
+    status: "IMPLEMENTED",
+    executionMode: "READ_ONLY",
+    writeScope: [".dokion/**"],
+    approvalClass: "BEFORE_WRITE",
+    geminiFiles: ["hooks.toml"],
+    geminiOrder: 1
   },
   {
     id: "reset-state",

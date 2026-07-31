@@ -26,7 +26,8 @@ export type DokionErrorCode =
   | "CLI_MISSING_OPTION_VALUE"
   | "CLI_DUPLICATE_OPTION"
   | "CLI_MISSING_ARGUMENT"
-  | "CLI_INVALID_ARGUMENT";
+  | "CLI_INVALID_ARGUMENT"
+  | "GOAL_NOT_FOUND";
 
 export class DokionError extends Error {
   readonly code: DokionErrorCode;

@@ -1,0 +1,4 @@
+description = "Manage lifecycle hook follow-ups and background automation in Dokion"
+prompt = """
+Manage lifecycle hook follow-ups and background automation in Dokion: run and status using `dokion hooks`.
+"""

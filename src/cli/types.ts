@@ -39,6 +39,15 @@ type CliCommandInvocation =
       pattern?: string;
       level?: string;
       objective?: string;
+    }
+  | {
+      command: "playbooks";
+      subcommand: "import" | "validate" | "sync" | "list";
+      from?: string;
+    }
+  | {
+      command: "hooks";
+      subcommand: "run" | "status";
     };
 
 export type CliInvocation = CliCommandInvocation & { format: CliOutputFormat };

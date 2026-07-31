@@ -66,11 +66,13 @@ Observe:
   loop <audit|init|cost|sync|context>
   goals list
   goal <audit|init|estimate|status|pause|resume|clear|sync|run>
+  hooks <run|status>
 
 Configure:
   init
   plan
   validate [--catalog-only]
+  playbooks <import|validate|sync|list>
 
 Execute:
   run

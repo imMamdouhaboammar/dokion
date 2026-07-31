@@ -270,6 +270,30 @@ export function parseCliInvocation(argv: readonly string[]): CliInvocation {
     };
   }
 
+  if (rawCommand === "playbooks") {
+    const parsed = parseTokens(rawCommand, tokens, {
+      "--from": { kind: "value" }
+    });
+    const subcommand = (parsed.positionals[0] || "list") as "import" | "validate" | "sync" | "list";
+    const from = parsed.options.get("--from");
+    return {
+      command: "playbooks",
+      subcommand,
+      ...(typeof from === "string" ? { from } : {}),
+      format: outputFormat(rawCommand, parsed.options)
+    };
+  }
+
+  if (rawCommand === "hooks") {
+    const parsed = parseTokens(rawCommand, tokens, {});
+    const subcommand = (parsed.positionals[0] || "status") as "run" | "status";
+    return {
+      command: "hooks",
+      subcommand,
+      format: outputFormat(rawCommand, parsed.options)
+    };
+  }
+
   if (SIMPLE_COMMANDS.has(rawCommand as CliSimpleCommand)) {
     const parsed = parseTokens(rawCommand, tokens, {});
     requireNoPositionals(rawCommand, parsed.positionals);

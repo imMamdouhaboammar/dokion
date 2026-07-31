@@ -8,8 +8,10 @@ import { builtinCatalog } from "./catalog/builtin-catalog.ts";
 import { renderCliHelp } from "./cli/command-registry.ts";
 import { handleDoctorCommand } from "./cli/handlers/doctor.ts";
 import { handleGoalCommand } from "./cli/handlers/goal.ts";
+import { handleHooksCommand } from "./cli/handlers/hooks.ts";
 import { handleLoopCommand } from "./cli/handlers/loop.ts";
 import { handlePlan } from "./cli/handlers/plan.ts";
+import { handlePlaybooksCommand } from "./cli/handlers/playbooks.ts";
 import { writeCliDiagnostic, writeCliResult } from "./cli/output.ts";
 import { parseCliInvocation, requestedCliOutputFormat } from "./cli/parser.ts";
 import type { CliInvocation, CliOutputFormat } from "./cli/types.ts";
@@ -133,6 +135,7 @@ interface DokionManifest {
     skills?: unknown[];
     tools?: unknown[];
     plugins_and_adapters?: unknown[];
+    goals?: unknown[];
   };
   loops?: { definitions?: unknown[] };
 }
@@ -143,14 +146,14 @@ async function projectCatalog(): Promise<DokionManifest> {
   return builtinCatalog as DokionManifest;
 }
 
-async function listCatalog(kind: "skills" | "tools" | "plugins" | "loops", format: CliOutputFormat): Promise<void> {
+async function listCatalog(kind: "skills" | "tools" | "plugins" | "loops" | "goals", format: CliOutputFormat): Promise<void> {
   const manifest = await projectCatalog();
   if (kind === "loops") {
     print(manifest.loops?.definitions ?? [], format);
     return;
   }
   const key = kind === "plugins" ? "plugins_and_adapters" : kind;
-  print(manifest.capability_catalog?.[key] ?? [], format);
+  print(manifest.capability_catalog?.[key as "skills" | "tools" | "plugins_and_adapters" | "goals"] ?? [], format);
 }
 
 type DecisionInvocation = Extract<CliInvocation, { command: "approve" | "reject" }>;
@@ -246,6 +249,16 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
         invocation.format
       );
       return;
+    case "playbooks": {
+      const exitCode = await handlePlaybooksCommand([invocation.subcommand, ...(invocation.from ? ["--from", invocation.from] : [])], root);
+      if (exitCode !== 0) process.exitCode = exitCode;
+      return;
+    }
+    case "hooks": {
+      const exitCode = await handleHooksCommand([invocation.subcommand], root);
+      if (exitCode !== 0) process.exitCode = exitCode;
+      return;
+    }
   }
 }
 

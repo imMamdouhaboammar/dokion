@@ -1,0 +1,96 @@
+{
+  "$schema": "../../schemas/dokion-playbook.schema.json",
+  "version": "1.0.0",
+  "project": {
+    "name": "agent-playbook-integration",
+    "target": "READY_FOR_PRODUCTION",
+    "notes": "REFERENCE PLAYBOOK — INERT. Agent Playbook Integration Workflow covering PRD planning, precheck, code review, and self-learning feedback loops."
+  },
+  "authority": {
+    "capability_selection": "USER_ONLY",
+    "execution_order": "USER_ONLY",
+    "capability_behavior": "USER_ONLY",
+    "automatic_capability_discovery": false,
+    "automatic_installation": false,
+    "automatic_substitution": false,
+    "automatic_reordering": false,
+    "allow_recommendations": true,
+    "recommendations_require_approval": true
+  },
+  "enforcement": {
+    "playbook_immutable": true,
+    "hash_algorithm": "sha256",
+    "verify_before_each_step": true,
+    "on_mutation": "ABORT_TAINTED",
+    "protected_paths": [
+      ".dokion/playbook.json",
+      "schemas/**"
+    ],
+    "worktree_policy": "clean-only"
+  },
+  "registry": {
+    "sources": [
+      "dokion.json"
+    ],
+    "require_verified": true,
+    "require_digest": true,
+    "on_unverified": "STOP_STEP"
+  },
+  "coverage_policy": {
+    "blocking_lanes": [
+      "application-security"
+    ]
+  },
+  "defaults": {
+    "approval": "BEFORE_WRITE",
+    "failure_policy": "STOP_STAGE",
+    "mode": "READ_ONLY",
+    "retry_count": 1,
+    "maximum_iterations": 1,
+    "parallel_execution": false,
+    "validation": {
+      "suppression_detection": true,
+      "require_evidence_artifact": true
+    }
+  },
+  "stages": [
+    {
+      "id": "stage-prd-planning",
+      "name": "PRD Planning & Precheck",
+      "execution": "SEQUENTIAL",
+      "steps": [
+        {
+          "id": "step-prd-planner",
+          "name": "Validate skill structures and playbook consistency",
+          "capability": {
+            "type": "tool",
+            "id": "git",
+            "version": ">=2.40",
+            "source": "system",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Validate skill structures and playbook consistency",
+          "mode": "READ_ONLY",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/state.json"
+            ],
+            "network": false,
+            "shell": [
+              "dokion playbooks validate"
+            ]
+          },
+          "success_conditions": [
+            "playbooks_validated"
+          ],
+          "failure_policy": "STOP_PIPELINE"
+        }
+      ]
+    }
+  ]
+}

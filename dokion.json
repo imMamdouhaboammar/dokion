@@ -300,6 +300,16 @@
         "mode": "READ_ONLY"
       },
       {
+        "command": "dokion playbooks",
+        "purpose": "Manage playbooks and skills ecosystem: import, validate, sync, and list.",
+        "mode": "READ_ONLY"
+      },
+      {
+        "command": "dokion hooks",
+        "purpose": "Manage lifecycle hook follow-ups and background automation: run and status.",
+        "mode": "READ_ONLY"
+      },
+      {
         "command": "dokion reset --state-only",
         "purpose": "Reset execution state without deleting findings, evidence, or the user playbook.",
         "approval": "ALWAYS"
