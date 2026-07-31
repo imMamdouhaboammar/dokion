@@ -117,3 +117,39 @@ export function evaluateCoverage(input: {
       : {})
   };
 }
+
+export interface CoverageDeclarationInput {
+  lane: string;
+  assignedModule: string | null;
+  rationale: string;
+}
+
+export interface CoverageGapsResult {
+  hasUnassignedGaps: boolean;
+  unassignedLanes: string[];
+  readinessScoreCap: number;
+  warnings: string[];
+}
+
+export function evaluateCoverageGaps(declarations: CoverageDeclarationInput[]): CoverageGapsResult {
+  const unassignedLanes: string[] = [];
+  const warnings: string[] = [];
+
+  for (const decl of declarations) {
+    if (!decl.assignedModule) {
+      unassignedLanes.push(decl.lane);
+      warnings.push(`Coverage gap in lane '${decl.lane}': ${decl.rationale}`);
+    }
+  }
+
+  const hasUnassignedGaps = unassignedLanes.length > 0;
+  const readinessScoreCap = hasUnassignedGaps ? 85 : 100;
+
+  return {
+    hasUnassignedGaps,
+    unassignedLanes,
+    readinessScoreCap,
+    warnings,
+  };
+}
+

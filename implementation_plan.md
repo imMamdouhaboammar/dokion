@@ -1,496 +1,138 @@
-# Dokion Secure Execution and Audit Round Implementation Plan
+# Dokion 100% Production Enterprise-Grade Hardening Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans. Every behavior change follows RED, GREEN, REFACTOR.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans. Every behavior change follows RED -> GREEN -> REFACTOR.
 
-**Goal:** Implement the next public-beta P0 slice covering capability provenance, secure execution, repair transactions, evidence manifests, deterministic reports, and independent audit.
+**Goal:** Drive Dokion from current baseline to 100% Production Enterprise-Grade Hardening Runtime by completing all remaining assurance modules, evidence generators, adapter contract matrices, promotion gates, and launch checklists.
 
-**Architecture:** Foundational modules are isolated by responsibility and landed before four integration tasks. Capability audit, command execution, repair validation, and reporting depend only on typed interfaces from the foundation wave. Signal recovery and independent audit land last because they require integrated process control and evidence surfaces.
+**Runtime Strictness:** Bun `1.3.14+`, TypeScript `7.0.2`. Zero untrusted runtime dependencies. `.dokion/playbook.json` remains sole execution authority.
 
-**Tech Stack:** Bun 1.3.14, TypeScript 7.0.2, Ajv 8.20.0, JSON Schema, Git.
+---
 
-## Global Constraints
+## Global Verification Commands
 
-- `.dokion/playbook.json` is the sole execution authority and must not be edited.
-- Bun is mandatory. Do not use npm, pnpm, yarn, or an alternate runtime.
-- No new runtime dependency without explicit user approval.
-- Subagents must not run `git add`, `git commit`, `git merge`, `git rebase`, or `git push`.
-- Tests must be written first and observed failing for the intended reason.
-- Secret values and private absolute paths must not appear in state, evidence, reports, logs, or errors.
-- Existing authority, append-only evidence, exact rollback, and approval invariants must remain intact.
-- Task-local verification is the focused test plus `bun run typecheck`.
-- Wave verification is `bun test`, `bun run typecheck`, `bun run validate:contracts`, and `bun run build`.
-- Final verification also includes `bun run validate:distribution` and `bun run smoke:package`.
+- Task Verification: `bun test <test-file> && bun run typecheck`
+- Wave Gate Verification:
+  - `bun test`
+  - `bun run typecheck`
+  - `bun run validate:contracts`
+  - `bun run validate:distribution`
+
+---
 
 ## Execution Waves
 
-- Wave A: isolated foundation tasks 01, 02, 03, 05, 06, 07, 08, 09, 10, 12, 13, 14, 15, 18, 19, 20, 21, 22.
-- Wave B: integration tasks 04, 11, 16, 23 after their foundations land.
-- Wave C: signal recovery task 17 and audit CLI task 24 after Wave B.
+### Wave 1: Assurance Modules & Gap Modeling
+- **MOD-009**: Implement reliability, performance, and WCAG accessibility assurance modules.
+- **MOD-010**: Implement explicit AI agent and mobile coverage gap modeling.
 
-### Task 01: CAP-005 Package Provenance (CAP-005)
+### Wave 2: Run Comparison & Promotion Sign-Off Evidence
+- **EVID-009**: Implement deterministic comparison of two Dokion run records (`dokion diff/compare`).
+- **EVID-011**: Build evidence retention rules and export bundles.
+- **EVID-012**: Implement automated generation of `promotion-signoff.json` backed by cryptographic digests.
 
-**Files:**
-- Modify or create: `src/capability/package-provenance.ts`
-- Test: `tests/capability/package-provenance.test.ts`
+### Wave 3: Adapters Parity & Cross-Platform Verification
+- **PROD-001..005**: Finalize canonical adapter contract suite for Claude Code, Codex, and Gemini CLI.
+- **PROD-006**: Enforce Windows platform compatibility, line endings, and path canonicalization.
+- **PROD-007..008**: Implement cross-agent handoff, session resume, and native binary smoke matrices.
 
-**Interface:** `recordPackageProvenance(input: PackageProvenanceInput): PackageProvenanceRecord`
-
-**Required behavior:** Record package manager, registry, package, version, integrity, installer command, exception reason, approval, and verifier. Redact credentials and reject non-Bun installer exceptions without explicit approval.
-
-- [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-- [ ] Run `bun test tests/capability/package-provenance.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-- [ ] Implement the smallest typed solution consistent with existing repository patterns.
-- [ ] Run `bun test tests/capability/package-provenance.test.ts` and `bun run typecheck` until both pass.
-- [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-- [ ] Write the task report. Do not stage or commit changes.
+### Wave 4: Launch Checklist & Full Audit Sign-Off
+- **PROD-009..014**: Complete CLI product flows, onboarding docs, seeded demo repositories, CI release gates, and public launch checklist.
+- **PG-001..PG-012**: Execute and verify all 12 Promotion Gates against clean test fixtures.
 
 ---
 
-### Task 02: CAP-006 Environment Prerequisite Audit (CAP-006)
+## Detailed Task Breakdown
 
-**Files:**
-- Modify or create: `src/capability/environment-check.ts`
-- Test: `tests/capability/environment-check.test.ts`
+### Wave 1: Assurance Modules & Gap Modeling
 
-**Interface:** `checkEnvironmentPrerequisites(requirements, environment): EnvironmentCheckResult`
+#### Task W1-1: MOD-009 Reliability, Performance, and Accessibility Modules
+- **Files:** `modules/observability-reliability/**`, `modules/performance-accessibility/**`, `src/modules/adapters/reliability-performance.ts`
+- **Test:** `tests/modules/reliability-performance-accessibility.test.ts`
+- **TDD:**
+  1. RED: Write failing test checking logging, health checks, timeout/retry/idempotency rules, Core Web Vitals, and WCAG accessibility assertions.
+  2. GREEN: Implement typed module adapters with playbook-declared threshold evaluation.
+  3. REFACTOR: Ensure pristine test run and zero type errors.
 
-**Required behavior:** Check only declared variable names and allowed value shapes. Return presence and validation status without returning raw values. Deny dangerous loader variables by default.
-
-- [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-- [ ] Run `bun test tests/capability/environment-check.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-- [ ] Implement the smallest typed solution consistent with existing repository patterns.
-- [ ] Run `bun test tests/capability/environment-check.test.ts` and `bun run typecheck` until both pass.
-- [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-- [ ] Write the task report. Do not stage or commit changes.
-
----
-
-### Task 03: CAP-007 Capability Conflict Detection (CAP-007)
-
-**Files:**
-- Modify or create: `src/capability/conflict-detector.ts`
-- Test: `tests/capability/conflict-detector.test.ts`
-
-**Interface:** `detectCapabilityConflicts(capabilities, platform): CapabilityConflict[]`
-
-**Required behavior:** Detect incompatible versions, duplicate responsibility, overlapping write scopes in unsafe parallel stages, and platform incompatibility. Never auto-resolve by substitution or reordering.
-
-- [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-- [ ] Run `bun test tests/capability/conflict-detector.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-- [ ] Implement the smallest typed solution consistent with existing repository patterns.
-- [ ] Run `bun test tests/capability/conflict-detector.test.ts` and `bun run typecheck` until both pass.
-- [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-- [ ] Write the task report. Do not stage or commit changes.
+#### Task W1-2: MOD-010 AI & Mobile Coverage Gap Modeling
+- **Files:** `modules/coverage-declarations/**`, `src/readiness/coverage.ts`
+- **Test:** `tests/modules/coverage-declarations.test.ts`
+- **TDD:**
+  1. RED: Write failing test checking that AI safety and mobile security lanes show unassigned gap warnings and enforce readiness score caps.
+  2. GREEN: Implement explicit gap declaration models and update coverage evaluator.
+  3. REFACTOR: Verify no implicit pass is awarded to unassigned security/coverage lanes.
 
 ---
 
-### Task 04: CAP-008 Deterministic Doctor Integration (CAP-008)
+### Wave 2: Run Comparison & Promotion Sign-Off Evidence
 
-    **Files:**
-    - Modify or create: `src/inspect/doctor.ts`
-- Modify or create: `src/cli/handlers/doctor.ts`
-    - Test: `tests/cli/doctor.test.ts`
+#### Task W2-1: EVID-009 Compare Two Dokion Runs (`dokion compare`/`diff`)
+- **Files:** `src/report/compare-runs.ts`, `src/cli/handlers/compare.ts`, `src/cli/command-registry.ts`
+- **Test:** `tests/report/compare-runs.test.ts`
+- **TDD:**
+  1. RED: Write failing test comparing two run states and asserting exact diff output for findings, gates, coverage, playbooks, locks, and platforms.
+  2. GREEN: Implement read-only comparison engine and CLI handler.
+  3. REFACTOR: Ensure comparison never mutates or rewrites run state.
 
-    **Interface:** `runDoctorAudit(root: string): Promise<DoctorAuditReport>`
+#### Task W2-2: EVID-011 Evidence Retention & Export Bundles
+- **Files:** `src/evidence/retention.ts`, `src/export/run-bundle.ts`
+- **Test:** `tests/evidence/retention-export.test.ts`
+- **TDD:**
+  1. RED: Write failing test checking retention class rules, safe pruning, portable ZIP/tar bundle export, and bundle verifier.
+  2. GREEN: Implement evidence retention manager and bundle packager/verifier without credential leakage.
+  3. REFACTOR: Confirm required evidence cannot be pruned.
 
-    **Required behavior:** Integrate provenance, prerequisite, digest, availability, conflict, and degradation checks into a read-only deterministic doctor report with blocking and warning severity.
-
-    - [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-    - [ ] Run `bun test tests/cli/doctor.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-    - [ ] Implement the smallest typed solution consistent with existing repository patterns.
-    - [ ] Run `bun test tests/cli/doctor.test.ts` and `bun run typecheck` until both pass.
-    - [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-    - [ ] Write the task report. Do not stage or commit changes.
-
----
-
-### Task 05: STATE-009 Side-Effect Checkpoint Store (STATE-009)
-
-**Files:**
-- Modify or create: `src/state/checkpoint.ts`
-- Test: `tests/state/checkpoint.test.ts`
-
-**Interface:** `beginSideEffect(root, intent): Promise<SideEffectCheckpoint>; completeSideEffect(root, id, outcome): Promise<SideEffectCheckpoint>`
-
-**Required behavior:** Persist intent before external action and completion afterward with stable IDs, monotonic state transitions, atomic writes, and STARTED_UNKNOWN recovery semantics.
-
-- [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-- [ ] Run `bun test tests/state/checkpoint.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-- [ ] Implement the smallest typed solution consistent with existing repository patterns.
-- [ ] Run `bun test tests/state/checkpoint.test.ts` and `bun run typecheck` until both pass.
-- [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-- [ ] Write the task report. Do not stage or commit changes.
+#### Task W2-3: EVID-012 Automated Promotion Sign-Off Record
+- **Files:** `schemas/dokion-promotion-signoff.schema.json`, `src/readiness/promotion-signoff.ts`
+- **Test:** `tests/readiness/promotion-signoff.test.ts`
+- **TDD:**
+  1. RED: Write failing test checking generation of schema-valid `promotion-signoff.json` backed by SHA-256 hashes of all state, evidence, and gate verification results.
+  2. GREEN: Implement promotion signoff generator.
+  3. REFACTOR: Ensure generator blocks if any mandatory gate fails.
 
 ---
 
-### Task 06: EXEC-001 Platform Command Strategy (EXEC-001)
+### Wave 3: Adapters Parity & Cross-Platform Verification
 
-**Files:**
-- Modify or create: `src/execution/command-strategy.ts`
-- Test: `tests/execution/command-strategy.test.ts`
+#### Task W3-1: PROD-001..005 Canonical Adapter Contract Suite
+- **Files:** `src/platform/adapter-contract.ts`, `src/platform/guarantees.ts`, `.claude-plugin/**`, `.agents/skills/dokion-hardening/**`, `commands/dokion/**`, `gemini-extension.json`
+- **Test:** `tests/adapters/adapter-contract.test.ts`, `tests/adapters/claude.test.ts`, `tests/adapters/codex.test.ts`, `tests/adapters/gemini.test.ts`, `tests/adapters/platform-guarantees.test.ts`
+- **TDD:**
+  1. RED: Write failing tests verifying identity, command parity, hook safety, and guarantee negotiation across Claude Code, Codex, and Gemini CLI adapters.
+  2. GREEN: Implement adapter contract verifiers and guarantee negotiator.
+  3. REFACTOR: Confirm no adapter adds permissions or commands outside core CLI.
 
-**Interface:** `resolveCommandStrategy(platform, command): CommandStrategyResult`
+#### Task W3-2: PROD-006 Windows Platform Compatibility
+- **Files:** `src/execution/windows/platform.ts`, `src/execution/windows/path.ts`
+- **Test:** `tests/platform/windows.test.ts`
+- **TDD:**
+  1. RED: Write failing tests for Windows path canonicalization (CRLF, backslashes, drive letters), process tree termination, and case sensitivity rules.
+  2. GREEN: Implement Windows execution helper and path policy adaptors.
+  3. REFACTOR: Ensure cross-platform path handling passes cleanly on macOS/Linux.
 
-**Required behavior:** Return explicit POSIX behavior for macOS and Linux, explicit unsupported or degraded results for unproven platforms, and no silent shell fallback.
-
-- [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-- [ ] Run `bun test tests/execution/command-strategy.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-- [ ] Implement the smallest typed solution consistent with existing repository patterns.
-- [ ] Run `bun test tests/execution/command-strategy.test.ts` and `bun run typecheck` until both pass.
-- [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-- [ ] Write the task report. Do not stage or commit changes.
-
----
-
-### Task 07: EXEC-002 Argument-Vector Command Specification (EXEC-002)
-
-    **Files:**
-    - Modify or create: `src/execution/command-spec.ts`
-- Modify or create: `schemas/dokion-playbook.schema.json`
-    - Test: `tests/execution/command-spec.test.ts`
-
-    **Interface:** `normalizeCommandSpec(input): NormalizedCommandSpec`
-
-    **Required behavior:** Support executable plus argument array and retain legacy shell strings as explicit high-risk specs. Reject mixed or empty forms and preserve executable and arguments separately.
-
-    - [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-    - [ ] Run `bun test tests/execution/command-spec.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-    - [ ] Implement the smallest typed solution consistent with existing repository patterns.
-    - [ ] Run `bun test tests/execution/command-spec.test.ts` and `bun run typecheck` until both pass.
-    - [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-    - [ ] Write the task report. Do not stage or commit changes.
+#### Task W3-3: PROD-007..008 Native Smoke & Cross-Agent Resume
+- **Files:** `tests/distribution/native-smoke.test.ts`, `tests/adapters/cross-agent-resume.test.ts`
+- **Test:** `tests/distribution/native-smoke.test.ts`, `tests/adapters/cross-agent-resume.test.ts`
+- **TDD:**
+  1. RED: Write failing tests for native package smoke execution and cross-adapter session pause/resume reconciliation.
+  2. GREEN: Implement smoke test logic and handoff reconciliation verifier.
+  3. REFACTOR: Confirm state continuity and event log integrity during handoff.
 
 ---
 
-### Task 08: EXEC-003 Child Environment Policy (EXEC-003)
-
-**Files:**
-- Modify or create: `src/execution/environment-policy.ts`
-- Test: `tests/execution/environment-policy.test.ts`
-
-**Interface:** `buildChildEnvironment(input): ChildEnvironmentResult`
-
-**Required behavior:** Construct an allowlisted child environment from platform-safe defaults and declared variables. Deny loader injection variables and expose redaction tokens without secret values.
-
-- [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-- [ ] Run `bun test tests/execution/environment-policy.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-- [ ] Implement the smallest typed solution consistent with existing repository patterns.
-- [ ] Run `bun test tests/execution/environment-policy.test.ts` and `bun run typecheck` until both pass.
-- [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-- [ ] Write the task report. Do not stage or commit changes.
-
----
-
-### Task 09: EXEC-004 Bounded Output Evidence Spool (EXEC-004)
-
-**Files:**
-- Modify or create: `src/execution/output-spool.ts`
-- Test: `tests/execution/output-spool.test.ts`
-
-**Interface:** `spoolOutput(stream, options): Promise<OutputSpoolResult>`
-
-**Required behavior:** Stream bytes to an evidence artifact with digest, size, truncation marker, media type, and bounded in-memory summary. Never buffer unbounded output.
-
-- [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-- [ ] Run `bun test tests/execution/output-spool.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-- [ ] Implement the smallest typed solution consistent with existing repository patterns.
-- [ ] Run `bun test tests/execution/output-spool.test.ts` and `bun run typecheck` until both pass.
-- [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-- [ ] Write the task report. Do not stage or commit changes.
-
----
-
-### Task 10: EXEC-005 Process Tree Controller (EXEC-005)
-
-**Files:**
-- Modify or create: `src/execution/process-controller.ts`
-- Test: `tests/execution/process-controller.test.ts`
-
-**Interface:** `terminateProcessTree(handle, reason, options): Promise<ProcessTerminationResult>`
-
-**Required behavior:** Track process group identity and terminate descendants using SIGTERM then bounded SIGKILL on supported POSIX hosts. Record reason, timing, exit status, and degraded guarantees.
-
-- [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-- [ ] Run `bun test tests/execution/process-controller.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-- [ ] Implement the smallest typed solution consistent with existing repository patterns.
-- [ ] Run `bun test tests/execution/process-controller.test.ts` and `bun run typecheck` until both pass.
-- [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-- [ ] Write the task report. Do not stage or commit changes.
-
----
-
-### Task 11: Secure Command Runner Integration (EXEC-001..005)
-
-**Files:**
-- Modify or create: `src/engine/command-runner.ts`
-- Test: `tests/execution/secure-command-runner.test.ts`
-
-**Interface:** `runCommand(root, commandSpec, options): Promise<CommandResult>`
-
-**Required behavior:** Integrate command strategy, normalized specs, child environment policy, bounded output spooling, timeout handling, and process-tree termination while preserving legacy callers.
-
-- [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-- [ ] Run `bun test tests/execution/secure-command-runner.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-- [ ] Implement the smallest typed solution consistent with existing repository patterns.
-- [ ] Run `bun test tests/execution/secure-command-runner.test.ts` and `bun run typecheck` until both pass.
-- [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-- [ ] Write the task report. Do not stage or commit changes.
-
----
-
-### Task 12: EXEC-006 Canonical Repository Path Policy (EXEC-006)
-
-**Files:**
-- Modify or create: `src/security/path-policy.ts`
-- Test: `tests/security/path-policy.test.ts`
-
-**Interface:** `evaluateRepositoryPath(root, requested, declaredScopes, options): Promise<PathPolicyDecision>`
-
-**Required behavior:** Reject absolute escapes, parent traversal, alternate separators, symlink escapes, root replacement, and case-fold collisions. Return canonical repository-relative paths and exact denial reasons.
-
-- [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-- [ ] Run `bun test tests/security/path-policy.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-- [ ] Implement the smallest typed solution consistent with existing repository patterns.
-- [ ] Run `bun test tests/security/path-policy.test.ts` and `bun run typecheck` until both pass.
-- [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-- [ ] Write the task report. Do not stage or commit changes.
-
----
-
-### Task 13: EXEC-007 Bounded Ignored-File Policy (EXEC-007)
-
-**Files:**
-- Modify or create: `src/validation/ignored-file-policy.ts`
-- Test: `tests/validation/ignored-files.test.ts`
-
-**Interface:** `collectDeclaredIgnoredFiles(root, policy): Promise<IgnoredFileCollection>`
-
-**Required behavior:** Include only explicitly declared ignored paths within file-count and byte limits. Exclude dependency trees, caches, credentials, and generated bulk directories by default.
-
-- [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-- [ ] Run `bun test tests/validation/ignored-files.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-- [ ] Implement the smallest typed solution consistent with existing repository patterns.
-- [ ] Run `bun test tests/validation/ignored-files.test.ts` and `bun run typecheck` until both pass.
-- [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-- [ ] Write the task report. Do not stage or commit changes.
-
----
-
-### Task 14: EXEC-008 Binary and Large File Snapshot (EXEC-008)
-
-**Files:**
-- Modify or create: `src/validation/file-snapshot.ts`
-- Test: `tests/validation/binary-snapshot.test.ts`
-
-**Interface:** `captureFileSnapshot(path, options): Promise<FileSnapshot>`
-
-**Required behavior:** Detect text versus binary without lossy conversion, record metadata and digest, copy exact bytes only within bounds, and fail before mutation when exact rollback cannot be proven.
-
-- [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-- [ ] Run `bun test tests/validation/binary-snapshot.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-- [ ] Implement the smallest typed solution consistent with existing repository patterns.
-- [ ] Run `bun test tests/validation/binary-snapshot.test.ts` and `bun run typecheck` until both pass.
-- [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-- [ ] Write the task report. Do not stage or commit changes.
-
----
-
-### Task 15: EXEC-009 Repair Transaction Manifest (EXEC-009)
-
-**Files:**
-- Modify or create: `src/validation/repair-transaction.ts`
-- Test: `tests/validation/repair-transaction.test.ts`
-
-**Interface:** `createRepairTransaction(input): RepairTransaction; advanceRepairTransaction(transaction, event): RepairTransaction`
-
-**Required behavior:** Represent before snapshot, command, after snapshot, diff, validation, verification, rollback, digests, changed paths, checkpoints, and final disposition in one versioned transaction.
-
-- [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-- [ ] Run `bun test tests/validation/repair-transaction.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-- [ ] Implement the smallest typed solution consistent with existing repository patterns.
-- [ ] Run `bun test tests/validation/repair-transaction.test.ts` and `bun run typecheck` until both pass.
-- [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-- [ ] Write the task report. Do not stage or commit changes.
-
----
-
-### Task 16: Repair Pipeline Transaction Integration (EXEC-006..009)
-
-    **Files:**
-    - Modify or create: `src/validation/repair-snapshot.ts`
-- Modify or create: `src/validation/repair-validator.ts`
-- Modify or create: `src/engine/capability-runner.ts`
-    - Test: `tests/validation/repair-pipeline-transaction.test.ts`
-
-    **Interface:** `execute repair through canonical path policy and transaction manifest`
-
-    **Required behavior:** Integrate canonical scopes, ignored files, binary snapshot capability, checkpoints, and repair transaction persistence without weakening existing suppression, regression-test, or rollback checks.
-
-    - [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-    - [ ] Run `bun test tests/validation/repair-pipeline-transaction.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-    - [ ] Implement the smallest typed solution consistent with existing repository patterns.
-    - [ ] Run `bun test tests/validation/repair-pipeline-transaction.test.ts` and `bun run typecheck` until both pass.
-    - [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-    - [ ] Write the task report. Do not stage or commit changes.
-
----
-
-### Task 17: STATE-008 Safe Signal Interruption (STATE-008)
-
-    **Files:**
-    - Modify or create: `src/runtime/signal-handler.ts`
-- Modify or create: `src/engine/runtime-engine.ts`
-    - Test: `tests/state/signal-recovery.test.ts`
-
-    **Interface:** `installSignalHandler(context): SignalHandlerController`
-
-    **Required behavior:** On SIGINT or SIGTERM, cancel child work, checkpoint interruption, append a typed event, mark or release the run lock, and leave a resumable non-failed state without replaying completed actions.
-
-    - [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-    - [ ] Run `bun test tests/state/signal-recovery.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-    - [ ] Implement the smallest typed solution consistent with existing repository patterns.
-    - [ ] Run `bun test tests/state/signal-recovery.test.ts` and `bun run typecheck` until both pass.
-    - [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-    - [ ] Write the task report. Do not stage or commit changes.
-
----
-
-### Task 18: EVID-001 Completion Criterion Evaluator (EVID-001)
-
-    **Files:**
-    - Modify or create: `src/readiness/completion.ts`
-- Modify or create: `schemas/dokion-state.schema.json`
-    - Test: `tests/readiness/completion.test.ts`
-
-    **Interface:** `evaluateCompletion(input): CompletionEvaluation`
-
-    **Required behavior:** Store PASS, FAIL, BLOCKED, or NOT_APPLICABLE for every criterion with evaluator version, evidence references, and freshness. Missing required criteria prevent completion.
-
-    - [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-    - [ ] Run `bun test tests/readiness/completion.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-    - [ ] Implement the smallest typed solution consistent with existing repository patterns.
-    - [ ] Run `bun test tests/readiness/completion.test.ts` and `bun run typecheck` until both pass.
-    - [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-    - [ ] Write the task report. Do not stage or commit changes.
-
----
-
-### Task 19: EVID-002 Qualified Readiness Statement (EVID-002)
-
-**Files:**
-- Modify or create: `src/readiness/readiness-statement.ts`
-- Test: `tests/readiness/statement.test.ts`
-
-**Interface:** `formatReadinessStatement(input): QualifiedReadinessStatement`
-
-**Required behavior:** Tie wording to subject, commit, playbook digest, lock digest, gates, coverage, degradations, exclusions, and timestamp. Reject unqualified production-ready language.
-
-- [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-- [ ] Run `bun test tests/readiness/statement.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-- [ ] Implement the smallest typed solution consistent with existing repository patterns.
-- [ ] Run `bun test tests/readiness/statement.test.ts` and `bun run typecheck` until both pass.
-- [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-- [ ] Write the task report. Do not stage or commit changes.
-
----
-
-### Task 20: EVID-003 Declared Execution Report Section (EVID-003)
-
-**Files:**
-- Modify or create: `src/report/sections/execution.ts`
-- Test: `tests/report/execution-section.test.ts`
-
-**Interface:** `renderExecutionSection(input): ExecutionSection`
-
-**Required behavior:** List every stage and step in declared order with actual disposition, capability identity, version, digest, attempts, and evidence. Keep skipped, blocked, failed, and unexecuted work visible.
-
-- [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-- [ ] Run `bun test tests/report/execution-section.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-- [ ] Implement the smallest typed solution consistent with existing repository patterns.
-- [ ] Run `bun test tests/report/execution-section.test.ts` and `bun run typecheck` until both pass.
-- [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-- [ ] Write the task report. Do not stage or commit changes.
-
----
-
-### Task 21: EVID-004 Exceptions Report Section (EVID-004)
-
-**Files:**
-- Modify or create: `src/report/sections/exceptions.ts`
-- Test: `tests/report/exceptions-section.test.ts`
-
-**Interface:** `renderExceptionsSection(input): ExceptionsSection`
-
-**Required behavior:** Render skips, manual reviews, accepted risks, deferrals, blocked lanes, stale evidence, degradations, and inert recommendations with actor and reason.
-
-- [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-- [ ] Run `bun test tests/report/exceptions-section.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-- [ ] Implement the smallest typed solution consistent with existing repository patterns.
-- [ ] Run `bun test tests/report/exceptions-section.test.ts` and `bun run typecheck` until both pass.
-- [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-- [ ] Write the task report. Do not stage or commit changes.
-
----
-
-### Task 22: EVID-008 Evidence Manifest and Checksums (EVID-008)
-
-    **Files:**
-    - Modify or create: `src/evidence/manifest.ts`
-- Modify or create: `schemas/dokion-evidence-manifest.schema.json`
-    - Test: `tests/evidence/manifest.test.ts`
-
-    **Interface:** `buildEvidenceManifest(root, metadata): Promise<EvidenceManifest>; verifyEvidenceManifest(root, manifest): Promise<EvidenceManifestVerification>`
-
-    **Required behavior:** Create a sorted manifest with path, size, media type, digest, producer, run, commit, redaction status, and retention class. Detect missing, altered, duplicate, cross-run, and required unmanifested evidence.
-
-    - [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-    - [ ] Run `bun test tests/evidence/manifest.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-    - [ ] Implement the smallest typed solution consistent with existing repository patterns.
-    - [ ] Run `bun test tests/evidence/manifest.test.ts` and `bun run typecheck` until both pass.
-    - [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-    - [ ] Write the task report. Do not stage or commit changes.
-
----
-
-### Task 23: EVID-005 Deterministic JSON Report (EVID-005)
-
-    **Files:**
-    - Modify or create: `src/report/json-report.ts`
-- Modify or create: `schemas/dokion-report.schema.json`
-    - Test: `tests/report/json-report.test.ts`
-
-    **Interface:** `buildJsonReport(input): DokionJsonReport`
-
-    **Required behavior:** Combine completion, qualified statement, execution, exceptions, gates, coverage, findings, and evidence into a schema-valid stable report using repository-relative paths and no secrets.
-
-    - [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-    - [ ] Run `bun test tests/report/json-report.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-    - [ ] Implement the smallest typed solution consistent with existing repository patterns.
-    - [ ] Run `bun test tests/report/json-report.test.ts` and `bun run typecheck` until both pass.
-    - [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-    - [ ] Write the task report. Do not stage or commit changes.
-
----
-
-### Task 24: EVID-010 Independent Audit CLI (EVID-010)
-
-    **Files:**
-    - Modify or create: `src/audit/audit-run.ts`
-- Modify or create: `src/cli/handlers/audit.ts`
-- Modify or create: `src/cli/command-registry.ts`
-- Modify or create: `src/cli/parser.ts`
-- Modify or create: `src/cli/types.ts`
-- Modify or create: `src/cli.ts`
-    - Test: `tests/audit/audit-run.test.ts`
-- Test: `tests/cli/audit.test.ts`
-
-    **Interface:** `auditRun(root: string): Promise<AuditResult>`
-
-    **Required behavior:** Add read-only dokion audit verification for schemas, revision, event chain, repository identity, playbook and lock digests, approvals, transactions, evidence manifest, JSON report, and completion with stable exit semantics.
-
-    - [ ] Write focused failing tests that exercise the public interface and the listed safety boundary.
-    - [ ] Run `bun test tests/audit/audit-run.test.ts tests/cli/audit.test.ts` and confirm RED is caused by missing behavior, not setup failure.
-    - [ ] Implement the smallest typed solution consistent with existing repository patterns.
-    - [ ] Run `bun test tests/audit/audit-run.test.ts tests/cli/audit.test.ts` and `bun run typecheck` until both pass.
-    - [ ] Review `git diff --check` and confirm no file outside the task scope changed.
-    - [ ] Write the task report. Do not stage or commit changes.
+### Wave 4: Launch Checklist & Full Audit Sign-Off
+
+#### Task W4-1: PROD-009..014 Coherent Product Flows, Docs, Fixtures, CI & Launch Checklist
+- **Files:** `docs/getting-started/ONBOARDING.md`, `docs/operations/RECOVERY.md`, `docs/launch/public-beta-checklist.md`, `tests/fixtures/promotion/**`, `.github/workflows/ci.yml`
+- **Test:** `tests/cli/product-flow.test.ts`, `tests/docs/onboarding-smoke.test.ts`, `tests/acceptance/promotion-fixtures.test.ts`, `tests/contracts/ci-gates.test.ts`, `tests/release/release-integrity.test.ts`, `tests/contracts/public-beta-checklist.test.ts`
+- **TDD:**
+  1. RED: Write failing tests validating CLI product flows, onboarding commands, promotion fixtures (web, API, library), CI workflow rules, and launch checklist.
+  2. GREEN: Create documentation, promotion fixtures, CI validation tests, and launch checklist.
+  3. REFACTOR: Confirm all public beta launch criteria pass.
+
+#### Task W4-2: PG-001..PG-012 Formal Promotion Gates Sign-Off
+- **Files:** `src/readiness/release-gates.ts`
+- **Test:** `tests/release-gates.test.ts`, `tests/release-gates-runtime.test.ts`
+- **TDD:**
+  1. RED: Write failing test evaluating all 12 Promotion Gates against clean test fixtures.
+  2. GREEN: Verify each gate check returns PASS with evidence digest.
+  3. REFACTOR: Run `dokion audit` and confirm 100% green enterprise readiness.
