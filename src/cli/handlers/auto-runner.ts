@@ -89,8 +89,9 @@ export async function handleAutoRunnerCommand(
     },
   });
 
-  // Save final state
-  await store.update(state.revision, () => report.finalState);
+  // Save final state using current revision
+  const currentState = await store.load();
+  await store.update(currentState.revision, () => report.finalState);
 
   if (invocation.format === "human") {
     console.log(`\n🤖 Dokion Auto Playbook Runner (Optimization Architect & Autoresearch Engine)\n`);
