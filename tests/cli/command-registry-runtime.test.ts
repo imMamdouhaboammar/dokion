@@ -64,6 +64,7 @@ Observe:
   plugins list
   loops list
   loop <audit|init|cost|sync|context>
+  memory <audit|init|status|patterns>
 
 Configure:
   init
@@ -78,6 +79,7 @@ Execute:
   reject <step:id|finding:id> --by <identity> [--notes <text>]
 
 Dokion never installs, selects, substitutes, reorders, or enables capabilities.`;
+
 
     expect(typeof registry.renderCliHelp).toBe("function");
     expect(registry.renderCliHelp("9.9.9")).toBe(expected);
@@ -151,8 +153,10 @@ Dokion never installs, selects, substitutes, reorders, or enables capabilities.`
       "dokion status",
       "dokion findings",
       "dokion report",
-      "dokion loop"
+      "dokion loop",
+      "dokion memory"
     ]);
+
   });
 
   test("uses registry lookup for planned and unknown command diagnostics", async () => {

@@ -32,6 +32,22 @@ type CliCommandInvocation =
       command: "loop";
       subcommand: "audit" | "init" | "cost" | "sync" | "context";
       pattern?: string;
+    }
+  | {
+      command: "goal";
+      subcommand?: string;
+      targetDir?: string;
+    }
+  | {
+      command: "memory";
+      subcommand: "audit" | "init" | "status" | "patterns";
+      targetDir?: string;
+      pattern?: string;
+      tool?: string;
+      force?: boolean;
+      withLoop?: boolean;
+      suggest?: boolean;
     };
 
 export type CliInvocation = CliCommandInvocation & { format: CliOutputFormat };
+

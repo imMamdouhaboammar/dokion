@@ -43,6 +43,16 @@ dokion loop sync
 dokion loop context
 ```
 
+## Memory Engineering commands
+
+```bash
+dokion memory audit
+dokion memory init --pattern <session-scratchpad|project-episodic-log|durable-facts-store|retrieval-budget|memory-hygiene-loop>
+dokion memory status
+dokion memory patterns
+```
+
+
 ## Verification
 
 A repair is accepted only when:

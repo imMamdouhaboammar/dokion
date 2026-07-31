@@ -8,7 +8,9 @@ import { builtinCatalog } from "./catalog/builtin-catalog.ts";
 import { renderCliHelp } from "./cli/command-registry.ts";
 import { handleDoctorCommand } from "./cli/handlers/doctor.ts";
 import { handleLoopCommand } from "./cli/handlers/loop.ts";
+import { handleMemoryCommand } from "./cli/handlers/memory.ts";
 import { handlePlan } from "./cli/handlers/plan.ts";
+
 import { writeCliDiagnostic, writeCliResult } from "./cli/output.ts";
 import { parseCliInvocation, requestedCliOutputFormat } from "./cli/parser.ts";
 import type { CliInvocation, CliOutputFormat } from "./cli/types.ts";
@@ -229,8 +231,22 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
     case "loop":
       print(handleLoopCommand({ subcommand: invocation.subcommand, ...(invocation.pattern ? { pattern: invocation.pattern } : {}), format: invocation.format, projectDir: root }), invocation.format);
       return;
+    case "memory":
+      process.exitCode = await handleMemoryCommand({
+        subcommand: invocation.subcommand,
+        targetDir: invocation.targetDir || root,
+        ...(invocation.pattern ? { pattern: invocation.pattern } : {}),
+        ...(invocation.tool ? { tool: invocation.tool } : {}),
+        ...(invocation.force !== undefined ? { force: invocation.force } : {}),
+        ...(invocation.withLoop !== undefined ? { withLoop: invocation.withLoop } : {}),
+        ...(invocation.suggest !== undefined ? { suggest: invocation.suggest } : {}),
+        json: invocation.format === "json"
+      });
+      return;
+
   }
 }
+
 
 try {
   await main();
