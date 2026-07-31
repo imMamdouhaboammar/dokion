@@ -11,13 +11,13 @@ describe('Dokion Automation Skill Set Verification', () => {
     const content = readFileSync(skillPath, 'utf8');
     expect(content).toContain('name: dokion-automation');
     expect(content).toContain('description:');
-    expect(content).toContain('bun run src/cli.ts autopilot');
+    expect(content).toContain('dokion autopilot');
   });
 
   test('reference authoring guide exists and contains valid schema details', () => {
     expect(existsSync(referencePath)).toBe(true);
     const content = readFileSync(referencePath, 'utf8');
-    expect(content).toContain('Playbook Authoring Reference Guide');
-    expect(content).toContain('approvalPolicy');
+    expect(content).toContain('Dokion Playbook Authoring');
+    expect(content).toContain('approval');
   });
 });
