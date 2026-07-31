@@ -76,6 +76,7 @@ Configure:
   plan
   configure
   validate [--catalog-only]
+  create [--from-memory <source>] [--transcript <path>] [--topic <topic>]
   reset --state-only
   playbooks <import|validate|sync|list>
 
@@ -88,6 +89,8 @@ Execute:
   reject <step:id|finding:id> --by <identity> [--notes <text>]
   skip <step-id> --reason <text>
   autopilot [--dry-run]
+  auto-runner [--max-turns 100] [--target 100]
+  autoresearch [<goal>] [--auto] [--dry-run]
 
 Dokion never installs, selects, substitutes, reorders, or enables capabilities.`;
 

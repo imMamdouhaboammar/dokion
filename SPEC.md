@@ -853,6 +853,7 @@ observe cannot mutate, and the commands that mutate cannot run unapproved.
 | `dokion configure` | Interactive edit of the proposal. |
 | `dokion validate` | Validate the playbook; resolve and verify every declared capability. |
 | `dokion playbooks` | Manage playbooks and skills ecosystem: import, validate, sync, and list. |
+| `dokion create` | Synthesize a new Playbook from memory, transcripts, and workflow optimization logs. |
 | `dokion reset --state-only` | Clear run state. Never touches the playbook. |
 
 `dokion plan` is the only command that authors a playbook, and it can only write the
@@ -869,6 +870,8 @@ adding one would break the model.
 | `dokion approve` · `reject` · `skip` | Record a decision. Every one lands in the approvals ledger. |
 | `dokion verify` | Re-run verification against the current commit. |
 | `dokion autopilot` | Run deterministic bounded autopilot execution. |
+| `dokion auto-runner` | Run continuous autonomous playbook execution loop to 100% completion with circuit breaker and self-healing. |
+| `dokion autoresearch` | Run autonomous goal-directed iteration loop with Modify-Verify-Guard and orchestrator routing. |
 
 `dokion resume` is the command that makes [principle 2](#the-principles) real: it reads
 `.dokion/state.json` and `HARDENING.md`, and needs nothing from the previous session's

@@ -1,0 +1,253 @@
+{
+  "$schema": "../../schemas/dokion-playbook.schema.json",
+  "version": "1.0.0",
+  "project": {
+    "name": "github-publishing-workflow",
+    "target": "READY_FOR_PRODUCTION",
+    "notes": "GitHub Publishing, CI/CD Release & Issues Automation Playbook. Enforces Conventional Commits (git-commit), GitHub Actions workflow generation (create-github-action-workflow-specification), GitHub Issues triage (github-issues), semantic versioning, and automated release gates."
+  },
+  "authority": {
+    "capability_selection": "USER_ONLY",
+    "execution_order": "USER_ONLY",
+    "capability_behavior": "USER_ONLY",
+    "automatic_capability_discovery": false,
+    "automatic_installation": false,
+    "automatic_substitution": false,
+    "automatic_reordering": false,
+    "allow_recommendations": true,
+    "recommendations_require_approval": true
+  },
+  "enforcement": {
+    "playbook_immutable": true,
+    "hash_algorithm": "sha256",
+    "verify_before_each_step": true,
+    "on_mutation": "ABORT_TAINTED",
+    "protected_paths": [
+      ".dokion/playbook.json",
+      "schemas/**"
+    ],
+    "worktree_policy": "clean-only"
+  },
+  "registry": {
+    "sources": [
+      "dokion.json"
+    ],
+    "require_verified": true,
+    "require_digest": true,
+    "on_unverified": "STOP_STEP"
+  },
+  "coverage_policy": {
+    "blocking_lanes": [
+      "application-security",
+      "api-security-and-contracts"
+    ]
+  },
+  "defaults": {
+    "approval": "BEFORE_WRITE",
+    "failure_policy": "STOP_STAGE",
+    "mode": "FIX_WITH_APPROVAL",
+    "retry_count": 1,
+    "maximum_iterations": 1,
+    "parallel_execution": false,
+    "validation": {
+      "suppression_detection": true,
+      "require_evidence_artifact": true,
+      "forbid_test_deletion": true,
+      "forbid_out_of_scope_edits": true,
+      "max_diff_lines": 300
+    }
+  },
+  "stages": [
+    {
+      "id": "stage-git-commit-lint",
+      "name": "Conventional Commits & History Verification",
+      "execution": "SEQUENTIAL",
+      "notes": "Verifies commit messages conform to git-commit conventional commit specification.",
+      "steps": [
+        {
+          "id": "lint-git-commits",
+          "name": "Lint recent git commits against conventional commits format",
+          "capability": {
+            "type": "skill",
+            "id": "git-commit",
+            "version": "1.0.0",
+            "source": "dokion.json",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Validate commit messages for feat, fix, docs, chore, refactor, breaking change types.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/evidence/**"
+            ],
+            "network": false,
+            "shell": [
+              "git log -n 10 --oneline"
+            ]
+          },
+          "success_conditions": [
+            "conventional_commits_validated"
+          ],
+          "failure_policy": "STOP_STAGE"
+        }
+      ]
+    },
+    {
+      "id": "stage-github-actions-spec",
+      "name": "GitHub Actions Workflows Spec & Audit",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "stage-git-commit-lint"
+      ],
+      "notes": "Audits or creates secure .github/workflows specs with scoped permissions.",
+      "steps": [
+        {
+          "id": "audit-workflow-spec",
+          "name": "Audit and generate GitHub Actions workflow specification",
+          "capability": {
+            "type": "skill",
+            "id": "create-github-action-workflow-specification",
+            "version": "1.0.0",
+            "source": "dokion.json",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Validate workflow triggers, job dependencies, least-privilege token permissions, and step caching.",
+          "mode": "FIX_WITH_APPROVAL",
+          "required": true,
+          "approval": "BEFORE_WRITE",
+          "permissions": {
+            "read": [
+              ".github/workflows/**"
+            ],
+            "write": [
+              ".github/workflows/**"
+            ],
+            "network": false
+          },
+          "success_conditions": [
+            "workflow_spec_valid",
+            "token_permissions_scoped"
+          ],
+          "failure_policy": "STOP_STAGE"
+        }
+      ]
+    },
+    {
+      "id": "stage-github-issues-triage",
+      "name": "GitHub Issues & Release Milestone Triage",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "stage-github-actions-spec"
+      ],
+      "notes": "Links fixed issues to commits, generates release notes, and updates milestones.",
+      "steps": [
+        {
+          "id": "triage-github-issues",
+          "name": "Triage open GitHub issues and assemble release notes",
+          "capability": {
+            "type": "skill",
+            "id": "github-issues",
+            "version": "1.0.0",
+            "source": "dokion.json",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Map commit PRs to open GitHub Issues, categorize release notes, and assign release labels.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/evidence/RELEASE_NOTES.md"
+            ],
+            "network": true
+          },
+          "success_conditions": [
+            "issues_triaged",
+            "release_notes_generated"
+          ],
+          "failure_policy": "CONTINUE"
+        }
+      ]
+    },
+    {
+      "id": "stage-release-gates",
+      "name": "Verification & Package Build Release Gates",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "stage-github-issues-triage"
+      ],
+      "notes": "Executes typecheck, linting, tests, and dry-run package publish build.",
+      "steps": [
+        {
+          "id": "run-publishing-gates",
+          "name": "Run typecheck, lint, test, and release build gates",
+          "capability": {
+            "type": "tool",
+            "id": "git",
+            "version": ">=2.40",
+            "source": "system",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Execute Bun test, typecheck, lint, and build verification.",
+          "mode": "VERIFY_ONLY",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/evidence/**"
+            ],
+            "network": false,
+            "shell": [
+              "bun test",
+              "bun run typecheck",
+              "bun run lint",
+              "bun run build"
+            ]
+          },
+          "verification": [
+            "bun test",
+            "bun run typecheck"
+          ],
+          "success_conditions": [
+            "publishing_gates_passed"
+          ],
+          "failure_policy": "STOP_PIPELINE"
+        }
+      ]
+    }
+  ],
+  "release_gates": [
+    {
+      "id": "typecheck",
+      "command": "bun run typecheck",
+      "blocking": true
+    },
+    {
+      "id": "tests",
+      "command": "bun test",
+      "blocking": true
+    },
+    {
+      "id": "lint",
+      "command": "bun run lint",
+      "blocking": true
+    },
+    {
+      "id": "build",
+      "command": "bun run build",
+      "blocking": true
+    }
+  ],
+  "manifest": "dokion.json"
+}

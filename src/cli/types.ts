@@ -83,6 +83,25 @@ type CliCommandInvocation =
       command: "compare";
       baselineRunId?: string;
       targetRunId?: string;
+    }
+  | {
+      command: "auto-runner";
+      options: Map<string, true | string>;
+      flags: Set<string>;
+    }
+  | {
+      command: "autoresearch";
+      positionals: string[];
+      options: Map<string, true | string>;
+      flags: Set<string>;
+      dryRun?: boolean;
+    }
+  | {
+      command: "create";
+      fromMemory?: string;
+      transcript?: string;
+      topic?: string;
+      output?: string;
     };
 
 export type CliInvocation = CliCommandInvocation & { format: CliOutputFormat };

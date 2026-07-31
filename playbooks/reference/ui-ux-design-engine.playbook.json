@@ -1,0 +1,293 @@
+{
+  "$schema": "../../schemas/dokion-playbook.schema.json",
+  "version": "1.0.0",
+  "project": {
+    "name": "ui-ux-design-engine",
+    "target": "READY_FOR_PRODUCTION",
+    "notes": "Vercel & Design Systems Inspired UI/UX Engineering Playbook. Enforces HSL design system tokens, CVA variant component composition, fluid typography, dark/light contrast correctness, accessible interaction states, and WCAG AA verification."
+  },
+  "authority": {
+    "capability_selection": "USER_ONLY",
+    "execution_order": "USER_ONLY",
+    "capability_behavior": "USER_ONLY",
+    "automatic_capability_discovery": false,
+    "automatic_installation": false,
+    "automatic_substitution": false,
+    "automatic_reordering": false,
+    "allow_recommendations": true,
+    "recommendations_require_approval": true
+  },
+  "enforcement": {
+    "playbook_immutable": true,
+    "hash_algorithm": "sha256",
+    "verify_before_each_step": true,
+    "on_mutation": "ABORT_TAINTED",
+    "protected_paths": [
+      ".dokion/playbook.json",
+      "schemas/**"
+    ],
+    "worktree_policy": "clean-only"
+  },
+  "registry": {
+    "sources": [
+      "dokion.json"
+    ],
+    "require_verified": true,
+    "require_digest": true,
+    "on_unverified": "STOP_STEP"
+  },
+  "coverage_policy": {
+    "blocking_lanes": [
+      "ui-ux-and-design-system",
+      "seo-and-accessibility"
+    ]
+  },
+  "defaults": {
+    "approval": "BEFORE_WRITE",
+    "failure_policy": "STOP_STAGE",
+    "mode": "FIX_WITH_APPROVAL",
+    "retry_count": 1,
+    "maximum_iterations": 1,
+    "parallel_execution": false,
+    "validation": {
+      "suppression_detection": true,
+      "require_evidence_artifact": true,
+      "forbid_test_deletion": true,
+      "forbid_out_of_scope_edits": true,
+      "max_diff_lines": 300
+    }
+  },
+  "stages": [
+    {
+      "id": "stage-design-tokens",
+      "name": "Semantic HSL Design System Tokens",
+      "execution": "SEQUENTIAL",
+      "notes": "Audits index.css and tailwind.config.ts to ensure HSL tokens exist and raw color classes are strictly prohibited.",
+      "steps": [
+        {
+          "id": "audit-design-tokens",
+          "name": "Audit index.css and enforce semantic tokens",
+          "capability": {
+            "type": "skill",
+            "id": "ui-ux-design-engine",
+            "version": "1.0.0",
+            "source": "dokion.json",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Verify that all colors, borders, cards, and backgrounds use semantic HSL CSS variables.",
+          "mode": "FIX_WITH_APPROVAL",
+          "required": true,
+          "approval": "BEFORE_WRITE",
+          "permissions": {
+            "read": [
+              "src/**/*.css",
+              "tailwind.config.ts"
+            ],
+            "write": [
+              "src/index.css",
+              "tailwind.config.ts"
+            ],
+            "network": false
+          },
+          "success_conditions": [
+            "hsl_tokens_configured",
+            "no_raw_color_classes"
+          ],
+          "failure_policy": "STOP_PIPELINE"
+        }
+      ]
+    },
+    {
+      "id": "stage-component-composition",
+      "name": "CVA Variant Component Architecture",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "stage-design-tokens"
+      ],
+      "notes": "Creates small, modular TypeScript React components using Class Variance Authority (CVA).",
+      "steps": [
+        {
+          "id": "build-cva-components",
+          "name": "Construct modular components with CVA variants",
+          "capability": {
+            "type": "skill",
+            "id": "ui-ux-design-engine",
+            "version": "1.0.0",
+            "source": "dokion.json",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Build buttons, cards, dialogs, inputs, and layout wrappers with variants (default, hero, glass, outline, subtle).",
+          "mode": "FIX_WITH_APPROVAL",
+          "required": true,
+          "approval": "BEFORE_WRITE",
+          "permissions": {
+            "read": [
+              "src/components/**",
+              "src/lib/**"
+            ],
+            "write": [
+              "src/components/ui/**",
+              "src/components/**"
+            ],
+            "network": false
+          },
+          "success_conditions": [
+            "cva_components_constructed"
+          ],
+          "failure_policy": "STOP_STAGE"
+        }
+      ]
+    },
+    {
+      "id": "stage-theme-and-rtl",
+      "name": "Dark/Light Contrast & RTL/LTR Parity",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "stage-component-composition"
+      ],
+      "notes": "Verifies high contrast in dark/light themes and logical spacing for Arabic RTL / English LTR.",
+      "steps": [
+        {
+          "id": "verify-theme-and-rtl",
+          "name": "Verify contrast ratios and logical CSS properties",
+          "capability": {
+            "type": "skill",
+            "id": "ui-ux-design-engine",
+            "version": "1.0.0",
+            "source": "dokion.json",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Ensure WCAG 2.2 AA contrast ratios and logical utility usage (ms-*, me-*) for bilingual support.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "src/**"
+            ],
+            "write": [
+              ".dokion/evidence/**"
+            ],
+            "network": false
+          },
+          "success_conditions": [
+            "contrast_verified",
+            "rtl_parity_confirmed"
+          ],
+          "failure_policy": "STOP_STAGE"
+        }
+      ]
+    },
+    {
+      "id": "stage-a11y-verification",
+      "name": "Accessibility & Interaction Verification",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "stage-theme-and-rtl"
+      ],
+      "notes": "Audits focus rings, keyboard navigation, ARIA attributes, and reduced motion queries.",
+      "steps": [
+        {
+          "id": "a11y-audit",
+          "name": "Audit focus states and keyboard navigation",
+          "capability": {
+            "type": "skill",
+            "id": "ui-ux-design-engine",
+            "version": "1.0.0",
+            "source": "dokion.json",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Run axe-core or equivalent a11y checks to verify focus-visible rings and ARIA accessibility.",
+          "mode": "VERIFY_ONLY",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "src/**"
+            ],
+            "write": [
+              ".dokion/evidence/**"
+            ],
+            "network": false
+          },
+          "success_conditions": [
+            "a11y_passed"
+          ],
+          "failure_policy": "CONTINUE"
+        }
+      ]
+    },
+    {
+      "id": "stage-ui-gates",
+      "name": "Release Gates & Build Verification",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "stage-a11y-verification"
+      ],
+      "notes": "Executes typecheck, linting, tests, and production build.",
+      "steps": [
+        {
+          "id": "run-ui-gates",
+          "name": "Run build and typecheck release gates",
+          "capability": {
+            "type": "tool",
+            "id": "git",
+            "version": ">=2.40",
+            "source": "system",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Run Bun typecheck, lint, test, and build commands.",
+          "mode": "VERIFY_ONLY",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/evidence/**"
+            ],
+            "network": false,
+            "shell": [
+              "bun test",
+              "bun run typecheck",
+              "bun run lint",
+              "bun run build"
+            ]
+          },
+          "verification": [
+            "bun test",
+            "bun run typecheck"
+          ],
+          "success_conditions": [
+            "all_ui_gates_green"
+          ],
+          "failure_policy": "STOP_PIPELINE"
+        }
+      ]
+    }
+  ],
+  "release_gates": [
+    {
+      "id": "typecheck",
+      "command": "bun run typecheck",
+      "blocking": true
+    },
+    {
+      "id": "tests",
+      "command": "bun test",
+      "blocking": true
+    },
+    {
+      "id": "lint",
+      "command": "bun run lint",
+      "blocking": true
+    },
+    {
+      "id": "build",
+      "command": "bun run build",
+      "blocking": true
+    }
+  ],
+  "manifest": "dokion.json"
+}

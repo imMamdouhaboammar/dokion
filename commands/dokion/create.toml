@@ -1,0 +1,6 @@
+description = "Synthesize a new Playbook from memory, transcripts, and workflow optimization logs"
+prompt = """
+Read skills/dokion-playbook-creator/SKILL.md and follow it exactly.
+
+Run `dokion create` to analyze memory drivers, conversation transcripts, and workflow logs to synthesize a new SHA-256 locked Dokion Playbook.
+"""

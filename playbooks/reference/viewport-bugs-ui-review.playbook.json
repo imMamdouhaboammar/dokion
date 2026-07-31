@@ -1,0 +1,210 @@
+{
+  "$schema": "../../schemas/dokion-playbook.schema.json",
+  "version": "1.0.0",
+  "project": {
+    "name": "viewport-bugs-ui-review",
+    "target": "READY_FOR_PRODUCTION",
+    "notes": "Automated Viewport Bug Detection, Systematic Layout Remediation & Visual UI Review Loop Playbook. Uses agent-browser, browser-use, systematic-debugging, and ui-review-loop to detect, systematically repair, and visually report responsiveness defects across all device breakpoints."
+  },
+  "authority": {
+    "capability_selection": "USER_ONLY",
+    "execution_order": "USER_ONLY",
+    "capability_behavior": "USER_ONLY",
+    "automatic_capability_discovery": false,
+    "automatic_installation": false,
+    "automatic_substitution": false,
+    "automatic_reordering": false,
+    "allow_recommendations": true,
+    "recommendations_require_approval": true
+  },
+  "enforcement": {
+    "playbook_immutable": true,
+    "hash_algorithm": "sha256",
+    "verify_before_each_step": true,
+    "on_mutation": "ABORT_TAINTED",
+    "protected_paths": [
+      ".dokion/playbook.json",
+      "schemas/**"
+    ],
+    "worktree_policy": "clean-only"
+  },
+  "registry": {
+    "sources": [
+      "dokion.json"
+    ],
+    "require_verified": true,
+    "require_digest": true,
+    "on_unverified": "STOP_STEP"
+  },
+  "coverage_policy": {
+    "blocking_lanes": [
+      "ui-ux-and-design-system",
+      "seo-and-accessibility",
+      "performance-benchmarking"
+    ]
+  },
+  "defaults": {
+    "approval": "BEFORE_WRITE",
+    "failure_policy": "STOP_STAGE",
+    "mode": "FIX_WITH_APPROVAL",
+    "retry_count": 1,
+    "maximum_iterations": 3,
+    "parallel_execution": false,
+    "validation": {
+      "suppression_detection": true,
+      "require_evidence_artifact": true,
+      "forbid_test_deletion": true,
+      "forbid_out_of_scope_edits": true,
+      "max_diff_lines": 300
+    }
+  },
+  "stages": [
+    {
+      "id": "stage-skill-provisioning",
+      "name": "Equip Viewport Audit & Repair Skills",
+      "execution": "SEQUENTIAL",
+      "notes": "Installs and registers agent-browser, browser-use, systematic-debugging, and ui-review-loop skills.",
+      "steps": [
+        {
+          "id": "equip-browser-and-debugging-skills",
+          "name": "Provision agent-browser, browser-use, systematic-debugging, and ui-review-loop skills",
+          "capability": {
+            "type": "tool",
+            "id": "run_command",
+            "source": "dokion.json",
+            "immutable_reference": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "responsibility": "Dynamically install and configure browser automation and debugging skills.",
+          "mode": "FIX_WITH_APPROVAL",
+          "required": true,
+          "approval": "BEFORE_WRITE",
+          "permissions": {
+            "read": ["**/*"],
+            "write": [".agents/skills/**", ".claude/skills/**", "commands/dokion/**"],
+            "network": true,
+            "shell": [
+              "npx skills use \"https://github.com/vercel-labs/agent-browser\" --skill \"agent-browser\"",
+              "npx skills use \"https://github.com/browser-use/browser-use\" --skill \"browser-use\"",
+              "npx skills use \"https://github.com/obra/superpowers\" --skill \"systematic-debugging\"",
+              "npx skills add \"https://github.com/amElnagdy/ui-review-loop\""
+            ]
+          },
+          "success_conditions": [
+            "skills_provisioned"
+          ],
+          "failure_policy": "STOP_STAGE"
+        }
+      ]
+    },
+    {
+      "id": "stage-viewport-bug-detection-loop",
+      "name": "Multi-Breakpoint Viewport Bug Detection Loop",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "stage-skill-provisioning"
+      ],
+      "notes": "Executes browser-use and agent-browser to detect layout overflows, clipping elements, unclickable targets, and responsive bugs across mobile, tablet, laptop, and desktop viewports.",
+      "steps": [
+        {
+          "id": "detect-viewport-bugs-mobile-desktop",
+          "name": "Run automated agent-browser and browser-use responsive audit across 375px, 768px, 1280px, and 1920px viewports",
+          "capability": {
+            "type": "tool",
+            "id": "run_command",
+            "source": "dokion.json",
+            "immutable_reference": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "responsibility": "Identify layout shifts, horizontal overflow scrollbars, overlapping text, and unclickable buttons across viewports.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": ["**/*"],
+            "write": [".dokion/evidence/**"],
+            "network": true,
+            "shell": [
+              "npx skills use \"https://github.com/vercel-labs/agent-browser\" --skill \"agent-browser\"",
+              "npx skills use \"https://github.com/browser-use/browser-use\" --skill \"browser-use\""
+            ]
+          },
+          "success_conditions": [
+            "viewport_bugs_analyzed"
+          ],
+          "failure_policy": "STOP_STAGE"
+        }
+      ]
+    },
+    {
+      "id": "stage-systematic-remediation-loop",
+      "name": "Systematic CSS & Layout Bug Remediation Loop",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "stage-viewport-bug-detection-loop"
+      ],
+      "notes": "Applies systematic-debugging methodology to trace CSS/DOM root causes and apply clean, responsive fixes.",
+      "steps": [
+        {
+          "id": "repair-viewport-bugs-systematically",
+          "name": "Apply systematic-debugging to locate and repair layout and CSS root causes",
+          "capability": {
+            "type": "tool",
+            "id": "run_command",
+            "source": "dokion.json",
+            "immutable_reference": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "responsibility": "Fix CSS container queries, flex/grid wrappers, overflow properties, and media queries without superficial patches.",
+          "mode": "FIX_WITH_APPROVAL",
+          "required": true,
+          "approval": "BEFORE_WRITE",
+          "permissions": {
+            "read": ["src/**/*", "public/**/*"],
+            "write": ["src/**/*.css", "src/**/*.tsx", "src/**/*.jsx", "src/**/*.vue", "src/**/*.svelte", ".dokion/evidence/**"],
+            "shell": [
+              "npx skills use \"https://github.com/obra/superpowers\" --skill \"systematic-debugging\""
+            ]
+          },
+          "success_conditions": [
+            "viewport_bugs_repaired"
+          ],
+          "failure_policy": "STOP_STAGE"
+        }
+      ]
+    },
+    {
+      "id": "stage-ui-review-report-loop",
+      "name": "Visual UI Review & Evidence Report Loop",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "stage-systematic-remediation-loop"
+      ],
+      "notes": "Executes ui-review-loop to capture before/after visual proof and publish the final UI Review Report.",
+      "steps": [
+        {
+          "id": "generate-ui-review-report",
+          "name": "Run ui-review-loop and render visual evidence report",
+          "capability": {
+            "type": "tool",
+            "id": "run_command",
+            "source": "dokion.json",
+            "immutable_reference": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "responsibility": "Capture viewport screenshots, generate visual diffs, and write UI_REVIEW.md report.",
+          "mode": "FIX_WITH_APPROVAL",
+          "required": true,
+          "approval": "BEFORE_WRITE",
+          "permissions": {
+            "read": ["**/*"],
+            "write": ["HARDENING.md", "UI_REVIEW.md", ".dokion/reports/**", ".dokion/evidence/**"],
+            "shell": [
+              "npx skills add \"https://github.com/amElnagdy/ui-review-loop\""
+            ]
+          },
+          "success_conditions": [
+            "ui_review_report_generated"
+          ],
+          "failure_policy": "STOP_STAGE"
+        }
+      ]
+    }
+  ]
+}

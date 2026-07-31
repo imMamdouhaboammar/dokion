@@ -401,6 +401,69 @@ export function parseCliInvocation(argv: readonly string[]): CliInvocation {
     };
   }
 
+  if (rawCommand === "auto-runner") {
+    const parsed = parseTokens(rawCommand, tokens, {
+      "--max-turns": { kind: "value" },
+      "--target": { kind: "value" },
+      "--max-cost": { kind: "value" },
+      "--disable-circuit-breaker": { kind: "boolean" }
+    });
+    const flags = new Set<string>();
+    if (parsed.options.get("--disable-circuit-breaker") === true) flags.add("disable-circuit-breaker");
+    return {
+      command: "auto-runner",
+      options: parsed.options,
+      flags,
+      format: outputFormat(rawCommand, parsed.options)
+    };
+  }
+
+  if (rawCommand === "autoresearch") {
+    const parsed = parseTokens(rawCommand, tokens, {
+      "--auto": { kind: "boolean" },
+      "--classic": { kind: "boolean" },
+      "--dry-run": { kind: "boolean" },
+      "--max-cycles": { kind: "value" },
+      "--evals": { kind: "boolean" }
+    });
+    const flags = new Set<string>();
+    if (parsed.options.get("--auto") === true) flags.add("auto");
+    if (parsed.options.get("--classic") === true) flags.add("classic");
+    if (parsed.options.get("--dry-run") === true) flags.add("dry-run");
+    if (parsed.options.get("--evals") === true) flags.add("evals");
+
+    return {
+      command: "autoresearch",
+      positionals: parsed.positionals,
+      options: parsed.options,
+      flags,
+      dryRun: parsed.options.get("--dry-run") === true,
+      format: outputFormat(rawCommand, parsed.options)
+    };
+  }
+
+  if (rawCommand === "create" || rawCommand === "creator") {
+    const parsed = parseTokens(rawCommand, tokens, {
+      "--from-memory": { kind: "value" },
+      "--transcript": { kind: "value" },
+      "--topic": { kind: "value" },
+      "--output": { kind: "value" }
+    });
+    const fromMemory = parsed.options.get("--from-memory") as string | undefined;
+    const transcript = parsed.options.get("--transcript") as string | undefined;
+    const topic = parsed.options.get("--topic") as string | undefined;
+    const output = parsed.options.get("--output") as string | undefined;
+
+    return {
+      command: "create",
+      ...(fromMemory ? { fromMemory } : {}),
+      ...(transcript ? { transcript } : {}),
+      ...(topic ? { topic } : {}),
+      ...(output ? { output } : {}),
+      format: outputFormat(rawCommand, parsed.options)
+    };
+  }
+
   if (SIMPLE_COMMANDS.has(rawCommand as CliSimpleCommand)) {
     const parsed = parseTokens(rawCommand, tokens, {});
     requireNoPositionals(rawCommand, parsed.positionals);

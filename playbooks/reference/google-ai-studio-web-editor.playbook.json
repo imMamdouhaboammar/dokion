@@ -1,0 +1,399 @@
+{
+  "$schema": "../../schemas/dokion-playbook.schema.json",
+  "version": "1.0.0",
+  "project": {
+    "name": "google-ai-studio-web-editor",
+    "target": "READY_FOR_PRODUCTION",
+    "notes": "Google AI Studio Web Application Agent & Real-Time Editor Playbook. Covers context inspection, design system tokenization, modular React/Vite/Tailwind implementation, Supabase backend integration, real-time debugging, SEO/mobile optimization, and strict release gates."
+  },
+  "authority": {
+    "capability_selection": "USER_ONLY",
+    "execution_order": "USER_ONLY",
+    "capability_behavior": "USER_ONLY",
+    "automatic_capability_discovery": false,
+    "automatic_installation": false,
+    "automatic_substitution": false,
+    "automatic_reordering": false,
+    "allow_recommendations": true,
+    "recommendations_require_approval": true
+  },
+  "enforcement": {
+    "playbook_immutable": true,
+    "hash_algorithm": "sha256",
+    "verify_before_each_step": true,
+    "on_mutation": "ABORT_TAINTED",
+    "protected_paths": [
+      ".dokion/playbook.json",
+      "schemas/**"
+    ],
+    "worktree_policy": "clean-only"
+  },
+  "registry": {
+    "sources": [
+      "dokion.json"
+    ],
+    "require_verified": true,
+    "require_digest": true,
+    "on_unverified": "STOP_STEP"
+  },
+  "coverage_policy": {
+    "blocking_lanes": [
+      "application-security",
+      "api-security-and-contracts",
+      "ui-ux-and-design-system",
+      "seo-and-accessibility"
+    ]
+  },
+  "defaults": {
+    "approval": "BEFORE_WRITE",
+    "failure_policy": "STOP_STAGE",
+    "mode": "FIX_WITH_APPROVAL",
+    "retry_count": 1,
+    "maximum_iterations": 1,
+    "parallel_execution": false,
+    "validation": {
+      "suppression_detection": true,
+      "require_evidence_artifact": true,
+      "forbid_test_deletion": true,
+      "forbid_out_of_scope_edits": true,
+      "max_diff_lines": 300
+    }
+  },
+  "stages": [
+    {
+      "id": "stage-context-intent",
+      "name": "Context Inspection & Discussion Mode Gating",
+      "execution": "SEQUENTIAL",
+      "notes": "Checks context FIRST, restates user intent, defaults to discussion/planning mode unless action keywords are present.",
+      "steps": [
+        {
+          "id": "check-useful-context",
+          "name": "Verify useful context and inspect codebase without redundant reads",
+          "capability": {
+            "type": "tool",
+            "id": "git",
+            "version": ">=2.40",
+            "source": "system",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Inspect repository structure, check useful context before reading files, and determine if request requires discussion or immediate implementation.",
+          "mode": "READ_ONLY",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/state.json"
+            ],
+            "network": false,
+            "shell": [
+              "git status --porcelain"
+            ]
+          },
+          "success_conditions": [
+            "context_inspected",
+            "intent_classified"
+          ],
+          "failure_policy": "STOP_PIPELINE"
+        }
+      ]
+    },
+    {
+      "id": "stage-tool-orchestration",
+      "name": "Tool Review & Parallel Batching",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "stage-context-intent"
+      ],
+      "notes": "Selects appropriate tools and batches independent operations concurrently.",
+      "steps": [
+        {
+          "id": "batch-tool-planner",
+          "name": "Plan parallel tool calls for file inspection and edits",
+          "capability": {
+            "type": "skill",
+            "id": "google-ai-studio-web-editor",
+            "version": "1.0.0",
+            "source": "dokion.json",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Map required operations to tools and trigger parallel tool execution without sequential blocking.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/evidence/**"
+            ],
+            "network": true
+          },
+          "success_conditions": [
+            "tool_plan_established",
+            "batching_configured"
+          ],
+          "failure_policy": "STOP_STAGE"
+        }
+      ]
+    },
+    {
+      "id": "stage-design-system",
+      "name": "Semantic Design System & HSL Tokenization",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "stage-tool-orchestration"
+      ],
+      "notes": "Configures HSL tokens, dark/light theme variables, custom Shadcn variants in index.css & tailwind.config.ts.",
+      "steps": [
+        {
+          "id": "design-token-setup",
+          "name": "Establish rich design tokens and component variants",
+          "capability": {
+            "type": "skill",
+            "id": "impeccable",
+            "version": "1.0.0",
+            "source": "dokion.json",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Update index.css and tailwind.config.ts with semantic HSL tokens, glow effects, gradients, and custom Shadcn variants.",
+          "mode": "FIX_WITH_APPROVAL",
+          "required": true,
+          "approval": "BEFORE_WRITE",
+          "permissions": {
+            "read": [
+              "src/**/*.css",
+              "src/**/*.ts",
+              "tailwind.config.ts",
+              "index.html"
+            ],
+            "write": [
+              "src/index.css",
+              "tailwind.config.ts",
+              "src/components/ui/**"
+            ],
+            "network": false
+          },
+          "success_conditions": [
+            "semantic_hsl_tokens_defined",
+            "no_raw_color_classes_used"
+          ],
+          "failure_policy": "STOP_STAGE"
+        }
+      ]
+    },
+    {
+      "id": "stage-web-app-implementation",
+      "name": "Modular Web App & Supabase Integration",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "stage-design-system"
+      ],
+      "notes": "Builds small focused components, connects Supabase backend, generates images for assets, and enforces relationship space contract.",
+      "steps": [
+        {
+          "id": "implement-components",
+          "name": "Implement React components with real data persistence and RTL support",
+          "capability": {
+            "type": "skill",
+            "id": "dokion-fullstack",
+            "version": "1.0.0",
+            "source": "dokion.json",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Create modular TypeScript React components, integrate Supabase authentication/database, support Arabic RTL & English, and implement full UI states.",
+          "mode": "FIX_WITH_APPROVAL",
+          "required": true,
+          "approval": "BEFORE_WRITE",
+          "permissions": {
+            "read": [
+              "src/**",
+              "public/**",
+              "package.json"
+            ],
+            "write": [
+              "src/components/**",
+              "src/pages/**",
+              "src/lib/**",
+              "src/App.tsx"
+            ],
+            "network": true
+          },
+          "validation": {
+            "suppression_detection": true,
+            "forbid_test_deletion": true,
+            "forbid_out_of_scope_edits": true,
+            "max_diff_lines": 300
+          },
+          "verification": [
+            "bun run typecheck"
+          ],
+          "success_conditions": [
+            "components_implemented",
+            "data_persisted",
+            "rtl_verified"
+          ],
+          "failure_policy": "STOP_STAGE"
+        }
+      ]
+    },
+    {
+      "id": "stage-realtime-debugging",
+      "name": "Console & Network Debugging",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "stage-web-app-implementation"
+      ],
+      "notes": "Uses debugging tools FIRST to read console logs and network requests before modifying broken code.",
+      "steps": [
+        {
+          "id": "read-logs-and-network",
+          "name": "Inspect browser console logs and API network requests",
+          "capability": {
+            "type": "tool",
+            "id": "chrome-devtools-mcp",
+            "version": "1.0.0",
+            "source": "dokion.json",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Read console logs and network traffic to isolate runtime or API errors before touching code.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/findings/**",
+              ".dokion/evidence/**"
+            ],
+            "network": true
+          },
+          "success_conditions": [
+            "console_logs_inspected",
+            "network_requests_verified"
+          ],
+          "failure_policy": "CONTINUE"
+        }
+      ]
+    },
+    {
+      "id": "stage-seo-mobile-a11y",
+      "name": "SEO, Accessibility & Mobile Optimization",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "stage-web-app-implementation"
+      ],
+      "notes": "Ensures single H1, <60 char title, <160 char meta description, JSON-LD, lazy loading, responsive viewport, and WCAG AA accessibility.",
+      "steps": [
+        {
+          "id": "audit-seo-and-a11y",
+          "name": "Validate SEO tags, structured data, and WCAG AA accessibility",
+          "capability": {
+            "type": "tool",
+            "id": "axe-core-cli",
+            "version": "PLACEHOLDER_PIN_EXACT_VERSION",
+            "source": "npm:@axe-core/cli",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Check semantic HTML5 tags, meta descriptions, image alt tags, canonical URLs, and keyboard navigation.",
+          "mode": "ANALYZE",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "index.html",
+              "src/**"
+            ],
+            "write": [
+              ".dokion/evidence/**"
+            ],
+            "network": false
+          },
+          "success_conditions": [
+            "seo_tags_validated",
+            "a11y_wcag_passed"
+          ],
+          "failure_policy": "CONTINUE"
+        }
+      ]
+    },
+    {
+      "id": "stage-verification-release-gates",
+      "name": "Release Gates & Quality Verification",
+      "execution": "SEQUENTIAL",
+      "depends_on": [
+        "stage-web-app-implementation",
+        "stage-seo-mobile-a11y"
+      ],
+      "notes": "Executes all project verification commands before claiming completion.",
+      "steps": [
+        {
+          "id": "run-release-gates",
+          "name": "Run typecheck, lint, test, and build gates",
+          "capability": {
+            "type": "tool",
+            "id": "git",
+            "version": ">=2.40",
+            "source": "system",
+            "immutable_reference": "sha256:PLACEHOLDER"
+          },
+          "responsibility": "Execute Bun typecheck, linting, tests, and production build to guarantee zero broken code.",
+          "mode": "VERIFY_ONLY",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/evidence/**"
+            ],
+            "network": false,
+            "shell": [
+              "bun test",
+              "bun run typecheck",
+              "bun run lint",
+              "bun run build"
+            ]
+          },
+          "verification": [
+            "bun test",
+            "bun run typecheck"
+          ],
+          "success_conditions": [
+            "all_gates_green"
+          ],
+          "failure_policy": "STOP_PIPELINE"
+        }
+      ]
+    }
+  ],
+  "release_gates": [
+    {
+      "id": "typecheck",
+      "command": "bun run typecheck",
+      "blocking": true
+    },
+    {
+      "id": "tests",
+      "command": "bun test",
+      "blocking": true
+    },
+    {
+      "id": "lint",
+      "command": "bun run lint",
+      "blocking": true
+    },
+    {
+      "id": "build",
+      "command": "bun run build",
+      "blocking": true
+    }
+  ],
+  "manifest": "dokion.json"
+}

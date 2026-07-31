@@ -4,7 +4,7 @@ export type CliExecutionMode = "READ_ONLY" | "CONFIGURE" | "EXECUTE" | "DECIDE" 
 export type CliApprovalClass = "NONE" | "BEFORE_WRITE" | "FROM_PLAYBOOK" | "ALWAYS" | "DECISION_RECORD";
 export type ManifestCommandMode = "READ_ONLY" | "VERIFY_ONLY" | "REPORT_ONLY";
 export type ManifestApprovalClass = "BEFORE_WRITE" | "FROM_PLAYBOOK" | "ALWAYS";
-export type GeminiCommandFile = "run.toml" | "status.toml" | "goal.toml" | "playbooks.toml" | "hooks.toml";
+export type GeminiCommandFile = "run.toml" | "status.toml" | "goal.toml" | "playbooks.toml" | "hooks.toml" | "create.toml";
 
 export interface ManifestCliCommand {
   command: `dokion ${string}`;
@@ -105,6 +105,24 @@ export const CLI_COMMAND_REGISTRY = [
     approvalClass: "NONE",
     geminiFiles: ["run.toml"],
     geminiOrder: 2
+  },
+  {
+    id: "create",
+    manifestCommand: "dokion create",
+    manifestUsage: "dokion create [--from-memory <source>] [--transcript <path>] [--topic <topic>]",
+    purpose: "Synthesize a new Playbook from memory, transcripts, and workflow optimization logs.",
+    manifestWrites: [".dokion/playbook.json"],
+    manifestApproval: "BEFORE_WRITE",
+    specMarker: "`dokion create`",
+    runtimeCase: "create",
+    helpLine: "  create [--from-memory <source>] [--transcript <path>] [--topic <topic>]",
+    helpGroup: "Configure",
+    helpOrder: 5,
+    status: "IMPLEMENTED",
+    executionMode: "CONFIGURE",
+    writeScope: [".dokion/playbook.json"],
+    approvalClass: "BEFORE_WRITE",
+    geminiFiles: ["create.toml"]
   },
   {
     id: "doctor",
@@ -535,6 +553,38 @@ export const CLI_COMMAND_REGISTRY = [
     writeScope: [],
     approvalClass: "NONE",
     geminiFiles: []
+  },
+  {
+    id: "auto-runner",
+    manifestCommand: "dokion auto-runner",
+    purpose: "Run continuous autonomous playbook execution loop to 100% completion with circuit breaker and self-healing.",
+    manifestApproval: "FROM_PLAYBOOK",
+    specMarker: "`dokion auto-runner`",
+    runtimeCase: "auto-runner",
+    helpLine: "  auto-runner [--max-turns 100] [--target 100]",
+    helpGroup: "Execute",
+    helpOrder: 9,
+    status: "IMPLEMENTED",
+    executionMode: "EXECUTE",
+    writeScope: ["PLAYBOOK_DECLARED", ".dokion/**", "HARDENING.md"],
+    approvalClass: "FROM_PLAYBOOK",
+    geminiFiles: []
+  },
+  {
+    id: "autoresearch",
+    manifestCommand: "dokion autoresearch",
+    purpose: "Run autonomous goal-directed iteration loop with Modify-Verify-Guard and orchestrator routing.",
+    manifestApproval: "FROM_PLAYBOOK",
+    specMarker: "`dokion autoresearch`",
+    runtimeCase: "autoresearch",
+    helpLine: "  autoresearch [<goal>] [--auto] [--dry-run]",
+    helpGroup: "Execute",
+    helpOrder: 10,
+    status: "IMPLEMENTED",
+    executionMode: "EXECUTE",
+    writeScope: ["PLAYBOOK_DECLARED", ".dokion/**", "HARDENING.md"],
+    approvalClass: "FROM_PLAYBOOK",
+    geminiFiles: []
   }
 ] as const satisfies readonly CliCommandDescriptor[];
 
@@ -545,7 +595,7 @@ export function implementedCliCommands(): readonly CliCommandDescriptor[] {
 }
 
 export function plannedCliCommands(): readonly CliCommandDescriptor[] {
-  return CLI_COMMAND_REGISTRY.filter((command) => command.status === "PLANNED");
+  return CLI_COMMAND_REGISTRY.filter((command: CliCommandDescriptor) => (command.status as string) === "PLANNED");
 }
 
 export function resolveCliCommand(command: string): CliCommandDescriptor | undefined {

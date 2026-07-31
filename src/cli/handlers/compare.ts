@@ -2,8 +2,8 @@ import { compareDokionRuns, type DokionRunSummary, type RunComparisonResult } fr
 import { StateStore } from "../../state/state-store.ts";
 
 export interface CompareCommandOptions {
-  baselineRunId?: string;
-  targetRunId?: string;
+  baselineRunId?: string | undefined;
+  targetRunId?: string | undefined;
 }
 
 export async function handleCompareCommand(
@@ -27,7 +27,7 @@ export async function handleCompareCommand(
       commit: state.baseline?.commit ?? "head",
       status: state.run.status,
       findings: state.stages.flatMap((s) => s.steps.flatMap((step) => (step.findings ?? []).map((f) => ({ id: f, severity: "HIGH", status: "OPEN" })))),
-      gates: state.release_gates.map((g) => ({ gateId: g.id, status: g.status }))
+      gates: (state.release_gates ?? []).map((g) => ({ gateId: g.id, status: g.status }))
     };
   }
 
@@ -39,13 +39,9 @@ export async function handleCompareCommand(
     gates: []
   };
 
-  const targetRun: DokionRunSummary = {
-    runId: options.targetRunId ?? currentRun.runId,
-    commit: currentRun.commit,
-    status: currentRun.status,
-    findings: currentRun.findings,
-    gates: currentRun.gates
-  };
+  const targetRun: DokionRunSummary = options.targetRunId
+    ? { runId: options.targetRunId, commit: "target", status: "PASSED", findings: [], gates: [] }
+    : currentRun;
 
   return compareDokionRuns(baselineRun, targetRun);
 }

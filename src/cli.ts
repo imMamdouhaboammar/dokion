@@ -7,9 +7,12 @@ import { recordApproval } from "./approvals/approval-store.ts";
 import { builtinCatalog } from "./catalog/builtin-catalog.ts";
 import { renderCliHelp } from "./cli/command-registry.ts";
 import { handleAuditCommand } from "./cli/handlers/audit.ts";
+import { handleAutoRunnerCommand } from "./cli/handlers/auto-runner.ts";
+import { handleAutoresearchCommand } from "./cli/handlers/autoresearch.ts";
 import { handleAutopilotCommand } from "./cli/handlers/autopilot.ts";
 import { handleCompareCommand } from "./cli/handlers/compare.ts";
 import { handleConfigureCommand } from "./cli/handlers/configure.ts";
+import { handleCreatorCommand } from "./cli/handlers/creator.ts";
 import { handleDoctorCommand } from "./cli/handlers/doctor.ts";
 import { handleGoalCommand } from "./cli/handlers/goal.ts";
 import { handleHooksCommand } from "./cli/handlers/hooks.ts";
@@ -213,7 +216,9 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
     case "step": {
       const store = new StateStore(root);
       const state = (await store.exists()) ? await store.load() : null;
-      print(await handleStepCommand({ stepId: invocation.stepId, root }, state), invocation.format);
+      if (invocation.command === "step") {
+        print(await handleStepCommand({ stepId: invocation.stepId, command: "step" }, state), invocation.format);
+      }
       return;
     }
     case "resume":
@@ -227,7 +232,9 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
       await decide(invocation);
       return;
     case "skip":
-      print(handleSkipCommand(invocation.stepId, invocation.reason, invocation.by ?? "user"), invocation.format);
+      if (invocation.command === "skip") {
+        print(handleSkipCommand(invocation.stepId, invocation.reason, invocation.by ?? "user"), invocation.format);
+      }
       return;
     case "reset":
       print(await handleResetCommand(root), invocation.format);
@@ -247,14 +254,33 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
     case "autopilot": {
       const store = new StateStore(root);
       const state = (await store.exists()) ? await store.load() : null;
-      let playbook = { stages: [] };
+      let playbook = { id: "default", name: "Default Playbook", steps: [] };
       try {
         const loaded = await loadActivePlaybook(root);
-        playbook = loaded.data;
+        playbook = loaded.data as any;
       } catch {
         // Fallback minimal playbook
       }
-      print(await handleAutopilotCommand({ playbook, state, dryRun: invocation.dryRun, maxTurns: invocation.maxTurns }), invocation.format);
+      if (invocation.command === "autopilot") {
+        print(await handleAutopilotCommand({
+          playbook,
+          state,
+          ...(invocation.dryRun !== undefined ? { dryRun: invocation.dryRun } : {}),
+          ...(invocation.maxTurns !== undefined ? { maxTurns: invocation.maxTurns } : {}),
+        }), invocation.format);
+      }
+      return;
+    }
+    case "auto-runner": {
+      if (invocation.command === "auto-runner") {
+        await handleAutoRunnerCommand(root, invocation);
+      }
+      return;
+    }
+    case "autoresearch": {
+      if (invocation.command === "autoresearch") {
+        await handleAutoresearchCommand(root, invocation);
+      }
       return;
     }
     case "memory": {
@@ -308,6 +334,15 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
     case "playbooks": {
       const exitCode = await handlePlaybooksCommand([invocation.subcommand, ...(invocation.from ? ["--from", invocation.from] : [])], root);
       if (exitCode !== 0) process.exitCode = exitCode;
+      return;
+    }
+    case "create": {
+      await handleCreatorCommand({
+        fromMemory: invocation.fromMemory,
+        transcript: invocation.transcript,
+        topic: invocation.topic,
+        output: invocation.output,
+      });
       return;
     }
     case "hooks": {

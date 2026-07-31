@@ -1,0 +1,224 @@
+{
+  "$schema": "../../schemas/dokion-playbook.schema.json",
+  "version": "1.0.0",
+  "project": {
+    "name": "superpowers-development-workflow",
+    "target": "READY_FOR_PRODUCTION",
+    "notes": "Superpowers Software Engineering Playbook (obra/superpowers). Enforces brainstorming, plan creation, test-driven development, systematic debugging, subagent-driven execution, and verification before completion."
+  },
+  "authority": {
+    "capability_selection": "USER_ONLY",
+    "execution_order": "USER_ONLY",
+    "capability_behavior": "USER_ONLY",
+    "automatic_capability_discovery": false,
+    "automatic_installation": false,
+    "automatic_substitution": false,
+    "automatic_reordering": false,
+    "allow_recommendations": true,
+    "recommendations_require_approval": true
+  },
+  "enforcement": {
+    "playbook_immutable": true,
+    "hash_algorithm": "sha256",
+    "verify_before_each_step": true,
+    "on_mutation": "ABORT_TAINTED",
+    "protected_paths": [
+      ".dokion/playbook.json",
+      "schemas/**"
+    ],
+    "worktree_policy": "clean-only"
+  },
+  "registry": {
+    "sources": [
+      "dokion.json"
+    ],
+    "require_verified": true,
+    "require_digest": false,
+    "on_unverified": "STOP_STEP"
+  },
+  "coverage_policy": {
+    "blocking_lanes": [
+      "agentic-coding-superpowers"
+    ]
+  },
+  "defaults": {
+    "approval": "BEFORE_WRITE",
+    "failure_policy": "STOP_STAGE",
+    "mode": "FIX_WITH_APPROVAL",
+    "retry_count": 1,
+    "maximum_iterations": 1,
+    "parallel_execution": false,
+    "validation": {
+      "suppression_detection": true,
+      "require_evidence_artifact": true,
+      "forbid_test_deletion": true,
+      "forbid_out_of_scope_edits": true
+    }
+  },
+  "stages": [
+    {
+      "id": "stage-brainstorming-and-spec",
+      "name": "Intent Exploration & Plan Authoring",
+      "execution": "SEQUENTIAL",
+      "steps": [
+        {
+          "id": "using-superpowers",
+          "name": "Establish skill discovery & superpowers protocol",
+          "capability": {
+            "type": "skill",
+            "id": "using-superpowers",
+            "version": "1.0.0",
+            "source": "dokion.json"
+          },
+          "responsibility": "Find and use skills before taking actions or clarifying questions.",
+          "mode": "READ_ONLY",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": ["**/*"],
+            "network": false
+          },
+          "success_conditions": ["skill_discovery_established"],
+          "failure_policy": "STOP_PIPELINE"
+        },
+        {
+          "id": "brainstorming",
+          "name": "Brainstorming and intent exploration",
+          "capability": {
+            "type": "skill",
+            "id": "brainstorming",
+            "version": "1.0.0",
+            "source": "dokion.json"
+          },
+          "responsibility": "Explore user intent, design alternatives, and requirements before coding.",
+          "mode": "READ_ONLY",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": ["**/*"],
+            "network": false
+          },
+          "success_conditions": ["intent_explored"],
+          "failure_policy": "STOP_PIPELINE"
+        },
+        {
+          "id": "writing-plans",
+          "name": "Implementation plan generation",
+          "capability": {
+            "type": "skill",
+            "id": "writing-plans",
+            "version": "1.0.0",
+            "source": "dokion.json"
+          },
+          "responsibility": "Create step-by-step implementation plan with verification checkpoints.",
+          "mode": "FIX_WITH_APPROVAL",
+          "required": true,
+          "approval": "BEFORE_WRITE",
+          "permissions": {
+            "read": ["**/*"],
+            "write": ["implementation_plan.md", "docs/superpowers/plans/*"],
+            "network": false
+          },
+          "success_conditions": ["plan_written"],
+          "failure_policy": "STOP_PIPELINE"
+        }
+      ]
+    },
+    {
+      "id": "stage-execution-and-testing",
+      "name": "TDD & Plan Execution",
+      "execution": "SEQUENTIAL",
+      "steps": [
+        {
+          "id": "test-driven-development",
+          "name": "Test-Driven Development (Red -> Green -> Refactor)",
+          "capability": {
+            "type": "skill",
+            "id": "test-driven-development",
+            "version": "1.0.0",
+            "source": "dokion.json"
+          },
+          "responsibility": "Write failing tests first before writing implementation code.",
+          "mode": "FIX_WITH_APPROVAL",
+          "required": true,
+          "approval": "BEFORE_WRITE",
+          "permissions": {
+            "read": ["**/*"],
+            "write": ["**/*"],
+            "shell": ["bun test", "npm test", "pytest"]
+          },
+          "success_conditions": ["tests_passing"],
+          "failure_policy": "STOP_PIPELINE"
+        },
+        {
+          "id": "systematic-debugging",
+          "name": "Systematic Debugging & Root Cause Analysis",
+          "capability": {
+            "type": "skill",
+            "id": "systematic-debugging",
+            "version": "1.0.0",
+            "source": "dokion.json"
+          },
+          "responsibility": "Investigate root cause before proposing or applying bug fixes.",
+          "mode": "READ_ONLY",
+          "required": false,
+          "approval": "NEVER",
+          "permissions": {
+            "read": ["**/*"],
+            "network": false
+          },
+          "success_conditions": ["root_cause_identified"],
+          "failure_policy": "STOP_STAGE"
+        },
+        {
+          "id": "subagent-driven-development",
+          "name": "Subagent Execution Loop",
+          "capability": {
+            "type": "skill",
+            "id": "subagent-driven-development",
+            "version": "1.0.0",
+            "source": "dokion.json"
+          },
+          "responsibility": "Execute implementation tasks with review checkpoints and task briefs.",
+          "mode": "FIX_WITH_APPROVAL",
+          "required": true,
+          "approval": "BEFORE_WRITE",
+          "permissions": {
+            "read": ["**/*"],
+            "write": ["**/*"],
+            "network": false
+          },
+          "success_conditions": ["plan_executed"],
+          "failure_policy": "STOP_PIPELINE"
+        }
+      ]
+    },
+    {
+      "id": "stage-verification",
+      "name": "Verification & Evidence Gate",
+      "execution": "SEQUENTIAL",
+      "steps": [
+        {
+          "id": "verification-before-completion",
+          "name": "Empirical verification before completion",
+          "capability": {
+            "type": "skill",
+            "id": "verification-before-completion",
+            "version": "1.0.0",
+            "source": "dokion.json"
+          },
+          "responsibility": "Gather empirical test proof and build logs before claiming work is complete.",
+          "mode": "READ_ONLY",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": ["**/*"],
+            "shell": ["bun test", "npm test", "bun run build"]
+          },
+          "success_conditions": ["empirical_proof_verified"],
+          "failure_policy": "STOP_PIPELINE"
+        }
+      ]
+    }
+  ]
+}

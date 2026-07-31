@@ -201,6 +201,15 @@
         "mode": "READ_ONLY"
       },
       {
+        "command": "dokion create",
+        "usage": "dokion create [--from-memory <source>] [--transcript <path>] [--topic <topic>]",
+        "purpose": "Synthesize a new Playbook from memory, transcripts, and workflow optimization logs.",
+        "writes": [
+          ".dokion/playbook.json"
+        ],
+        "approval": "BEFORE_WRITE"
+      },
+      {
         "command": "dokion doctor",
         "purpose": "Check agent adapters, CLIs, MCP servers, credentials, runtimes, and local prerequisites.",
         "mode": "READ_ONLY"
@@ -333,6 +342,16 @@
         "command": "dokion compare",
         "purpose": "Compare two Dokion run records deterministically without mutating state.",
         "mode": "READ_ONLY"
+      },
+      {
+        "command": "dokion auto-runner",
+        "purpose": "Run continuous autonomous playbook execution loop to 100% completion with circuit breaker and self-healing.",
+        "approval": "FROM_PLAYBOOK"
+      },
+      {
+        "command": "dokion autoresearch",
+        "purpose": "Run autonomous goal-directed iteration loop with Modify-Verify-Guard and orchestrator routing.",
+        "approval": "FROM_PLAYBOOK"
       }
     ]
   },
@@ -1346,6 +1365,60 @@
             "outputs": [
               "HARDENING.md",
               ".dokion/reports/readiness.json"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "autoresearch-loop",
+        "name": "Autoresearch Autonomous Goal-Directed Loop",
+        "purpose": "Iteratively modify, verify, and keep/rollback against any metric or success predicate until 100% completion.",
+        "maximum_iterations": 50,
+        "ordered_steps": [
+          {
+            "id": "classify-and-derive",
+            "executor": "dokion-core",
+            "mode": "READ_ONLY",
+            "actions": [
+              "Classify goal archetype",
+              "Derive success predicate command and threshold"
+            ]
+          },
+          {
+            "id": "modify-verify-guard",
+            "executor": "autoresearch",
+            "mode": "FIX_AUTOMATICALLY",
+            "actions": [
+              "Apply targeted step modification",
+              "Execute verify command",
+              "Execute guard command",
+              "Commit on success or rollback on failure"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "autonomous-optimization-loop",
+        "name": "Autonomous Optimization Architect Governor Loop",
+        "purpose": "Execute continuous shadow-testing with strict financial and circuit breaker guardrails.",
+        "maximum_iterations": 100,
+        "ordered_steps": [
+          {
+            "id": "circuit-breaker-guard",
+            "executor": "dokion-core",
+            "mode": "READ_ONLY",
+            "actions": [
+              "Check budget cap",
+              "Check execution timeout",
+              "Check consecutive failure count"
+            ]
+          },
+          {
+            "id": "shadow-verification",
+            "executor": "dokion-core",
+            "mode": "VERIFY_ONLY",
+            "actions": [
+              "Shadow test step output against schema syntax and permission scope"
             ]
           }
         ]

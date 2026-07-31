@@ -1,0 +1,111 @@
+import { createHash } from "node:crypto";
+import type { DokionPlaybook, PlaybookStep } from "../playbook/types.js";
+import { validatePlaybookData } from "../contracts/schema-validator.ts";
+import type { ExtractedActionStep } from "./types.js";
+
+export class PlaybookCompiler {
+  public async compile(
+    steps: ExtractedActionStep[],
+    options?: { topic?: string; title?: string; description?: string }
+  ): Promise<DokionPlaybook> {
+    const topicName = options?.topic || "Custom Workflow";
+    const title = options?.title || (options?.topic ? `${options.topic} Playbook` : "Generated Engineering Playbook");
+    const description = options?.description || `Synthesized Playbook by Dokion Creator Engine for topic: ${topicName}`;
+
+    const placeholderDigest = "sha256:" + "0".repeat(64);
+
+    const compiledSteps: PlaybookStep[] = steps.map((step, index) => {
+      const stepPayload = JSON.stringify({
+        id: step.id,
+        title: step.title,
+        command: step.command,
+        verificationCommands: step.verificationCommands,
+      });
+
+      const sha256 = createHash("sha256").update(stepPayload).digest("hex");
+
+      return {
+        id: step.id,
+        name: step.title,
+        capability: {
+          type: "tool",
+          id: "run_command",
+          source: "dokion.json",
+          immutable_reference: `sha256:${sha256}`,
+        },
+        responsibility: step.description,
+        mode: "FIX_WITH_APPROVAL",
+        required: true,
+        approval: "BEFORE_WRITE",
+        failure_policy: "STOP_STAGE",
+        verification: step.verificationCommands && step.verificationCommands.length > 0 ? step.verificationCommands : ["git status --short"],
+        depends_on: index > 0 ? [steps[index - 1].id] : undefined,
+        permissions: {
+          read: ["**/*"],
+          write: [".dokion/**"],
+          network: false,
+          shell: step.command ? [step.command] : undefined,
+        },
+      };
+    });
+
+    const playbook: DokionPlaybook = {
+      $schema: "../schemas/dokion-playbook.schema.json",
+      version: "1.0.0",
+      project: {
+        name: title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        target: "BASELINE",
+        notes: description,
+      },
+      authority: {
+        capability_selection: "USER_ONLY",
+        execution_order: "USER_ONLY",
+        capability_behavior: "USER_ONLY",
+        automatic_capability_discovery: false,
+        automatic_installation: false,
+        automatic_substitution: false,
+        automatic_reordering: false,
+        allow_recommendations: true,
+        recommendations_require_approval: true,
+      },
+      enforcement: {
+        playbook_immutable: true,
+        hash_algorithm: "sha256",
+        verify_before_each_step: true,
+        on_mutation: "ABORT_TAINTED",
+        protected_paths: [".dokion/playbook.json"],
+        worktree_policy: "clean-only",
+      },
+      registry: {
+        sources: ["dokion.json"],
+        require_verified: false,
+        require_digest: false,
+        "on_unverified": "STOP_STEP",
+      },
+      defaults: {
+        approval: "BEFORE_WRITE",
+        failure_policy: "STOP_STAGE",
+        mode: "FIX_WITH_APPROVAL",
+        retry_count: 1,
+        maximum_iterations: 1,
+        parallel_execution: false,
+      },
+      stages: [
+        {
+          id: "stage-1-generated-workflow",
+          name: `${topicName} Stage`,
+          execution: "SEQUENTIAL",
+          steps: compiledSteps,
+        },
+      ],
+    };
+
+    // Validate generated playbook against JSON Schema
+    const issues = await validatePlaybookData(process.cwd(), playbook, ".dokion/playbook.json");
+    if (issues.length > 0) {
+      throw new Error(`Generated Playbook failed schema contract validation: ${JSON.stringify(issues)}`);
+    }
+
+    return playbook;
+  }
+}
