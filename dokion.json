@@ -300,8 +300,13 @@
         "mode": "READ_ONLY"
       },
       {
-        "command": "dokion memory",
-        "purpose": "Run memory engineering tools: audit, init, status, patterns.",
+        "command": "dokion playbooks",
+        "purpose": "Manage playbooks and skills ecosystem: import, validate, sync, and list.",
+        "mode": "READ_ONLY"
+      },
+      {
+        "command": "dokion hooks",
+        "purpose": "Manage lifecycle hook follow-ups and background automation: run and status.",
         "mode": "READ_ONLY"
       },
       {

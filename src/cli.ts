@@ -8,10 +8,10 @@ import { builtinCatalog } from "./catalog/builtin-catalog.ts";
 import { renderCliHelp } from "./cli/command-registry.ts";
 import { handleDoctorCommand } from "./cli/handlers/doctor.ts";
 import { handleGoalCommand } from "./cli/handlers/goal.ts";
+import { handleHooksCommand } from "./cli/handlers/hooks.ts";
 import { handleLoopCommand } from "./cli/handlers/loop.ts";
-import { handleMemoryCommand } from "./cli/handlers/memory.ts";
 import { handlePlan } from "./cli/handlers/plan.ts";
-
+import { handlePlaybooksCommand } from "./cli/handlers/playbooks.ts";
 import { writeCliDiagnostic, writeCliResult } from "./cli/output.ts";
 import { parseCliInvocation, requestedCliOutputFormat } from "./cli/parser.ts";
 import type { CliInvocation, CliOutputFormat } from "./cli/types.ts";
@@ -138,7 +138,6 @@ interface DokionManifest {
     goals?: unknown[];
   };
   loops?: { definitions?: unknown[] };
-  goals?: { definitions?: unknown[] };
 }
 
 async function projectCatalog(): Promise<DokionManifest> {
@@ -153,12 +152,8 @@ async function listCatalog(kind: "skills" | "tools" | "plugins" | "loops" | "goa
     print(manifest.loops?.definitions ?? [], format);
     return;
   }
-  if (kind === "goals") {
-    print(manifest.goals?.definitions ?? manifest.capability_catalog?.goals ?? [], format);
-    return;
-  }
   const key = kind === "plugins" ? "plugins_and_adapters" : kind;
-  print(manifest.capability_catalog?.[key] ?? [], format);
+  print(manifest.capability_catalog?.[key as "skills" | "tools" | "plugins_and_adapters" | "goals"] ?? [], format);
 }
 
 type DecisionInvocation = Extract<CliInvocation, { command: "approve" | "reject" }>;
@@ -254,22 +249,18 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
         invocation.format
       );
       return;
-    case "memory":
-      process.exitCode = await handleMemoryCommand({
-        subcommand: invocation.subcommand,
-        targetDir: invocation.targetDir || root,
-        ...(invocation.pattern ? { pattern: invocation.pattern } : {}),
-        ...(invocation.tool ? { tool: invocation.tool } : {}),
-        ...(invocation.force !== undefined ? { force: invocation.force } : {}),
-        ...(invocation.withLoop !== undefined ? { withLoop: invocation.withLoop } : {}),
-        ...(invocation.suggest !== undefined ? { suggest: invocation.suggest } : {}),
-        json: invocation.format === "json"
-      });
+    case "playbooks": {
+      const exitCode = await handlePlaybooksCommand([invocation.subcommand, ...(invocation.from ? ["--from", invocation.from] : [])], root);
+      if (exitCode !== 0) process.exitCode = exitCode;
       return;
-
+    }
+    case "hooks": {
+      const exitCode = await handleHooksCommand([invocation.subcommand], root);
+      if (exitCode !== 0) process.exitCode = exitCode;
+      return;
+    }
   }
 }
-
 
 try {
   await main();

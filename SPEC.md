@@ -839,6 +839,7 @@ observe cannot mutate, and the commands that mutate cannot run unapproved.
 | `dokion loop` | Run loop engineering tools: audit, init, cost, sync, context. |
 | `dokion memory` | Run memory engineering tools: audit, init, status, patterns. |
 | `dokion goal` | Run goal engineering tools: audit, init, estimate, status, pause, resume, clear, sync, run. |
+| `dokion hooks` | Manage lifecycle hook follow-ups and background automation: run and status. |
 
 ### 15.2 Configure — writes only Dokion's own files
 
@@ -848,6 +849,7 @@ observe cannot mutate, and the commands that mutate cannot run unapproved.
 | `dokion plan` | Write `.dokion/playbook.proposed.json` with a rationale per step, then stop. |
 | `dokion configure` | Interactive edit of the proposal. |
 | `dokion validate` | Validate the playbook; resolve and verify every declared capability. |
+| `dokion playbooks` | Manage playbooks and skills ecosystem: import, validate, sync, and list. |
 | `dokion reset --state-only` | Clear run state. Never touches the playbook. |
 
 `dokion plan` is the only command that authors a playbook, and it can only write the

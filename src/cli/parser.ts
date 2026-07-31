@@ -270,29 +270,26 @@ export function parseCliInvocation(argv: readonly string[]): CliInvocation {
     };
   }
 
-  if (rawCommand === "memory") {
+  if (rawCommand === "playbooks") {
     const parsed = parseTokens(rawCommand, tokens, {
-      "--pattern": { kind: "value" },
-      "--tool": { kind: "value" },
-      "--force": { kind: "boolean" },
-      "--with-loop": { kind: "boolean" },
-      "--suggest": { kind: "boolean" }
+      "--from": { kind: "value" }
     });
-    const subArg = parsed.positionals[0];
-    const isSub = subArg && ["audit", "init", "status", "patterns"].includes(subArg);
-    const subcommand = (isSub ? subArg : "audit") as "audit" | "init" | "status" | "patterns";
-    const targetDir = isSub ? parsed.positionals[1] : subArg;
-    const pattern = parsed.options.get("--pattern");
-    const tool = parsed.options.get("--tool");
+    const subcommand = (parsed.positionals[0] || "list") as "import" | "validate" | "sync" | "list";
+    const from = parsed.options.get("--from");
     return {
-      command: "memory",
+      command: "playbooks",
       subcommand,
-      ...(targetDir ? { targetDir } : {}),
-      ...(typeof pattern === "string" ? { pattern } : {}),
-      ...(typeof tool === "string" ? { tool } : {}),
-      force: parsed.options.get("--force") === true,
-      withLoop: parsed.options.get("--with-loop") === true,
-      suggest: parsed.options.get("--suggest") === true,
+      ...(typeof from === "string" ? { from } : {}),
+      format: outputFormat(rawCommand, parsed.options)
+    };
+  }
+
+  if (rawCommand === "hooks") {
+    const parsed = parseTokens(rawCommand, tokens, {});
+    const subcommand = (parsed.positionals[0] || "status") as "run" | "status";
+    return {
+      command: "hooks",
+      subcommand,
       format: outputFormat(rawCommand, parsed.options)
     };
   }

@@ -41,16 +41,13 @@ type CliCommandInvocation =
       objective?: string;
     }
   | {
-      command: "memory";
-      subcommand: "audit" | "init" | "status" | "patterns";
-      targetDir?: string;
-      pattern?: string;
-      tool?: string;
-      force?: boolean;
-      withLoop?: boolean;
-      suggest?: boolean;
+      command: "playbooks";
+      subcommand: "import" | "validate" | "sync" | "list";
+      from?: string;
+    }
+  | {
+      command: "hooks";
+      subcommand: "run" | "status";
     };
 
-
 export type CliInvocation = CliCommandInvocation & { format: CliOutputFormat };
-

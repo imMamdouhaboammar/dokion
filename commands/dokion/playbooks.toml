@@ -1,0 +1,7 @@
+description = "Manage playbooks and skills ecosystem in Dokion"
+prompt = """
+Manage agent playbooks and skills catalog in Dokion: import, validate, sync, and list using `dokion playbooks`.
+"""
+
+[options]
+"from" = "Path or catalog source for importing skills/playbooks"
