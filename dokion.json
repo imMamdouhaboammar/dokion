@@ -210,6 +210,12 @@
         "approval": "BEFORE_WRITE"
       },
       {
+        "command": "dokion hub",
+        "usage": "dokion hub <search|pull|fork|leaderboard> [<package-id>]",
+        "purpose": "Interact with GitHub Native Decentralized Community Playbook Hub, Registry, and Leaderboard.",
+        "mode": "READ_ONLY"
+      },
+      {
         "command": "dokion doctor",
         "purpose": "Check agent adapters, CLIs, MCP servers, credentials, runtimes, and local prerequisites.",
         "mode": "READ_ONLY"

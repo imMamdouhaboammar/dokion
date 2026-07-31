@@ -4,7 +4,7 @@ export type CliExecutionMode = "READ_ONLY" | "CONFIGURE" | "EXECUTE" | "DECIDE" 
 export type CliApprovalClass = "NONE" | "BEFORE_WRITE" | "FROM_PLAYBOOK" | "ALWAYS" | "DECISION_RECORD";
 export type ManifestCommandMode = "READ_ONLY" | "VERIFY_ONLY" | "REPORT_ONLY";
 export type ManifestApprovalClass = "BEFORE_WRITE" | "FROM_PLAYBOOK" | "ALWAYS";
-export type GeminiCommandFile = "run.toml" | "status.toml" | "goal.toml" | "playbooks.toml" | "hooks.toml" | "create.toml";
+export type GeminiCommandFile = "run.toml" | "status.toml" | "goal.toml" | "playbooks.toml" | "hooks.toml" | "create.toml" | "hub.toml";
 
 export interface ManifestCliCommand {
   command: `dokion ${string}`;
@@ -123,6 +123,23 @@ export const CLI_COMMAND_REGISTRY = [
     writeScope: [".dokion/playbook.json"],
     approvalClass: "BEFORE_WRITE",
     geminiFiles: ["create.toml"]
+  },
+  {
+    id: "hub",
+    manifestCommand: "dokion hub",
+    manifestUsage: "dokion hub <search|pull|fork|leaderboard> [<package-id>]",
+    purpose: "Interact with GitHub Native Decentralized Community Playbook Hub, Registry, and Leaderboard.",
+    manifestMode: "READ_ONLY",
+    specMarker: "`dokion hub`",
+    runtimeCase: "hub",
+    helpLine: "  hub <search|pull|fork|leaderboard> [<package-id>]",
+    helpGroup: "Configure",
+    helpOrder: 6,
+    status: "IMPLEMENTED",
+    executionMode: "READ_ONLY",
+    writeScope: [".dokion/playbook.proposed.json", ".dokion/telemetry/**"],
+    approvalClass: "NONE",
+    geminiFiles: ["hub.toml"]
   },
   {
     id: "doctor",

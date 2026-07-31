@@ -15,6 +15,7 @@ import { handleConfigureCommand } from "./cli/handlers/configure.ts";
 import { handleCreatorCommand } from "./cli/handlers/creator.ts";
 import { handleDoctorCommand } from "./cli/handlers/doctor.ts";
 import { handleGoalCommand } from "./cli/handlers/goal.ts";
+import { handleHubCommand } from "./cli/handlers/hub.ts";
 import { handleHooksCommand } from "./cli/handlers/hooks.ts";
 import { handleLoopCommand } from "./cli/handlers/loop.ts";
 import { handleMemoryCommand } from "./cli/handlers/memory.ts";
@@ -343,6 +344,18 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
         topic: invocation.topic,
         output: invocation.output,
       });
+      return;
+    }
+    case "hub": {
+      const output = await handleHubCommand(root, {
+        action: invocation.action,
+        query: invocation.query,
+        packageId: invocation.packageId,
+        category: invocation.category,
+        format: invocation.format,
+        author: invocation.author,
+      });
+      console.log(output);
       return;
     }
     case "hooks": {

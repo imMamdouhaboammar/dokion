@@ -854,6 +854,7 @@ observe cannot mutate, and the commands that mutate cannot run unapproved.
 | `dokion validate` | Validate the playbook; resolve and verify every declared capability. |
 | `dokion playbooks` | Manage playbooks and skills ecosystem: import, validate, sync, and list. |
 | `dokion create` | Synthesize a new Playbook from memory, transcripts, and workflow optimization logs. |
+| `dokion hub` | Interact with GitHub Native Decentralized Community Playbook Hub, Registry, and Leaderboard. |
 | `dokion reset --state-only` | Clear run state. Never touches the playbook. |
 
 `dokion plan` is the only command that authors a playbook, and it can only write the

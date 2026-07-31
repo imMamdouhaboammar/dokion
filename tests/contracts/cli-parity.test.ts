@@ -61,7 +61,7 @@ describe("canonical CLI command registry", () => {
       CLI_COMMAND_REGISTRY.map((command) => command.manifestCommand)
     );
     expect(new Set(CLI_COMMAND_REGISTRY.map((command) => command.id)).size).toBe(CLI_COMMAND_REGISTRY.length);
-    expect(implementedCliCommands()).toHaveLength(33);
+    expect(implementedCliCommands()).toHaveLength(34);
     expect(plannedCliCommands()).toHaveLength(0);
   });
 

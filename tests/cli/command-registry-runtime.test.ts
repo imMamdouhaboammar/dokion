@@ -78,6 +78,7 @@ Configure:
   validate [--catalog-only]
   create [--from-memory <source>] [--transcript <path>] [--topic <topic>]
   reset --state-only
+  hub <search|pull|fork|leaderboard> [<package-id>]
   playbooks <import|validate|sync|list>
 
 Execute:
