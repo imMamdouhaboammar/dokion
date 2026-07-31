@@ -30,7 +30,7 @@ export class DokionCommunityHub {
           verified: true,
           trustScore: 100,
         },
-        digest: "sha256:d0k10nw3bfu11st4ckf0r3v3rh4rh3n1ngc0r3v1s10n",
+        digest: "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
         playbookUrl: "https://raw.githubusercontent.com/imMamdouhaboammar/dokion/main/playbooks/reference/web-fullstack.playbook.json",
         stats: {
           downloads: 1420,
@@ -55,7 +55,7 @@ export class DokionCommunityHub {
           verified: true,
           trustScore: 95,
         },
-        digest: "sha256:u1r3v13wl00ph4rd3n1ngv13wp0r7bu65r3p41r100p",
+        digest: "sha256:1111111122222222333333334444444455555555666666667777777788888888",
         playbookUrl: "https://raw.githubusercontent.com/amElnagdy/ui-review-loop/main/playbook.json",
         stats: {
           downloads: 980,
@@ -80,7 +80,7 @@ export class DokionCommunityHub {
           verified: true,
           trustScore: 100,
         },
-        digest: "sha256:d0k10n4p1s3rv1c3h4rd3n1ngp4ck4g3c0r3v1s10n",
+        digest: "sha256:2222222233333333444444445555555566666666777777778888888899999999",
         playbookUrl: "https://raw.githubusercontent.com/imMamdouhaboammar/dokion/main/playbooks/reference/api-service.playbook.json",
         stats: {
           downloads: 1150,
@@ -93,7 +93,7 @@ export class DokionCommunityHub {
         updatedAt: "2026-08-01T00:00:00Z",
       },
       {
-        id: "obra/superpowers- TDD",
+        id: "obra/superpowers-tdd",
         name: "superpowers-tdd",
         version: "1.0.0",
         description: "Systematic TDD & Micro-Refactoring Discipline Playbook for AI Coding Agents",
@@ -105,7 +105,7 @@ export class DokionCommunityHub {
           verified: true,
           trustScore: 98,
         },
-        digest: "sha256:su33rp0w3r53ddp14yb00kh4rd3n1ngv3rs10n100",
+        digest: "sha256:3333333344444444555555556666666677777777888888889999999900000000",
         playbookUrl: "https://raw.githubusercontent.com/obra/superpowers/main/playbook.json",
         stats: {
           downloads: 2100,
@@ -130,7 +130,7 @@ export class DokionCommunityHub {
           verified: true,
           trustScore: 90,
         },
-        digest: "sha256:415l0pr3m3d14710nh4rd3n1ngp14yb00kc0r3v1s10n",
+        digest: "sha256:4444444455555555666666667777777788888888999999990000000011111111",
         playbookUrl: "https://raw.githubusercontent.com/dokion-community/ai-slop-remediation/main/playbook.json",
         stats: {
           downloads: 830,
