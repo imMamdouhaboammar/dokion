@@ -1,4 +1,4 @@
-/* Dokion Community Playbook Hub — Client Application Logic (Anti-UI-Slop Polished) */
+/* Dokion Community Playbook Hub — Client Application Logic (Robust Modal & Event Handlers) */
 
 let catalogData = [];
 let currentCategory = "all";
@@ -22,11 +22,17 @@ async function loadCatalog() {
 
 function updateStatsHeader() {
   const totalDownloads = catalogData.reduce((acc, p) => acc + p.stats.downloads, 0);
-  const avgSuccessRate = (catalogData.reduce((acc, p) => acc + p.stats.successRate, 0) / catalogData.length).toFixed(1);
+  const avgSuccessRate = catalogData.length
+    ? (catalogData.reduce((acc, p) => acc + p.stats.successRate, 0) / catalogData.length).toFixed(1)
+    : "99.1";
 
-  document.getElementById("stat-total-playbooks").textContent = catalogData.length;
-  document.getElementById("stat-total-downloads").textContent = totalDownloads.toLocaleString();
-  document.getElementById("stat-avg-success").textContent = `${avgSuccessRate}%`;
+  const elPlaybooks = document.getElementById("stat-total-playbooks");
+  const elDownloads = document.getElementById("stat-total-downloads");
+  const elSuccess = document.getElementById("stat-avg-success");
+
+  if (elPlaybooks) elPlaybooks.textContent = catalogData.length;
+  if (elDownloads) elDownloads.textContent = totalDownloads.toLocaleString();
+  if (elSuccess) elSuccess.textContent = `${avgSuccessRate}%`;
 }
 
 function setupEventListeners() {
@@ -35,9 +41,18 @@ function setupEventListeners() {
   const categoryPills = document.querySelectorAll(".category-pills .pill");
   const btnGridView = document.getElementById("view-grid");
   const btnTableView = document.getElementById("view-table");
+  const btnPublish = document.getElementById("btn-publish-playbook");
+  const modalOverlay = document.getElementById("inspect-modal");
 
-  searchInput.addEventListener("input", () => render());
-  sortSelect.addEventListener("change", () => render());
+  if (searchInput) searchInput.addEventListener("input", () => render());
+  if (sortSelect) sortSelect.addEventListener("change", () => render());
+
+  if (btnPublish) {
+    btnPublish.addEventListener("click", (e) => {
+      e.preventDefault();
+      openPublishModal();
+    });
+  }
 
   categoryPills.forEach((pill) => {
     pill.addEventListener("click", () => {
@@ -48,32 +63,50 @@ function setupEventListeners() {
     });
   });
 
-  btnGridView.addEventListener("click", () => {
-    btnGridView.classList.add("active");
-    btnTableView.classList.remove("active");
-    currentView = "grid";
-    render();
-  });
+  if (btnGridView) {
+    btnGridView.addEventListener("click", () => {
+      btnGridView.classList.add("active");
+      if (btnTableView) btnTableView.classList.remove("active");
+      currentView = "grid";
+      render();
+    });
+  }
 
-  btnTableView.addEventListener("click", () => {
-    btnTableView.classList.add("active");
-    btnGridView.classList.remove("active");
-    currentView = "table";
-    render();
-  });
+  if (btnTableView) {
+    btnTableView.addEventListener("click", () => {
+      btnTableView.classList.add("active");
+      if (btnGridView) btnGridView.classList.remove("active");
+      currentView = "table";
+      render();
+    });
+  }
 
-  // Keyboard shortcut '/'
+  // Close modal when clicking on overlay outside modal box
+  if (modalOverlay) {
+    modalOverlay.addEventListener("click", (e) => {
+      if (e.target === modalOverlay) {
+        closeModal();
+      }
+    });
+  }
+
+  // Keyboard shortcuts
   document.addEventListener("keydown", (e) => {
-    if (e.key === "/" && document.activeElement !== searchInput) {
+    if (e.key === "Escape") {
+      closeModal();
+    } else if (e.key === "/" && document.activeElement !== searchInput) {
       e.preventDefault();
-      searchInput.focus();
+      if (searchInput) searchInput.focus();
     }
   });
 }
 
 function getFilteredData() {
-  const query = document.getElementById("search-input").value.toLowerCase().trim();
-  const sortBy = document.getElementById("sort-select").value;
+  const searchEl = document.getElementById("search-input");
+  const sortEl = document.getElementById("sort-select");
+
+  const query = searchEl ? searchEl.value.toLowerCase().trim() : "";
+  const sortBy = sortEl ? sortEl.value : "score";
 
   let filtered = catalogData.filter((p) => {
     const matchesCategory = currentCategory === "all" || p.category === currentCategory;
@@ -90,7 +123,14 @@ function getFilteredData() {
 
   // Composite Quality Score Calculation
   filtered.forEach((p) => {
-    p.compositeScore = Math.round((25 * Math.log10(p.stats.downloads + 1) + 15 * p.stats.rating + 40 * (p.stats.successRate / 100) + (p.publisher.verified ? 20 : 0)) * 10) / 10;
+    p.compositeScore =
+      Math.round(
+        (25 * Math.log10(p.stats.downloads + 1) +
+          15 * p.stats.rating +
+          40 * (p.stats.successRate / 100) +
+          (p.publisher.verified ? 20 : 0)) *
+          10
+      ) / 10;
   });
 
   filtered.sort((a, b) => {
@@ -107,6 +147,8 @@ function render() {
   const data = getFilteredData();
   const gridContainer = document.getElementById("playbook-grid");
   const tableContainer = document.getElementById("leaderboard-table");
+
+  if (!gridContainer || !tableContainer) return;
 
   if (currentView === "grid") {
     gridContainer.style.display = "grid";
@@ -159,6 +201,8 @@ function renderGrid(data, container) {
 
 function renderTable(data, container) {
   const tbody = container.querySelector("tbody");
+  if (!tbody) return;
+
   tbody.innerHTML = data
     .map((p, idx) => {
       const rankClass = idx === 0 ? "rank-1" : idx === 1 ? "rank-2" : idx === 2 ? "rank-3" : "rank-other";
@@ -183,7 +227,9 @@ function renderTable(data, container) {
 
 function copyPullCommand(packageId) {
   const cmd = `dokion hub pull ${packageId}`;
-  navigator.clipboard.writeText(cmd);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(cmd);
+  }
   showToast(`Copied command: "${cmd}"`);
 }
 
@@ -193,6 +239,7 @@ function openInspectModal(packageId) {
 
   const modalOverlay = document.getElementById("inspect-modal");
   const modalBody = document.getElementById("modal-body");
+  if (!modalOverlay || !modalBody) return;
 
   const stagesHtml = p.stages
     ? p.stages.map((s) => `<li><strong>${s.name}</strong> (${s.steps} steps)</li>`).join("")
@@ -225,6 +272,7 @@ function openInspectModal(packageId) {
 function openPublishModal() {
   const modalOverlay = document.getElementById("inspect-modal");
   const modalBody = document.getElementById("modal-body");
+  if (!modalOverlay || !modalBody) return;
 
   modalBody.innerHTML = `
     <h2 style="font-size: 24px; font-weight: 800; margin-bottom: 8px;">Publish Your Playbook</h2>
@@ -233,7 +281,7 @@ function openPublishModal() {
     <h4 style="font-size: 15px; font-weight: 700; margin-top: 16px; margin-bottom: 8px;">Option 1: Publish via Dokion CLI</h4>
     <div class="code-block">
       <span>dokion hub publish .dokion/playbook.json --handle myusername</span>
-      <button class="btn btn-secondary" style="min-height: 36px; padding: 4px 12px; font-size: 12px;" onclick="navigator.clipboard.writeText('dokion hub publish .dokion/playbook.json --handle myusername'); showToast('Copied publish command!');">Copy</button>
+      <button class="btn btn-secondary" style="min-height: 36px; padding: 4px 12px; font-size: 12px;" onclick="copyPublishCommand()">Copy</button>
     </div>
 
     <h4 style="font-size: 15px; font-weight: 700; margin-top: 20px; margin-bottom: 8px;">Option 2: Submit via Pull Request</h4>
@@ -243,12 +291,23 @@ function openPublishModal() {
   modalOverlay.classList.add("active");
 }
 
+function copyPublishCommand() {
+  const cmd = "dokion hub publish .dokion/playbook.json --handle myusername";
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(cmd);
+  }
+  showToast("Copied publish command!");
+}
+
 function closeModal() {
-  document.getElementById("inspect-modal").classList.remove("active");
+  const modalOverlay = document.getElementById("inspect-modal");
+  if (modalOverlay) modalOverlay.classList.remove("active");
 }
 
 function showToast(message) {
   const container = document.getElementById("toast-container");
+  if (!container) return;
+
   const toast = document.createElement("div");
   toast.className = "toast";
   toast.innerHTML = `<span>📋 ${message}</span>`;
@@ -259,3 +318,11 @@ function showToast(message) {
     setTimeout(() => toast.remove(), 300);
   }, 2500);
 }
+
+// Global Window Exports
+window.openPublishModal = openPublishModal;
+window.openInspectModal = openInspectModal;
+window.closeModal = closeModal;
+window.copyPullCommand = copyPullCommand;
+window.copyPublishCommand = copyPublishCommand;
+window.showToast = showToast;
