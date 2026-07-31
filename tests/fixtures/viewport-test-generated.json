@@ -1,0 +1,86 @@
+{
+  "$schema": "../schemas/dokion-playbook.schema.json",
+  "version": "1.0.0",
+  "project": {
+    "name": "viewport-bugs-ui-review-loop-playbook",
+    "target": "BASELINE",
+    "notes": "Synthesized Playbook by Dokion Creator Engine for topic: Viewport Bugs & UI Review Loop"
+  },
+  "authority": {
+    "capability_selection": "USER_ONLY",
+    "execution_order": "USER_ONLY",
+    "capability_behavior": "USER_ONLY",
+    "automatic_capability_discovery": false,
+    "automatic_installation": false,
+    "automatic_substitution": false,
+    "automatic_reordering": false,
+    "allow_recommendations": true,
+    "recommendations_require_approval": true
+  },
+  "enforcement": {
+    "playbook_immutable": true,
+    "hash_algorithm": "sha256",
+    "verify_before_each_step": true,
+    "on_mutation": "ABORT_TAINTED",
+    "protected_paths": [
+      ".dokion/playbook.json"
+    ],
+    "worktree_policy": "clean-only"
+  },
+  "registry": {
+    "sources": [
+      "dokion.json"
+    ],
+    "require_verified": false,
+    "require_digest": false,
+    "on_unverified": "STOP_STEP"
+  },
+  "defaults": {
+    "approval": "BEFORE_WRITE",
+    "failure_policy": "STOP_STAGE",
+    "mode": "FIX_WITH_APPROVAL",
+    "retry_count": 1,
+    "maximum_iterations": 1,
+    "parallel_execution": false
+  },
+  "stages": [
+    {
+      "id": "stage-1-generated-workflow",
+      "name": "Viewport Bugs & UI Review Loop Stage",
+      "execution": "SEQUENTIAL",
+      "steps": [
+        {
+          "id": "step-1-baseline-validation",
+          "name": "Repository Baseline Verification",
+          "capability": {
+            "type": "tool",
+            "id": "run_command",
+            "source": "dokion.json",
+            "immutable_reference": "sha256:0e75e45f524e626285985ea5bd51fb11efcc5f6d47b76390376b4d0015c91f8e"
+          },
+          "responsibility": "Run test suite and verify repository working tree state.",
+          "mode": "FIX_WITH_APPROVAL",
+          "required": true,
+          "approval": "BEFORE_WRITE",
+          "failure_policy": "STOP_STAGE",
+          "verification": [
+            "bun test",
+            "git status --short"
+          ],
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/**"
+            ],
+            "network": false,
+            "shell": [
+              "bun test"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

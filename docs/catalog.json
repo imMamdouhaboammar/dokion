@@ -1,0 +1,191 @@
+[
+  {
+    "id": "dokion/web-fullstack",
+    "name": "web-fullstack",
+    "version": "1.0.0",
+    "description": "Full-stack Web Engineering & Hardening Playbook for Next.js, Vite, React, and Tailwind. Enforces semantic HSL design system tokens, WCAG AA accessibility, Core Web Vitals, and Lighthouse benchmarks.",
+    "category": "ui-ux",
+    "tags": ["web", "fullstack", "react", "nextjs", "accessibility", "lighthouse"],
+    "publisher": {
+      "handle": "dokion",
+      "name": "Dokion Core Team",
+      "verified": true,
+      "trustScore": 100,
+      "avatarUrl": "https://avatars.githubusercontent.com/u/10000000?v=4"
+    },
+    "digest": "sha256:d0k10nw3bfu11st4ckf0r3v3rh4rh3n1ngc0r3v1s10n",
+    "playbookUrl": "https://github.com/imMamdouhaboammar/dokion/blob/main/playbooks/reference/web-fullstack.playbook.json",
+    "stats": {
+      "downloads": 1420,
+      "activeInstalls": 890,
+      "rating": 4.9,
+      "ratingsCount": 128,
+      "successRate": 99.2
+    },
+    "stages": [
+      { "name": "Design Tokens & HSL Enforcer", "steps": 2 },
+      { "name": "WCAG AA Accessibility Audit", "steps": 3 },
+      { "name": "Core Web Vitals & Bundle Weight Benchmark", "steps": 2 },
+      { "name": "Lighthouse Lab Metrics Verification", "steps": 1 }
+    ],
+    "createdAt": "2026-07-01T00:00:00Z",
+    "updatedAt": "2026-08-01T00:00:00Z"
+  },
+  {
+    "id": "amElnagdy/ui-review-loop",
+    "name": "ui-review-loop",
+    "version": "1.0.0",
+    "description": "Automated Viewport Bug Detection, Systematic Layout Repair & Visual UI Review Loop across 375px, 768px, 1280px, and 1920px breakpoints using agent-browser, browser-use, and systematic-debugging.",
+    "category": "ui-ux",
+    "tags": ["ui-review", "agent-browser", "browser-use", "systematic-debugging", "viewport-bugs"],
+    "publisher": {
+      "handle": "amElnagdy",
+      "name": "Amr Elnagdy",
+      "verified": true,
+      "trustScore": 95,
+      "avatarUrl": "https://avatars.githubusercontent.com/u/10000001?v=4"
+    },
+    "digest": "sha256:u1r3v13wl00ph4rd3n1ngv13wp0r7bu65r3p41r100p",
+    "playbookUrl": "https://github.com/amElnagdy/ui-review-loop/blob/main/playbook.json",
+    "stats": {
+      "downloads": 980,
+      "activeInstalls": 610,
+      "rating": 4.95,
+      "ratingsCount": 84,
+      "successRate": 98.8
+    },
+    "stages": [
+      { "name": "Skill Provisioning (agent-browser, browser-use)", "steps": 1 },
+      { "name": "Multi-Breakpoint Responsive Audit Loop", "steps": 2 },
+      { "name": "Systematic CSS & Layout Repair Loop", "steps": 1 },
+      { "name": "Visual Evidence & UI_REVIEW.md Report", "steps": 1 }
+    ],
+    "createdAt": "2026-07-15T00:00:00Z",
+    "updatedAt": "2026-08-01T00:00:00Z"
+  },
+  {
+    "id": "dokion/api-service",
+    "name": "api-service",
+    "version": "1.0.0",
+    "description": "Backend Service Hardening, OWASP API Security Top 10 2023, OpenAPI Contract Verification, BOLA/BFLA Detection, and Rate Limiting Audit.",
+    "category": "security",
+    "tags": ["api", "security", "owasp", "backend", "contracts", "semgrep"],
+    "publisher": {
+      "handle": "dokion",
+      "name": "Dokion Core Team",
+      "verified": true,
+      "trustScore": 100,
+      "avatarUrl": "https://avatars.githubusercontent.com/u/10000000?v=4"
+    },
+    "digest": "sha256:d0k10n4p1s3rv1c3h4rd3n1ngp4ck4g3c0r3v1s10n",
+    "playbookUrl": "https://github.com/imMamdouhaboammar/dokion/blob/main/playbooks/reference/api-service.playbook.json",
+    "stats": {
+      "downloads": 1150,
+      "activeInstalls": 720,
+      "rating": 4.85,
+      "ratingsCount": 96,
+      "successRate": 98.5
+    },
+    "stages": [
+      { "name": "OpenAPI Contract Validation", "steps": 1 },
+      { "name": "OWASP API Top 10 SAST Analysis", "steps": 3 },
+      { "name": "BOLA & Authorization Logic Review", "steps": 2 },
+      { "name": "Rate Limiting & Input Validation Verification", "steps": 1 }
+    ],
+    "createdAt": "2026-07-01T00:00:00Z",
+    "updatedAt": "2026-08-01T00:00:00Z"
+  },
+  {
+    "id": "obra/superpowers-tdd",
+    "name": "superpowers-tdd",
+    "version": "1.0.0",
+    "description": "Systematic TDD & Micro-Refactoring Discipline Playbook for AI Coding Agents. Guarantees every fix includes a failing regression test before repair.",
+    "category": "testing",
+    "tags": ["superpowers", "tdd", "systematic-debugging", "clean-code", "refactoring"],
+    "publisher": {
+      "handle": "obra",
+      "name": "Jesse Vincent",
+      "verified": true,
+      "trustScore": 98,
+      "avatarUrl": "https://avatars.githubusercontent.com/u/10000002?v=4"
+    },
+    "digest": "sha256:su33rp0w3r53ddp14yb00kh4rd3n1ngv3rs10n100",
+    "playbookUrl": "https://github.com/obra/superpowers/blob/main/playbook.json",
+    "stats": {
+      "downloads": 2100,
+      "activeInstalls": 1450,
+      "rating": 5.0,
+      "ratingsCount": 210,
+      "successRate": 99.5
+    },
+    "stages": [
+      { "name": "Failing Test Creation Phase", "steps": 1 },
+      { "name": "Minimal Implementation Phase", "steps": 1 },
+      { "name": "Refactoring & Clean Code Verification", "steps": 2 }
+    ],
+    "createdAt": "2026-06-20T00:00:00Z",
+    "updatedAt": "2026-08-01T00:00:00Z"
+  },
+  {
+    "id": "community/ai-slop-remediation",
+    "name": "ai-slop-remediation",
+    "version": "1.0.0",
+    "description": "Micro-Playbook for Detecting and Purging AI Code Slop, Unused Imports, Redundant Placeholders, and Generic Boilerplate in TypeScript/Python codebases.",
+    "category": "ai-slop-remediation",
+    "tags": ["ai-slop", "cleanup", "refactoring", "unslop", "code-quality"],
+    "publisher": {
+      "handle": "community",
+      "name": "Dokion Open Community",
+      "verified": true,
+      "trustScore": 90,
+      "avatarUrl": "https://avatars.githubusercontent.com/u/10000003?v=4"
+    },
+    "digest": "sha256:415l0pr3m3d14710nh4rd3n1ngp14yb00kc0r3v1s10n",
+    "playbookUrl": "https://github.com/dokion-community/ai-slop-remediation/blob/main/playbook.json",
+    "stats": {
+      "downloads": 830,
+      "activeInstalls": 510,
+      "rating": 4.8,
+      "ratingsCount": 62,
+      "successRate": 97.9
+    },
+    "stages": [
+      { "name": "Unused Imports & Dead Code Audit", "steps": 1 },
+      { "name": "Generic Placeholder & TODO Sweeper", "steps": 1 },
+      { "name": "Codebase Tightening Verification", "steps": 1 }
+    ],
+    "createdAt": "2026-07-20T00:00:00Z",
+    "updatedAt": "2026-08-01T00:00:00Z"
+  },
+  {
+    "id": "dokion/library-package",
+    "name": "library-package",
+    "version": "1.0.0",
+    "description": "NPM / PyPI Library Release Hardening. Validates dual CJS/ESM exports, TypeScript declaration maps, license compliance, and OSV vulnerability scanning.",
+    "category": "devops",
+    "tags": ["library", "npm", "pypi", "types", "security", "provenance"],
+    "publisher": {
+      "handle": "dokion",
+      "name": "Dokion Core Team",
+      "verified": true,
+      "trustScore": 100,
+      "avatarUrl": "https://avatars.githubusercontent.com/u/10000000?v=4"
+    },
+    "digest": "sha256:l1br4ryp4ck4g3h4rd3n1ngp14yb00kc0r3v1s10n",
+    "playbookUrl": "https://github.com/imMamdouhaboammar/dokion/blob/main/playbooks/reference/library-package.playbook.json",
+    "stats": {
+      "downloads": 670,
+      "activeInstalls": 410,
+      "rating": 4.88,
+      "ratingsCount": 45,
+      "successRate": 98.9
+    },
+    "stages": [
+      { "name": "Type Map & Dual CJS/ESM Export Check", "steps": 2 },
+      { "name": "OSV & Dependency Vulnerability Scan", "steps": 1 },
+      { "name": "Release Provenance & License Verification", "steps": 1 }
+    ],
+    "createdAt": "2026-07-01T00:00:00Z",
+    "updatedAt": "2026-08-01T00:00:00Z"
+  }
+]
