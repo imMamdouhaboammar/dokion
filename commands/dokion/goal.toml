@@ -1,0 +1,6 @@
+description = "Report and manage Goal Engineering objectives, verifier status, and telemetry"
+prompt = """
+Read skills/dokion-hardening/SKILL.md. Run `dokion goal`, `dokion goal status`, `dokion goal audit`, `dokion goal estimate`, and `dokion goal sync`.
+
+Summarize the active goal objective, status (ACTIVE, PAUSED, COMPLETED, BLOCKED), done conditions, verifier status, turn count, token budget limits, and progress log updates. Do not mark completed until verifier checks pass cleanly.
+"""

@@ -35,7 +35,7 @@ const SIMPLE_COMMANDS = new Set<CliSimpleCommand>([
   "findings"
 ]);
 
-const CATALOG_COMMANDS = new Set<CliCatalogCommand>(["tools", "skills", "plugins", "loops"]);
+const CATALOG_COMMANDS = new Set<CliCatalogCommand>(["tools", "skills", "plugins", "loops", "goals"]);
 const GLOBAL_OPTION_SPECS: Readonly<Record<string, OptionSpec>> = { "--format": { kind: "value" } };
 
 function parseTokens(command: string, tokens: readonly string[], specs: Readonly<Record<string, OptionSpec>>): ParsedTokens {
@@ -224,6 +224,48 @@ export function parseCliInvocation(argv: readonly string[]): CliInvocation {
       command: "loop",
       subcommand,
       ...(typeof pattern === "string" ? { pattern } : {}),
+      format: outputFormat(rawCommand, parsed.options)
+    };
+  }
+
+  if (rawCommand === "goal") {
+    const parsed = parseTokens(rawCommand, tokens, {
+      "--pattern": { kind: "value" },
+      "--level": { kind: "value" },
+      "--objective": { kind: "value" }
+    });
+    const subcommand = parsed.positionals[0] as
+      | "audit"
+      | "doctor"
+      | "init"
+      | "estimate"
+      | "status"
+      | "pause"
+      | "resume"
+      | "clear"
+      | "sync"
+      | "run"
+      | undefined;
+    const validSubs = ["audit", "doctor", "init", "estimate", "status", "pause", "resume", "clear", "sync", "run"];
+    if (!subcommand || !validSubs.includes(subcommand)) {
+      throw new DokionError(
+        "CLI_INVALID_ARGUMENT",
+        "Usage: dokion goal <audit|doctor|init|estimate|status|pause|resume|clear|sync|run> [--pattern <p>] [--level <l>] [--objective <obj>]",
+        {
+          command: rawCommand,
+          arguments: parsed.positionals
+        }
+      );
+    }
+    const pattern = parsed.options.get("--pattern");
+    const level = parsed.options.get("--level");
+    const objective = parsed.options.get("--objective") || parsed.positionals.slice(1).join(" ");
+    return {
+      command: "goal",
+      subcommand,
+      ...(typeof pattern === "string" ? { pattern } : {}),
+      ...(typeof level === "string" ? { level } : {}),
+      ...(typeof objective === "string" && objective.length > 0 ? { objective } : {}),
       format: outputFormat(rawCommand, parsed.options)
     };
   }

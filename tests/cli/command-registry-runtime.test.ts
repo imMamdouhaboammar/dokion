@@ -64,6 +64,8 @@ Observe:
   plugins list
   loops list
   loop <audit|init|cost|sync|context>
+  goals list
+  goal <audit|init|estimate|status|pause|resume|clear|sync|run>
 
 Configure:
   init
@@ -151,7 +153,8 @@ Dokion never installs, selects, substitutes, reorders, or enables capabilities.`
       "dokion status",
       "dokion findings",
       "dokion report",
-      "dokion loop"
+      "dokion loop",
+      "dokion goal"
     ]);
   });
 

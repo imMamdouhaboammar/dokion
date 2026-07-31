@@ -7,6 +7,7 @@ import { recordApproval } from "./approvals/approval-store.ts";
 import { builtinCatalog } from "./catalog/builtin-catalog.ts";
 import { renderCliHelp } from "./cli/command-registry.ts";
 import { handleDoctorCommand } from "./cli/handlers/doctor.ts";
+import { handleGoalCommand } from "./cli/handlers/goal.ts";
 import { handleLoopCommand } from "./cli/handlers/loop.ts";
 import { handlePlan } from "./cli/handlers/plan.ts";
 import { writeCliDiagnostic, writeCliResult } from "./cli/output.ts";
@@ -228,6 +229,22 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
       return;
     case "loop":
       print(handleLoopCommand({ subcommand: invocation.subcommand, ...(invocation.pattern ? { pattern: invocation.pattern } : {}), format: invocation.format, projectDir: root }), invocation.format);
+      return;
+    case "goals":
+      await listCatalog("goals", invocation.format);
+      return;
+    case "goal":
+      print(
+        handleGoalCommand({
+          subcommand: invocation.subcommand,
+          ...(invocation.pattern ? { pattern: invocation.pattern } : {}),
+          ...(invocation.level ? { level: invocation.level } : {}),
+          ...(invocation.objective ? { objective: invocation.objective } : {}),
+          format: invocation.format,
+          projectDir: root,
+        }),
+        invocation.format
+      );
       return;
   }
 }

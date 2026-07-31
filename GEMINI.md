@@ -8,6 +8,7 @@ Use the namespaced commands:
 
 - `/dokion:run` validates and starts the user-authored playbook
 - `/dokion:status` reports run state, findings, evidence, and platform degradations
+- `/dokion:goal` manages run-until-done objectives, verifiers, and progress telemetry
 
 Dokion uses Bun and TypeScript. For repository changes, run:
 

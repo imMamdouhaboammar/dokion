@@ -290,6 +290,16 @@
         "mode": "READ_ONLY"
       },
       {
+        "command": "dokion goals list",
+        "purpose": "List active goals, patterns, and verifier status.",
+        "mode": "READ_ONLY"
+      },
+      {
+        "command": "dokion goal",
+        "purpose": "Run goal engineering tools: audit, init, estimate, status, pause, resume, clear, sync, run.",
+        "mode": "READ_ONLY"
+      },
+      {
         "command": "dokion reset --state-only",
         "purpose": "Reset execution state without deleting findings, evidence, or the user playbook.",
         "approval": "ALWAYS"
@@ -437,6 +447,24 @@
         ],
         "default_enabled": false,
         "requires_user_approval": true
+      },
+      {
+        "id": "goal-engineering",
+        "name": "Goal Engineering",
+        "category": "agent-goal-orchestration",
+        "role": "Run-until-done objectives, patterns, verifiers, progress telemetry, and goal-audit CLI.",
+        "applicability": "always",
+        "official_repository": "https://github.com/cobusgreyling/goal-engineering",
+        "documented_commands": [
+          "dokion goal audit",
+          "dokion goal init --pattern <p>",
+          "dokion goal estimate --level <l>",
+          "dokion goal status",
+          "dokion goal sync",
+          "dokion goal run <objective>"
+        ],
+        "default_enabled": false,
+        "requires_user_approval": true
       }
     ],
     "tools": [
@@ -462,6 +490,45 @@
         "official_repository": "https://github.com/cobusgreyling/loop-engineering",
         "documented_commands": [
           "dokion loop cost"
+        ],
+        "default_enabled": false,
+        "requires_user_approval": true
+      },
+      {
+        "id": "goal-audit",
+        "name": "Goal Audit",
+        "type": "goal-readiness-scanner",
+        "role": "Audit repository for goal engineering readiness (0-100 score) and verifiers.",
+        "applicability": "always",
+        "official_repository": "https://github.com/cobusgreyling/goal-engineering",
+        "documented_commands": [
+          "dokion goal audit"
+        ],
+        "default_enabled": false,
+        "requires_user_approval": true
+      },
+      {
+        "id": "goal-cost",
+        "name": "Goal Cost & Difficulty Estimator",
+        "type": "goal-difficulty-estimator",
+        "role": "Estimate difficulty levels G1-G5, tokens, max turns, and cost projections for run-until-done goals.",
+        "applicability": "always",
+        "official_repository": "https://github.com/cobusgreyling/goal-engineering",
+        "documented_commands": [
+          "dokion goal estimate"
+        ],
+        "default_enabled": false,
+        "requires_user_approval": true
+      },
+      {
+        "id": "goal-verifier",
+        "name": "Goal Verifier",
+        "type": "verifier-gate-checker",
+        "role": "Verify whether goal completion conditions are objectively met before completion.",
+        "applicability": "always",
+        "official_repository": "https://github.com/cobusgreyling/goal-engineering",
+        "documented_commands": [
+          "dokion goal status"
         ],
         "default_enabled": false,
         "requires_user_approval": true

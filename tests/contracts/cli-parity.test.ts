@@ -61,7 +61,7 @@ describe("canonical CLI command registry", () => {
       CLI_COMMAND_REGISTRY.map((command) => command.manifestCommand)
     );
     expect(new Set(CLI_COMMAND_REGISTRY.map((command) => command.id)).size).toBe(CLI_COMMAND_REGISTRY.length);
-    expect(implementedCliCommands()).toHaveLength(18);
+    expect(implementedCliCommands()).toHaveLength(20);
     expect(plannedCliCommands()).toHaveLength(4);
   });
 
@@ -80,7 +80,7 @@ describe("canonical CLI command registry", () => {
   test("keeps the specification aware of every declared command", async () => {
     const specification = await read("SPEC.md");
 
-    expect(specification).toContain("| `dokion tools list` · `skills list` · `plugins list` · `loops list` |");
+    expect(specification).toContain("| `dokion tools list` · `skills list` · `plugins list` · `loops list` · `goals list` |");
     expect(specification).toContain("| `dokion approve` · `reject` · `skip` |");
 
     for (const descriptor of CLI_COMMAND_REGISTRY) {
