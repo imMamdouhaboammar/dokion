@@ -63,6 +63,7 @@ Observe:
   skills list
   plugins list
   loops list
+  loop <audit|init|cost|sync|context>
 
 Configure:
   init
@@ -149,7 +150,8 @@ Dokion never installs, selects, substitutes, reorders, or enables capabilities.`
     expect(registry.geminiCommandsForFile("status.toml").map((command) => command.manifestCommand)).toEqual([
       "dokion status",
       "dokion findings",
-      "dokion report"
+      "dokion report",
+      "dokion loop"
     ]);
   });
 

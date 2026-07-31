@@ -7,6 +7,7 @@ import { recordApproval } from "./approvals/approval-store.ts";
 import { builtinCatalog } from "./catalog/builtin-catalog.ts";
 import { renderCliHelp } from "./cli/command-registry.ts";
 import { handleDoctorCommand } from "./cli/handlers/doctor.ts";
+import { handleLoopCommand } from "./cli/handlers/loop.ts";
 import { handlePlan } from "./cli/handlers/plan.ts";
 import { writeCliDiagnostic, writeCliResult } from "./cli/output.ts";
 import { parseCliInvocation, requestedCliOutputFormat } from "./cli/parser.ts";
@@ -224,6 +225,9 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
       return;
     case "loops":
       await listCatalog("loops", invocation.format);
+      return;
+    case "loop":
+      print(handleLoopCommand({ subcommand: invocation.subcommand, ...(invocation.pattern ? { pattern: invocation.pattern } : {}), format: invocation.format, projectDir: root }), invocation.format);
       return;
   }
 }

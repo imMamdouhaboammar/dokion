@@ -208,6 +208,26 @@ export function parseCliInvocation(argv: readonly string[]): CliInvocation {
     };
   }
 
+  if (rawCommand === "loop") {
+    const parsed = parseTokens(rawCommand, tokens, {
+      "--pattern": { kind: "value" }
+    });
+    const subcommand = parsed.positionals[0] as "audit" | "init" | "cost" | "sync" | "context" | undefined;
+    if (!subcommand || !["audit", "init", "cost", "sync", "context"].includes(subcommand)) {
+      throw new DokionError("CLI_INVALID_ARGUMENT", "Usage: dokion loop <audit|init|cost|sync|context> [--pattern <p>]", {
+        command: rawCommand,
+        arguments: parsed.positionals
+      });
+    }
+    const pattern = parsed.options.get("--pattern");
+    return {
+      command: "loop",
+      subcommand,
+      ...(typeof pattern === "string" ? { pattern } : {}),
+      format: outputFormat(rawCommand, parsed.options)
+    };
+  }
+
   if (SIMPLE_COMMANDS.has(rawCommand as CliSimpleCommand)) {
     const parsed = parseTokens(rawCommand, tokens, {});
     requireNoPositionals(rawCommand, parsed.positionals);

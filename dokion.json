@@ -285,6 +285,11 @@
         "mode": "READ_ONLY"
       },
       {
+        "command": "dokion loop",
+        "purpose": "Run loop engineering tools: audit, init, cost, sync, context.",
+        "mode": "READ_ONLY"
+      },
+      {
         "command": "dokion reset --state-only",
         "purpose": "Reset execution state without deleting findings, evidence, or the user playbook.",
         "approval": "ALWAYS"
@@ -415,9 +420,52 @@
         ],
         "default_enabled": false,
         "requires_user_approval": true
+      },
+      {
+        "id": "loop-engineering",
+        "name": "Loop Engineering",
+        "category": "agent-loop-orchestration",
+        "role": "Practical patterns, starters, context engineering, and budget constraints for AI coding agent loops.",
+        "applicability": "always",
+        "official_repository": "https://github.com/cobusgreyling/loop-engineering",
+        "documented_commands": [
+          "dokion loop audit",
+          "dokion loop init --pattern <p>",
+          "dokion loop cost",
+          "dokion loop sync",
+          "dokion loop context"
+        ],
+        "default_enabled": false,
+        "requires_user_approval": true
       }
     ],
     "tools": [
+      {
+        "id": "loop-audit",
+        "name": "Loop Audit",
+        "type": "loop-readiness-scanner",
+        "role": "Audit repository for agent loop readiness (0-100 score) and actionable next steps.",
+        "applicability": "always",
+        "official_repository": "https://github.com/cobusgreyling/loop-engineering",
+        "documented_commands": [
+          "dokion loop audit"
+        ],
+        "default_enabled": false,
+        "requires_user_approval": true
+      },
+      {
+        "id": "loop-cost",
+        "name": "Loop Cost Estimator",
+        "type": "cost-and-token-tracker",
+        "role": "Estimate token usage, cost projections, and budget enforcement for agent loops.",
+        "applicability": "always",
+        "official_repository": "https://github.com/cobusgreyling/loop-engineering",
+        "documented_commands": [
+          "dokion loop cost"
+        ],
+        "default_enabled": false,
+        "requires_user_approval": true
+      },
       {
         "id": "serena",
         "name": "Serena",

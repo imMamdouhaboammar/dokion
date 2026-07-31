@@ -372,6 +372,23 @@ export const CLI_COMMAND_REGISTRY = [
     geminiFiles: []
   },
   {
+    id: "loop",
+    manifestCommand: "dokion loop",
+    purpose: "Run loop engineering tools: audit, init, cost, sync, context.",
+    manifestMode: "READ_ONLY",
+    specMarker: "`dokion loop`",
+    runtimeCase: "loop",
+    helpLine: "  loop <audit|init|cost|sync|context>",
+    helpGroup: "Observe",
+    helpOrder: 10,
+    status: "IMPLEMENTED",
+    executionMode: "READ_ONLY",
+    writeScope: [".dokion/**", "HARDENING.md", "STATE.md", "LOOP.md", "loop-budget.md"],
+    approvalClass: "BEFORE_WRITE",
+    geminiFiles: ["status.toml"],
+    geminiOrder: 4
+  },
+  {
     id: "reset-state",
     manifestCommand: "dokion reset --state-only",
     purpose: "Reset execution state without deleting findings, evidence, or the user playbook.",

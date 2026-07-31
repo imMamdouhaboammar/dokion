@@ -27,6 +27,11 @@ type CliCommandInvocation =
       by: string;
       notes?: string;
     }
-  | { command: CliCatalogCommand; action: "list" };
+  | { command: CliCatalogCommand; action: "list" }
+  | {
+      command: "loop";
+      subcommand: "audit" | "init" | "cost" | "sync" | "context";
+      pattern?: string;
+    };
 
 export type CliInvocation = CliCommandInvocation & { format: CliOutputFormat };

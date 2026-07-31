@@ -33,6 +33,16 @@ dokion approve step:<id> --by <identity> --notes "<reason>"
 
 Do not infer approval from conversational tone when Dokion requires an approval record.
 
+## Loop Engineering commands
+
+```bash
+dokion loop audit
+dokion loop init --pattern <daily-triage|test-driven-loop|bug-fix-loop>
+dokion loop cost
+dokion loop sync
+dokion loop context
+```
+
 ## Verification
 
 A repair is accepted only when:

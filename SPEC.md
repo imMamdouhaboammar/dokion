@@ -836,6 +836,7 @@ observe cannot mutate, and the commands that mutate cannot run unapproved.
 | `dokion findings` | The findings ledger. |
 | `dokion report` | Render `HARDENING.md` from state. |
 | `dokion tools list` · `skills list` · `plugins list` · `loops list` | Show the catalog. Listing is not enabling. |
+| `dokion loop` | Run loop engineering tools: audit, init, cost, sync, context. |
 
 ### 15.2 Configure — writes only Dokion's own files
 
