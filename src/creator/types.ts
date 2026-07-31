@@ -5,6 +5,13 @@ export type MemorySourceType =
   | "transcript"
   | "mem0"
   | "workflow-optimizer"
+  | "vector-db"
+  | "qdrant"
+  | "chromadb"
+  | "knowledge-graph"
+  | "adr"
+  | "github-pr"
+  | "github-issue"
   | "manual";
 
 export interface MemoryEntry {
@@ -13,7 +20,7 @@ export interface MemoryEntry {
   timestamp: string;
   title: string;
   content: string;
-  category?: "ui-ux" | "security" | "backend" | "testing" | "unslop" | "general";
+  category?: "ui-ux" | "security" | "backend" | "testing" | "unslop" | "general" | "architecture";
   metadata?: Record<string, unknown>;
 }
 

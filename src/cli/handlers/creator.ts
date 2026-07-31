@@ -18,6 +18,22 @@ export async function handleCreatorCommand(options: CreatorCliOptions): Promise<
     mem0: "mem0",
     workflow: "workflow-optimizer",
     "workflow-optimizer": "workflow-optimizer",
+    "vector-db": "vector-db",
+    vectordb: "vector-db",
+    qdrant: "qdrant",
+    chromadb: "chromadb",
+    chroma: "chromadb",
+    "knowledge-graph": "knowledge-graph",
+    graph: "knowledge-graph",
+    kg: "knowledge-graph",
+    adr: "adr",
+    adrs: "adr",
+    "github-pr": "github-pr",
+    pr: "github-pr",
+    prs: "github-pr",
+    "github-issue": "github-issue",
+    issue: "github-issue",
+    issues: "github-issue",
   };
 
   const source = options.fromMemory ? sourceMap[options.fromMemory.toLowerCase()] : undefined;
