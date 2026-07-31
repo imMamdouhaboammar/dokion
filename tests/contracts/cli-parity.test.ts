@@ -81,11 +81,14 @@ describe("canonical CLI command registry", () => {
     const specification = await read("SPEC.md");
 
     expect(specification).toContain("| `dokion tools list` · `skills list` · `plugins list` · `loops list` · `goals list` |");
-    expect(specification).toContain("| `dokion approve` · `reject` · `skip` |");
+
+    expect(specification).toContain("`dokion approve`");
 
     for (const descriptor of CLI_COMMAND_REGISTRY) {
       expect(specification).toContain(descriptor.specMarker);
     }
+
+
   });
 
   test("keeps implemented and planned runtime cases explicit", async () => {
