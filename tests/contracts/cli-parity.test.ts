@@ -61,8 +61,8 @@ describe("canonical CLI command registry", () => {
       CLI_COMMAND_REGISTRY.map((command) => command.manifestCommand)
     );
     expect(new Set(CLI_COMMAND_REGISTRY.map((command) => command.id)).size).toBe(CLI_COMMAND_REGISTRY.length);
-    expect(implementedCliCommands()).toHaveLength(22);
-    expect(plannedCliCommands()).toHaveLength(4);
+    expect(implementedCliCommands()).toHaveLength(30);
+    expect(plannedCliCommands()).toHaveLength(0);
   });
 
   test("records source-specific manifest usage without hiding current differences", async () => {
@@ -87,8 +87,6 @@ describe("canonical CLI command registry", () => {
     for (const descriptor of CLI_COMMAND_REGISTRY) {
       expect(specification).toContain(descriptor.specMarker);
     }
-
-
   });
 
   test("keeps implemented and planned runtime cases explicit", async () => {

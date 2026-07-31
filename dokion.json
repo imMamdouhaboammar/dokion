@@ -313,6 +313,26 @@
         "command": "dokion reset --state-only",
         "purpose": "Reset execution state without deleting findings, evidence, or the user playbook.",
         "approval": "ALWAYS"
+      },
+      {
+        "command": "dokion audit",
+        "purpose": "Independent audit verifying evidence manifests and repository state.",
+        "mode": "READ_ONLY"
+      },
+      {
+        "command": "dokion memory",
+        "purpose": "Run memory engineering tools: audit, init, status, patterns.",
+        "mode": "READ_ONLY"
+      },
+      {
+        "command": "dokion autopilot",
+        "purpose": "Run deterministic bounded autopilot execution.",
+        "approval": "FROM_PLAYBOOK"
+      },
+      {
+        "command": "dokion compare",
+        "purpose": "Compare two Dokion run records deterministically without mutating state.",
+        "mode": "READ_ONLY"
       }
     ]
   },

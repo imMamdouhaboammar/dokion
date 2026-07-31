@@ -67,19 +67,27 @@ Observe:
   goals list
   goal <audit|init|estimate|status|pause|resume|clear|sync|run>
   hooks <run|status>
+  audit
+  memory <audit|init|status|patterns>
+  compare [<run-a> <run-b>]
 
 Configure:
   init
   plan
+  configure
   validate [--catalog-only]
+  reset --state-only
   playbooks <import|validate|sync|list>
 
 Execute:
   run
+  step <step-id>
   resume
   verify
   approve <step:id|finding:id> --by <identity> [--notes <text>]
   reject <step:id|finding:id> --by <identity> [--notes <text>]
+  skip <step-id> --reason <text>
+  autopilot [--dry-run]
 
 Dokion never installs, selects, substitutes, reorders, or enables capabilities.`;
 
@@ -87,7 +95,7 @@ Dokion never installs, selects, substitutes, reorders, or enables capabilities.`
     expect(registry.renderCliHelp("9.9.9")).toBe(expected);
   });
 
-  test("resolves implemented planned and unknown commands", async () => {
+  test("resolves implemented commands", async () => {
     const registry = await registryApi();
 
     expect(typeof registry.resolveCliCommand).toBe("function");
@@ -100,7 +108,7 @@ Dokion never installs, selects, substitutes, reorders, or enables capabilities.`
     });
     expect(registry.resolveCliCommand("configure")).toMatchObject({
       id: "configure",
-      status: "PLANNED",
+      status: "IMPLEMENTED",
       executionMode: "CONFIGURE",
       approvalClass: "ALWAYS"
     });
@@ -156,16 +164,12 @@ Dokion never installs, selects, substitutes, reorders, or enables capabilities.`
       "dokion findings",
       "dokion report",
       "dokion loop",
-      "dokion goal"
+      "dokion goal",
+      "dokion memory"
     ]);
   });
 
-  test("uses registry lookup for planned and unknown command diagnostics", async () => {
-    const planned = await runCli("configure");
-    expect(planned.exitCode).toBe(1);
-    expect(planned.stdout).toBe("");
-    expect(planned.stderr).toContain("Command is planned but not implemented: dokion configure");
-
+  test("uses registry lookup for unknown command diagnostics", async () => {
     const unknown = await runCli("not-a-command");
     expect(unknown.exitCode).toBe(1);
     expect(unknown.stdout).toBe("");

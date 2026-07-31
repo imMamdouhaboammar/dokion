@@ -36,7 +36,7 @@ describe('CORE-012 Bounded Autopilot End-to-End Acceptance', () => {
     expect(verifyResult.passed).toBe(true);
 
     // 4. Evidence audit
-    const auditResult = handleAuditCommand([
+    const auditResult = await handleAuditCommand([
       { path: '.dokion/evidence/e2e.log', content: 'E2E execution log' },
     ]);
     expect(auditResult.audited).toBe(true);

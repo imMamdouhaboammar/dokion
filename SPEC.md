@@ -841,6 +841,8 @@ observe cannot mutate, and the commands that mutate cannot run unapproved.
 | `dokion memory` | Run memory engineering tools: audit, init, status, patterns. |
 | `dokion goal` | Run goal engineering tools: audit, init, estimate, status, pause, resume, clear, sync, run. |
 | `dokion hooks` | Manage lifecycle hook follow-ups and background automation: run and status. |
+| `dokion audit` | Independent audit verifying evidence manifests and repository state. |
+| `dokion compare` | Compare two Dokion run records deterministically without mutating state. |
 
 ### 15.2 Configure — writes only Dokion's own files
 
@@ -866,6 +868,7 @@ adding one would break the model.
 | `dokion resume` | Continue an interrupted run from disk. |
 | `dokion approve` · `reject` · `skip` | Record a decision. Every one lands in the approvals ledger. |
 | `dokion verify` | Re-run verification against the current commit. |
+| `dokion autopilot` | Run deterministic bounded autopilot execution. |
 
 `dokion resume` is the command that makes [principle 2](#the-principles) real: it reads
 `.dokion/state.json` and `HARDENING.md`, and needs nothing from the previous session's

@@ -314,7 +314,7 @@ async function capabilityChecks(
     if (digestMatches && immutableReferences.length > 0) {
       digestMatches = immutableReferences.every((reference) => reference === lockedDigest);
     }
-    if (digestMatches && lockedDigest && executable) {
+    if (digestMatches && lockedDigest && executable && entry.source?.kind !== "builtin" && entry.verification?.digest_check !== false) {
       const algorithm = lockedDigest.startsWith("sha512:") ? "sha512" : "sha256";
       if (!lockedDigest.startsWith(`${algorithm}:`)) {
         digestMatches = false;

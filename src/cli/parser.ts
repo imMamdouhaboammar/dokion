@@ -32,7 +32,9 @@ const SIMPLE_COMMANDS = new Set<CliSimpleCommand>([
   "verify",
   "status",
   "report",
-  "findings"
+  "findings",
+  "configure",
+  "audit"
 ]);
 
 const CATALOG_COMMANDS = new Set<CliCatalogCommand>(["tools", "skills", "plugins", "loops", "goals"]);
@@ -170,6 +172,61 @@ export function parseCliInvocation(argv: readonly string[]): CliInvocation {
     };
   }
 
+  if (rawCommand === "step") {
+    const parsed = parseTokens(rawCommand, tokens, {});
+    const stepId = parsed.positionals[0];
+    if (!stepId) {
+      throw new DokionError("CLI_MISSING_ARGUMENT", "Missing step ID for dokion step <step-id>", {
+        command: rawCommand,
+        argument: "step-id"
+      });
+    }
+    return {
+      command: "step",
+      stepId,
+      format: outputFormat(rawCommand, parsed.options)
+    };
+  }
+
+  if (rawCommand === "skip") {
+    const parsed = parseTokens(rawCommand, tokens, {
+      "--reason": { kind: "value" },
+      "--by": { kind: "value" }
+    });
+    const stepId = parsed.positionals[0];
+    if (!stepId) {
+      throw new DokionError("CLI_MISSING_ARGUMENT", "Missing step ID for dokion skip <step-id> --reason <text>", {
+        command: rawCommand,
+        argument: "step-id"
+      });
+    }
+    const reason = requiredOption(rawCommand, parsed.options, "--reason");
+    const by = parsed.options.get("--by");
+    return {
+      command: "skip",
+      stepId,
+      reason,
+      ...(typeof by === "string" ? { by } : {}),
+      format: outputFormat(rawCommand, parsed.options)
+    };
+  }
+
+  if (rawCommand === "reset") {
+    const parsed = parseTokens(rawCommand, tokens, {
+      "--state-only": { kind: "boolean" }
+    });
+    if (parsed.options.get("--state-only") !== true) {
+      throw new DokionError("CLI_INVALID_ARGUMENT", "dokion reset requires --state-only flag", {
+        command: rawCommand
+      });
+    }
+    return {
+      command: "reset",
+      stateOnly: true,
+      format: outputFormat(rawCommand, parsed.options)
+    };
+  }
+
   if (rawCommand === "approve" || rawCommand === "reject") {
     const parsed = parseTokens(rawCommand, tokens, {
       "--by": { kind: "value" },
@@ -290,6 +347,56 @@ export function parseCliInvocation(argv: readonly string[]): CliInvocation {
     return {
       command: "hooks",
       subcommand,
+      format: outputFormat(rawCommand, parsed.options)
+    };
+  }
+
+  if (rawCommand === "autopilot") {
+    const parsed = parseTokens(rawCommand, tokens, {
+      "--dry-run": { kind: "boolean" },
+      "--max-turns": { kind: "value" }
+    });
+    const maxTurnsStr = parsed.options.get("--max-turns");
+    const maxTurns = typeof maxTurnsStr === "string" ? parseInt(maxTurnsStr, 10) : undefined;
+    return {
+      command: "autopilot",
+      dryRun: parsed.options.get("--dry-run") === true,
+      ...(maxTurns && !isNaN(maxTurns) ? { maxTurns } : {}),
+      format: outputFormat(rawCommand, parsed.options)
+    };
+  }
+
+  if (rawCommand === "memory") {
+    const parsed = parseTokens(rawCommand, tokens, {
+      "--pattern": { kind: "value" },
+      "--tool": { kind: "value" },
+      "--force": { kind: "boolean" },
+      "--with-loop": { kind: "boolean" },
+      "--suggest": { kind: "boolean" }
+    });
+    const subcommand = (parsed.positionals[0] || "audit") as "audit" | "init" | "status" | "patterns";
+    const pattern = parsed.options.get("--pattern");
+    const tool = parsed.options.get("--tool");
+    return {
+      command: "memory",
+      subcommand,
+      ...(typeof pattern === "string" ? { pattern } : {}),
+      ...(typeof tool === "string" ? { tool } : {}),
+      force: parsed.options.get("--force") === true,
+      withLoop: parsed.options.get("--with-loop") === true,
+      suggest: parsed.options.get("--suggest") === true,
+      format: outputFormat(rawCommand, parsed.options)
+    };
+  }
+
+  if (rawCommand === "compare" || rawCommand === "diff") {
+    const parsed = parseTokens(rawCommand, tokens, {});
+    const baselineRunId = parsed.positionals[0];
+    const targetRunId = parsed.positionals[1];
+    return {
+      command: "compare",
+      ...(baselineRunId ? { baselineRunId } : {}),
+      ...(targetRunId ? { targetRunId } : {}),
       format: outputFormat(rawCommand, parsed.options)
     };
   }

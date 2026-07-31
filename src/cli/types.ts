@@ -12,7 +12,9 @@ export type CliSimpleCommand =
   | "verify"
   | "status"
   | "report"
-  | "findings";
+  | "findings"
+  | "configure"
+  | "audit";
 
 export type CliCatalogCommand = "tools" | "skills" | "plugins" | "loops" | "goals";
 
@@ -20,6 +22,20 @@ type CliCommandInvocation =
   | { command: "help" }
   | { command: CliSimpleCommand }
   | { command: "validate"; catalogOnly: boolean }
+  | {
+      command: "step";
+      stepId: string;
+    }
+  | {
+      command: "skip";
+      stepId: string;
+      reason: string;
+      by?: string;
+    }
+  | {
+      command: "reset";
+      stateOnly: boolean;
+    }
   | {
       command: "approve" | "reject";
       subject: string;
@@ -48,6 +64,25 @@ type CliCommandInvocation =
   | {
       command: "hooks";
       subcommand: "run" | "status";
+    }
+  | {
+      command: "autopilot";
+      dryRun?: boolean;
+      maxTurns?: number;
+    }
+  | {
+      command: "memory";
+      subcommand: "audit" | "init" | "status" | "patterns";
+      pattern?: string;
+      tool?: string;
+      force?: boolean;
+      withLoop?: boolean;
+      suggest?: boolean;
+    }
+  | {
+      command: "compare";
+      baselineRunId?: string;
+      targetRunId?: string;
     };
 
 export type CliInvocation = CliCommandInvocation & { format: CliOutputFormat };

@@ -6,12 +6,20 @@ import { join } from "node:path";
 import { recordApproval } from "./approvals/approval-store.ts";
 import { builtinCatalog } from "./catalog/builtin-catalog.ts";
 import { renderCliHelp } from "./cli/command-registry.ts";
+import { handleAuditCommand } from "./cli/handlers/audit.ts";
+import { handleAutopilotCommand } from "./cli/handlers/autopilot.ts";
+import { handleCompareCommand } from "./cli/handlers/compare.ts";
+import { handleConfigureCommand } from "./cli/handlers/configure.ts";
 import { handleDoctorCommand } from "./cli/handlers/doctor.ts";
 import { handleGoalCommand } from "./cli/handlers/goal.ts";
 import { handleHooksCommand } from "./cli/handlers/hooks.ts";
 import { handleLoopCommand } from "./cli/handlers/loop.ts";
+import { handleMemoryCommand } from "./cli/handlers/memory.ts";
 import { handlePlan } from "./cli/handlers/plan.ts";
 import { handlePlaybooksCommand } from "./cli/handlers/playbooks.ts";
+import { handleResetCommand } from "./cli/handlers/reset.ts";
+import { handleSkipCommand } from "./cli/handlers/skip.ts";
+import { handleStepCommand } from "./cli/handlers/step.ts";
 import { writeCliDiagnostic, writeCliResult } from "./cli/output.ts";
 import { parseCliInvocation, requestedCliOutputFormat } from "./cli/parser.ts";
 import type { CliInvocation, CliOutputFormat } from "./cli/types.ts";
@@ -184,6 +192,9 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
     case "inspect":
       print(await inspectProject(root), invocation.format);
       return;
+    case "configure":
+      print(await handleConfigureCommand(root), invocation.format);
+      return;
     case "doctor": {
       const audit = await handleDoctorCommand(root);
       print(audit, invocation.format);
@@ -199,6 +210,12 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
     case "run":
       print(await new ExecutionEngine(root).run(), invocation.format);
       return;
+    case "step": {
+      const store = new StateStore(root);
+      const state = (await store.exists()) ? await store.load() : null;
+      print(await handleStepCommand({ stepId: invocation.stepId, root }, state), invocation.format);
+      return;
+    }
     case "resume":
       print(await new ExecutionEngine(root).resume(), invocation.format);
       return;
@@ -209,6 +226,12 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
     case "reject":
       await decide(invocation);
       return;
+    case "skip":
+      print(handleSkipCommand(invocation.stepId, invocation.reason, invocation.by ?? "user"), invocation.format);
+      return;
+    case "reset":
+      print(await handleResetCommand(root), invocation.format);
+      return;
     case "status":
       await status(invocation.format);
       return;
@@ -217,6 +240,39 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
       return;
     case "findings":
       print(await listFindings(root), invocation.format);
+      return;
+    case "audit":
+      print(await handleAuditCommand(root), invocation.format);
+      return;
+    case "autopilot": {
+      const store = new StateStore(root);
+      const state = (await store.exists()) ? await store.load() : null;
+      let playbook = { stages: [] };
+      try {
+        const loaded = await loadActivePlaybook(root);
+        playbook = loaded.data;
+      } catch {
+        // Fallback minimal playbook
+      }
+      print(await handleAutopilotCommand({ playbook, state, dryRun: invocation.dryRun, maxTurns: invocation.maxTurns }), invocation.format);
+      return;
+    }
+    case "memory": {
+      const exitCode = await handleMemoryCommand({
+        subcommand: invocation.subcommand,
+        targetDir: root,
+        pattern: invocation.pattern,
+        tool: invocation.tool,
+        force: invocation.force,
+        withLoop: invocation.withLoop,
+        suggest: invocation.suggest,
+        json: invocation.format === "json"
+      });
+      if (exitCode !== 0) process.exitCode = exitCode;
+      return;
+    }
+    case "compare":
+      print(await handleCompareCommand(root, { baselineRunId: invocation.baselineRunId, targetRunId: invocation.targetRunId }), invocation.format);
       return;
     case "tools":
       await listCatalog("tools", invocation.format);
