@@ -21,11 +21,20 @@
       "allOf": [
         {
           "if": { "properties": { "transport": { "const": "git" } }, "required": ["transport"] },
-          "then": { "required": ["immutable_revision"] }
+          "then": {
+            "required": ["immutable_revision"],
+            "properties": {
+              "location": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" }
+            }
+          }
         },
         {
           "if": { "properties": { "transport": { "const": "https" } }, "required": ["transport"] },
-          "then": { "properties": { "location": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" } } }
+          "then": {
+            "properties": {
+              "location": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" }
+            }
+          }
         }
       ]
     },
@@ -47,5 +56,49 @@
       }
     },
     "authority": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/authorityNone" }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "source": {
+            "properties": { "transport": { "const": "https" } },
+            "required": ["transport"]
+          }
+        },
+        "required": ["source"]
+      },
+      "then": {
+        "properties": {
+          "indexes": {
+            "items": {
+              "properties": {
+                "location": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "source": {
+            "properties": { "transport": { "const": "git" } },
+            "required": ["transport"]
+          }
+        },
+        "required": ["source"]
+      },
+      "then": {
+        "properties": {
+          "indexes": {
+            "items": {
+              "required": ["immutable_revision"]
+            }
+          }
+        }
+      }
+    }
+  ]
 }
