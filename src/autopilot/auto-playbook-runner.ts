@@ -38,7 +38,8 @@ export interface AutoRunnerOptions {
   hasUserApproval?: boolean;
   onExecuteStep?: ((action: ActionSpec) => Promise<StepExecutionReceipt>) | undefined;
   onShadowVerify?: ((action: ActionSpec) => Promise<ShadowVerificationResult>) | undefined;
-  onSelfHealingRepair?: ((stepId: string, error: Error) => Promise<boolean>) | undefined;
+  onSelfHealingRepair?: ((stepId: string, error: Error) => Promise<StepExecutionReceipt>) | undefined;
+  onRollbackStep?: ((action: ActionSpec, error: Error) => Promise<boolean>) | undefined;
   onRunShellCommand?: ((command: string) => Promise<{ exitCode: number; stdout: string; stderr: string }>) | undefined;
 }
 
@@ -59,7 +60,7 @@ export interface AutoRunnerReport {
 
 interface StepAttemptResult {
   success: boolean;
-  changed: boolean;
+  receipt?: StepExecutionReceipt;
   error?: Error;
 }
 
@@ -76,7 +77,8 @@ export class AutoPlaybookRunner {
   private hasUserApproval: boolean;
   private onExecuteStep?: ((action: ActionSpec) => Promise<StepExecutionReceipt>) | undefined;
   private onShadowVerify?: ((action: ActionSpec) => Promise<ShadowVerificationResult>) | undefined;
-  private onSelfHealingRepair?: ((stepId: string, error: Error) => Promise<boolean>) | undefined;
+  private onSelfHealingRepair?: ((stepId: string, error: Error) => Promise<StepExecutionReceipt>) | undefined;
+  private onRollbackStep?: ((action: ActionSpec, error: Error) => Promise<boolean>) | undefined;
   private onRunShellCommand?: ((command: string) => Promise<{ exitCode: number; stdout: string; stderr: string }>) | undefined;
 
   private consecutiveFailures = 0;
@@ -101,6 +103,7 @@ export class AutoPlaybookRunner {
     this.onExecuteStep = options.onExecuteStep;
     this.onShadowVerify = options.onShadowVerify;
     this.onSelfHealingRepair = options.onSelfHealingRepair;
+    this.onRollbackStep = options.onRollbackStep;
     this.onRunShellCommand = options.onRunShellCommand;
 
     this.circuitBreaker = {
@@ -173,34 +176,51 @@ export class AutoPlaybookRunner {
       console.log(`  ▶ [Turn ${turns}] Executing Step: ${action.stepId} ("${action.command}")...`);
       const attempt = await this.executeStepWithAutoresearch(action, turns);
 
-      if (attempt.success) {
+      if (attempt.success && attempt.receipt?.executed) {
         console.log(`    ✔ Step ${action.stepId} SUCCEEDED [Executed & Verified]`);
-        this.recordSuccess(action, attempt.changed);
+        this.recordSuccess(action, attempt.receipt.changed);
         continue;
       }
 
-      const failure = attempt.error ?? new Error(
+      let failure = attempt.error ?? new Error(
         `Step ${action.stepId} execution failed verification or guard checks`
       );
-      let repaired = false;
+      let repairReceipt: StepExecutionReceipt | undefined;
       if (this.onSelfHealingRepair) {
         this.repairsTriggered += 1;
-        repaired = await this.onSelfHealingRepair(action.stepId, failure);
+        try {
+          repairReceipt = await this.onSelfHealingRepair(action.stepId, failure);
+          if (!repairReceipt.executed) {
+            failure = new Error(`Repair callback did not confirm execution for ${action.stepId}`);
+          }
+        } catch (error) {
+          failure = error instanceof Error ? error : new Error(String(error));
+        }
       }
 
-      if (repaired && await this.verifyExecutedStep(action)) {
+      if (repairReceipt?.executed && await this.verifyExecutedStep(action)) {
         console.log(`    ✔ Step ${action.stepId} SUCCEEDED [Repaired & Re-verified]`);
         circuitBreakerStatus = "RECOVERED";
-        this.recordSuccess(action, attempt.changed);
+        this.recordSuccess(action, Boolean(attempt.receipt?.changed || repairReceipt.changed));
         continue;
+      }
+
+      const changed = Boolean(attempt.receipt?.changed || repairReceipt?.changed);
+      if (changed) {
+        const rollbackConfirmed = await this.confirmRollback(action, failure);
+        if (!rollbackConfirmed) {
+          this.recordFailure(action);
+          return this.buildReport(
+            false,
+            "TRIPPED",
+            `Step ${action.stepId} failed after changing the repository and rollback was not confirmed`
+          );
+        }
+        this.rolledBackChanges += 1;
       }
 
       console.log(`    ✖ Step ${action.stepId} FAILED [No verified effect]`);
-      this.stepsFailed += 1;
-      this.rolledBackChanges += 1;
-      this.consecutiveFailures += 1;
-      this.totalCost += 0.01;
-      this.markStepInState(action.stepId, "FAILED");
+      this.recordFailure(action);
     }
 
     const finalCompletion = this.calculateCompletionPercentage();
@@ -219,6 +239,22 @@ export class AutoPlaybookRunner {
     this.consecutiveFailures = 0;
     this.totalCost += 0.02;
     this.markStepInState(action.stepId, "SUCCEEDED");
+  }
+
+  private recordFailure(action: ActionSpec): void {
+    this.stepsFailed += 1;
+    this.consecutiveFailures += 1;
+    this.totalCost += 0.01;
+    this.markStepInState(action.stepId, "FAILED");
+  }
+
+  private async confirmRollback(action: ActionSpec, failure: Error): Promise<boolean> {
+    if (!this.onRollbackStep) return false;
+    try {
+      return await this.onRollbackStep(action, failure);
+    } catch {
+      return false;
+    }
   }
 
   private async executeStepWithAutoresearch(
@@ -251,7 +287,7 @@ export class AutoPlaybookRunner {
       if (result.action === "ROLLBACK") {
         return {
           success: false,
-          changed: receipt?.changed ?? false,
+          ...(receipt ? { receipt } : {}),
           error: new Error(result.changeDescription),
         };
       }
@@ -261,14 +297,14 @@ export class AutoPlaybookRunner {
       } catch (error) {
         return {
           success: false,
-          changed: receipt?.changed ?? false,
+          ...(receipt ? { receipt } : {}),
           error: error instanceof Error ? error : new Error(String(error)),
         };
       }
       if (!await this.verifyShell(action)) {
         return {
           success: false,
-          changed: receipt?.changed ?? false,
+          ...(receipt ? { receipt } : {}),
           error: new Error(`Verification failed for ${action.stepId}`),
         };
       }
@@ -277,12 +313,20 @@ export class AutoPlaybookRunner {
     if (!await this.verifyShadow(action)) {
       return {
         success: false,
-        changed: receipt?.changed ?? false,
+        ...(receipt ? { receipt } : {}),
         error: new Error(`Independent shadow verification failed for ${action.stepId}`),
       };
     }
 
-    return { success: true, changed: receipt?.changed ?? false };
+    if (!receipt?.executed) {
+      return {
+        success: false,
+        ...(receipt ? { receipt } : {}),
+        error: new Error(`No execution receipt was recorded for ${action.stepId}`),
+      };
+    }
+
+    return { success: true, receipt };
   }
 
   private async verifyExecutedStep(action: ActionSpec): Promise<boolean> {
