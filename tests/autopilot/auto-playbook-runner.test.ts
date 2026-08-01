@@ -134,8 +134,13 @@ describe("AUTORUN-001 Auto Playbook Runner Loop", () => {
     expect(result.circuitBreakerStatus).toBe("TRIPPED");
   });
 
-  it("only reports self-healing after the repaired step passes verification", async () => {
-    const repair = mock(async () => true);
+  it("only reports self-healing after the repair executes and passes verification", async () => {
+    const repair = mock(async () => ({
+      executed: true,
+      changed: true,
+      description: "Repaired candidate change",
+      evidence: ["repair-evidence.json"],
+    }));
     let verificationAttempts = 0;
 
     const runner = new AutoPlaybookRunner({
@@ -159,5 +164,77 @@ describe("AUTORUN-001 Auto Playbook Runner Loop", () => {
     expect(verificationAttempts).toBe(2);
     expect(result.selfHealingRepairsTriggered).toBe(1);
     expect(result.stepsSucceeded).toBe(1);
+    expect(result.keptChangesCount).toBe(1);
+  });
+
+  it("does not accept a repair that cannot prove execution", async () => {
+    let verificationAttempts = 0;
+    const rollback = mock(async () => true);
+
+    const runner = new AutoPlaybookRunner({
+      playbook: { ...mockPlaybook, steps: [mockPlaybook.steps[0]!] },
+      state: createMockState(),
+      maxTurns: 1,
+      enableShadowVerification: false,
+      onExecuteStep: async () => ({ executed: true, changed: true, description: "Applied candidate change" }),
+      onRunShellCommand: async () => {
+        verificationAttempts += 1;
+        return verificationAttempts === 1
+          ? { exitCode: 1, stdout: "", stderr: "FAIL" }
+          : { exitCode: 0, stdout: "PASS", stderr: "" };
+      },
+      onSelfHealingRepair: async () => ({
+        executed: false,
+        changed: false,
+        description: "Repair callback returned without executing",
+      }),
+      onRollbackStep: rollback,
+    });
+
+    const result = await runner.runToAbsoluteSuccess();
+
+    expect(result.completed).toBe(false);
+    expect(result.stepsSucceeded).toBe(0);
+    expect(result.stepsFailed).toBe(1);
+    expect(rollback).toHaveBeenCalledTimes(1);
+    expect(result.rolledBackChangesCount).toBe(1);
+  });
+
+  it("counts rollback only after repository restoration is confirmed", async () => {
+    const rollback = mock(async () => true);
+    const runner = new AutoPlaybookRunner({
+      playbook: { ...mockPlaybook, steps: [mockPlaybook.steps[0]!] },
+      state: createMockState(),
+      maxTurns: 1,
+      enableShadowVerification: false,
+      onExecuteStep: async () => ({ executed: true, changed: true, description: "Changed project" }),
+      onRunShellCommand: async () => ({ exitCode: 1, stdout: "", stderr: "FAIL" }),
+      onRollbackStep: rollback,
+    });
+
+    const result = await runner.runToAbsoluteSuccess();
+
+    expect(result.completed).toBe(false);
+    expect(rollback).toHaveBeenCalledTimes(1);
+    expect(result.rolledBackChangesCount).toBe(1);
+    expect(result.stepsFailed).toBe(1);
+  });
+
+  it("trips instead of claiming rollback when repository restoration is unavailable", async () => {
+    const runner = new AutoPlaybookRunner({
+      playbook: { ...mockPlaybook, steps: [mockPlaybook.steps[0]!] },
+      state: createMockState(),
+      maxTurns: 1,
+      enableShadowVerification: false,
+      onExecuteStep: async () => ({ executed: true, changed: true, description: "Changed project" }),
+      onRunShellCommand: async () => ({ exitCode: 1, stdout: "", stderr: "FAIL" }),
+    });
+
+    const result = await runner.runToAbsoluteSuccess();
+
+    expect(result.completed).toBe(false);
+    expect(result.circuitBreakerStatus).toBe("TRIPPED");
+    expect(result.rolledBackChangesCount).toBe(0);
+    expect(result.message).toContain("rollback was not confirmed");
   });
 });
