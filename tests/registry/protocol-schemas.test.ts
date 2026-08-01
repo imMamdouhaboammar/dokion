@@ -68,12 +68,26 @@ describe("Registry protocol schema inventory", () => {
     }
   });
 
+  test("keeps artifact integrity outside the package manifest to avoid circular digests", () => {
+    const schema = loadJson(join(registrySchemaRoot, "dokion.package-manifest.v1.schema.json"));
+    const properties = schema.properties as Record<string, unknown>;
+    const required = schema.required as string[];
+    const fixture = loadJson(join(registrySchemaRoot, "fixtures/valid/package-manifest.json"));
+    const files = fixture.files as Array<{ path: string }>;
+
+    expect(properties.artifact).toBeUndefined();
+    expect(required).not.toContain("artifact");
+    expect(properties.package_format).toEqual({ const: "dokion-package-tar-v1" });
+    expect(files.map((file) => file.path)).not.toContain("manifest.json");
+  });
+
   test("rejects every shipped negative fixture", () => {
     const ajv = buildValidator();
     const invalidFixtures = [
       ["dokion.registry-root.v1", "registry-root-authority.json"],
       ["dokion.registry-index.v1", "registry-index-mutable-git.json"],
       ["dokion.package-manifest.v1", "package-manifest-path-traversal.json"],
+      ["dokion.package-manifest.v1", "package-manifest-self-reference.json"],
       ["dokion.registry-config.v1", "registry-config-credentials.json"],
       ["dokion.playbooks-lock.v1", "playbooks-lock-floating-version.json"],
       ["dokion.provenance.v1", "provenance-ambiguous-verified.json"]
