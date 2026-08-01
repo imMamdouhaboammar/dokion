@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
-import { DokionError } from "../../src/core/errors.ts";
+import { DokionError, type DokionErrorCode } from "../../src/core/errors.ts";
 import { parseCliInvocation } from "../../src/cli/parser.ts";
 
-function expectCode(action: () => unknown, code: string): DokionError {
+function expectCode(action: () => unknown, code: DokionErrorCode): DokionError {
   try {
     action();
     throw new Error(`Expected ${code}`);

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { DokionError } from "../../src/core/errors.ts";
+import { DokionError, type DokionErrorCode } from "../../src/core/errors.ts";
 import {
   assertSafeHttpsUrl,
   parseExactPackageReference,
@@ -35,7 +35,7 @@ function config(sources: unknown[]): unknown {
   };
 }
 
-function expectCode(action: () => unknown, code: string): DokionError {
+function expectCode(action: () => unknown, code: DokionErrorCode): DokionError {
   try {
     action();
     throw new Error(`Expected ${code}`);

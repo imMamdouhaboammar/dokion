@@ -3,7 +3,7 @@ import { chmod, mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
-import { DokionError } from "../../src/core/errors.ts";
+import { DokionError, type DokionErrorCode } from "../../src/core/errors.ts";
 import { canonicalJsonBytes, sha256Digest } from "../../src/registry/digests.ts";
 import { buildRegistryPackage } from "../../src/registry/package-builder.ts";
 import { cachePathForDigest } from "../../src/registry/artifact-cache.ts";
@@ -158,7 +158,7 @@ async function createFixture(): Promise<RegistryFixture> {
   return { root, project, registry, cache, configPath, artifactPath, ...metadata };
 }
 
-async function expectCode(action: Promise<unknown>, code: string): Promise<DokionError> {
+async function expectCode(action: Promise<unknown>, code: DokionErrorCode): Promise<DokionError> {
   try {
     await action;
     throw new Error(`Expected ${code}`);

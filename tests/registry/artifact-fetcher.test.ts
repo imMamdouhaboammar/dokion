@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { describe, expect, test } from "bun:test";
 
-import { DokionError } from "../../src/core/errors.ts";
+import { DokionError, type DokionErrorCode } from "../../src/core/errors.ts";
 import {
   fetchVerifiedHttpsBytes,
   type RegistryNetworkResponse,
@@ -57,7 +57,7 @@ function response(
   return { status, headers, body };
 }
 
-async function expectCode(action: Promise<unknown>, code: string): Promise<DokionError> {
+async function expectCode(action: Promise<unknown>, code: DokionErrorCode): Promise<DokionError> {
   try {
     await action;
     throw new Error(`Expected ${code}`);

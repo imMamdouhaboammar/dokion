@@ -84,7 +84,10 @@ function responseBody(body: ReadableStream<Uint8Array> | null): AsyncIterable<Ui
 }
 
 export const DEFAULT_REGISTRY_NETWORK_TRANSPORT: RegistryNetworkTransport = Object.freeze({
-  async request(url, options): Promise<RegistryNetworkResponse> {
+  async request(
+    url: string,
+    options: { signal: AbortSignal; headers: Readonly<Record<string, string>> }
+  ): Promise<RegistryNetworkResponse> {
     const response = await fetch(url, {
       method: "GET",
       redirect: "manual",
