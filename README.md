@@ -8,6 +8,8 @@ It validates the selected Playbook, preserves execution order, records evidence,
 >
 > Runtime baseline: M0-M6 implemented
 >
+> Audited runtime baseline: [`docs/architecture/current-baseline.md`](docs/architecture/current-baseline.md)
+>
 > Production hardening backlog: in progress
 >
 > Compatibility matrix: [`docs/compatibility.md`](docs/compatibility.md)
