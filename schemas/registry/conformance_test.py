@@ -7,10 +7,10 @@ import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Iterator
 
 from jsonschema import Draft202012Validator, FormatChecker
-from jsonschema.exceptions import SchemaError
+from jsonschema.exceptions import SchemaError, ValidationError
 from referencing import Registry, Resource
 
 ROOT = Path(__file__).resolve().parent
@@ -148,18 +148,32 @@ def semantic_errors(schema_name: str, document: dict[str, Any]) -> list[Protocol
     return errors
 
 
+def flatten_validation_error(error: ValidationError) -> Iterator[ValidationError]:
+    """Yield wrapper errors and their nested branch causes.
+
+    JSON Schema combinators such as oneOf expose the useful path and keyword in
+    ValidationError.context. Keeping only the wrapper would let a fixture pass
+    for the wrong reason.
+    """
+    yield error
+    for child in error.context:
+        yield from flatten_validation_error(child)
+
+
 def schema_errors(
     validator: Draft202012Validator,
     document: dict[str, Any],
 ) -> list[ProtocolError]:
-    return [
-        ProtocolError(
-            path=json_pointer(error.absolute_path),
-            keyword=str(error.validator),
-            message=error.message,
-        )
-        for error in validator.iter_errors(document)
-    ]
+    observed: dict[tuple[str, str, str], ProtocolError] = {}
+    for root_error in validator.iter_errors(document):
+        for error in flatten_validation_error(root_error):
+            protocol_error = ProtocolError(
+                path=json_pointer(error.absolute_path),
+                keyword=str(error.validator),
+                message=error.message,
+            )
+            observed[(protocol_error.path, protocol_error.keyword, protocol_error.message)] = protocol_error
+    return list(observed.values())
 
 
 def main() -> int:
