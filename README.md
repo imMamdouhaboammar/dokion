@@ -25,25 +25,32 @@ A user-directed Playbooks Engineering runtime for Claude Code, Codex, Gemini CLI
 
 <!-- project-story:start -->
 <details open>
-  <summary><strong>🚀 Executive Summary & Core Mission</strong></summary>
+  <summary><strong>Problem to project: Why I built Dokion</strong></summary>
   <br />
   <p align="center"><img src="https://raw.githubusercontent.com/imMamdouhaboammar/imMamdouhaboammar/main/assets/profile/project-badges.svg" width="488" alt="Real friction, building in public, daily pulse" /></p>
   <table>
     <tr>
       <td width="104" align="center" valign="middle"><img src="./assets/readme/project-mark.svg" width="76" alt="Dokion repository mark" /></td>
-      <td valign="middle"><strong>Dokion</strong><br />The premiere Playbooks Engineering platform that transforms proven software engineering methodologies into binding, deterministic constitutions for AI coding agents.</td>
+      <td valign="middle"><strong>Dokion</strong><br />A user-directed hardening runtime that executes an explicit software repair playbook across coding agents.</td>
     </tr>
   </table>
   <table>
     <tr>
-      <td width="50%" valign="top"><strong>💥 The Problem: Agent Drift</strong><br />AI coding agents drift, skip critical validation steps, reorder checks, hallucinate claims, and generate low-quality code ("AI slop") when given unconstrained prompts or loose guidelines.</td>
-      <td width="50%" valign="top"><strong>✨ The Solution: Playbooks Engineering</strong><br />Codify proven software methodologies into immutable Playbooks that force AI agents to execute step-by-step with verified evidence, adversarial validation, and exact rollback.</td>
+      <td width="50%" valign="top"><strong>Recurring problem</strong><br />Hardening work drifts when agents choose tools, reorder checks, or claim readiness without durable evidence and bounded rollback.</td>
+      <td width="50%" valign="top"><strong>Practical goal</strong><br />Let the user own the hardening playbook while Dokion validates execution, journals evidence, verifies repairs, and restores rejected changes.</td>
     </tr>
     <tr>
-      <td width="50%" valign="top"><strong>👥 Target Audience</strong><br />Vibe Coders and Senior Software Engineers using Claude Code, Codex, Gemini CLI, Cursor, Antigravity, and shell capabilities.</td>
-      <td width="50%" valign="top"><strong>🔍 Keywords</strong><br />Playbooks Engineering · AI coding agent workflows · binding agent constitution · verified community playbooks · unslop AI code · evidence based code repair</td>
+      <td width="50%" valign="top"><strong>Built for</strong><br />Developers using Claude Code, Codex, Gemini CLI, and shell tools for repeatable software hardening.</td>
+      <td width="50%" valign="top"><strong>Search terms</strong><br />software hardening agent · AI repair validation · user directed agent runtime · evidence based code repair</td>
     </tr>
   </table>
+  <p><strong>Daily build pulse</strong></p>
+  <ul>
+      <li>33 commits landed: feat: adapt native scanner outputs into Dokion findings (#46); fix: require real playbook execution evidence (#45).</li>
+      <li>3 pull requests updated, led by #48: test: expose simulated registry success.</li>
+      <li>2 issues changed, including #47: [Epic] Replace the fake Playbook Hub with real decentralized Registry, Store, and Dokion do….</li>
+      <li>Daily summary covers 38 public activity items from the last 1 day.</li>
+  </ul>
 </details>
 <!-- project-story:end -->
 
