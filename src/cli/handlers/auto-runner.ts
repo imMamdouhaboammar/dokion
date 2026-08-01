@@ -78,7 +78,7 @@ function summarizeProductionRun(state: DokionState): ProductionAutoRunnerReport 
 
 function rejectLegacySimulationControls(invocation: AutoRunnerCliOptions): void {
   const controls = [
-    ...invocation.options.keys(),
+    ...Array.from(invocation.options.keys()).filter((option) => option !== "--format"),
     ...invocation.flags.values(),
   ];
   if (controls.length === 0) return;
