@@ -193,6 +193,37 @@ export function parseCliInvocation(argv: readonly string[]): CliInvocation {
       };
     }
 
+    if (subcommand === "pull") {
+      const parsed = parseTokens(rawCommand, tokens.slice(1), {
+        "--source": { kind: "value" },
+        "--config": { kind: "value" },
+        "--cache": { kind: "value" }
+      });
+      if (parsed.positionals.length === 0) {
+        throw new DokionError(
+          "CLI_MISSING_ARGUMENT",
+          "Missing exact package reference for dokion registry pull <namespace/name@version>",
+          { command: rawCommand, subcommand, argument: "package-reference" }
+        );
+      }
+      if (parsed.positionals.length > 1) {
+        throw new DokionError("CLI_INVALID_ARGUMENT", "dokion registry pull accepts exactly one package reference.", {
+          command: rawCommand,
+          subcommand,
+          arguments: parsed.positionals
+        });
+      }
+      return {
+        command: "registry",
+        subcommand: "pull",
+        packageReference: parsed.positionals[0]!,
+        source: requiredOption(rawCommand, parsed.options, "--source"),
+        configPath: requiredOption(rawCommand, parsed.options, "--config"),
+        cacheRoot: requiredOption(rawCommand, parsed.options, "--cache"),
+        format: outputFormat(rawCommand, parsed.options)
+      };
+    }
+
     if (subcommand === "verify-package") {
       const parsed = parseTokens(rawCommand, tokens.slice(1), {
         "--package": { kind: "value" },
@@ -226,7 +257,7 @@ export function parseCliInvocation(argv: readonly string[]): CliInvocation {
 
     throw new DokionError(
       "CLI_INVALID_ARGUMENT",
-      "Usage: dokion registry <pack|verify-package> ...",
+      "Usage: dokion registry <pack|verify-package|pull> ...",
       { command: rawCommand, subcommand }
     );
   }
