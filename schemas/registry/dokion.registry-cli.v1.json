@@ -3,10 +3,11 @@
   "commands": [
     {
       "command": "dokion registry",
-      "usage": "dokion registry <pack|verify-package> ...",
-      "purpose": "Build deterministic Playbook packages and verify them without extraction, installation, or activation.",
+      "usage": "dokion registry <pack|verify-package|pull> ...",
+      "purpose": "Build deterministic Playbook packages, verify them read-only, and retrieve verified artifacts into an immutable cache without installation or activation.",
       "writes": [
-        "<user-selected-output>"
+        "<user-selected-output>",
+        "<user-selected-cache>"
       ],
       "approval": "BEFORE_WRITE"
     }
