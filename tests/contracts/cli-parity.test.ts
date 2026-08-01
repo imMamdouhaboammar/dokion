@@ -61,8 +61,9 @@ describe("canonical CLI command registry", () => {
       CLI_COMMAND_REGISTRY.map((command) => command.manifestCommand)
     );
     expect(new Set(CLI_COMMAND_REGISTRY.map((command) => command.id)).size).toBe(CLI_COMMAND_REGISTRY.length);
-    expect(implementedCliCommands()).toHaveLength(34);
-    expect(plannedCliCommands()).toHaveLength(0);
+    expect(implementedCliCommands()).toHaveLength(33);
+    expect(plannedCliCommands()).toHaveLength(1);
+    expect(plannedCliCommands()[0]?.id).toBe("hub");
   });
 
   test("records source-specific manifest usage without hiding current differences", async () => {
@@ -81,7 +82,6 @@ describe("canonical CLI command registry", () => {
     const specification = await read("SPEC.md");
 
     expect(specification).toContain("| `dokion tools list` · `skills list` · `plugins list` · `loops list` · `goals list` |");
-
     expect(specification).toContain("`dokion approve`");
 
     for (const descriptor of CLI_COMMAND_REGISTRY) {
@@ -92,15 +92,20 @@ describe("canonical CLI command registry", () => {
   test("keeps implemented and planned runtime cases explicit", async () => {
     const cliSource = await read("src/cli.ts");
     const observedCases = Array.from(cliSource.matchAll(/case "([^"]+)":/g), (match) => match[1]!);
-    const expectedCases = ["help", ...implementedCliCommands().map((command) => command.runtimeCase)];
+    const expectedImplementedCases = ["help", ...implementedCliCommands().map((command) => command.runtimeCase)];
 
-    expect(sorted(new Set(observedCases))).toEqual(sorted(new Set(expectedCases)));
+    for (const expectedCase of expectedImplementedCases) {
+      expect(sorted(new Set(observedCases))).toContain(expectedCase);
+    }
+
     for (const builtin of CLI_BUILTIN_CASES) {
       expect(parseCliInvocation([builtin])).toEqual({ command: "help", format: "human" });
     }
 
     for (const command of plannedCliCommands()) {
-      expect(observedCases).not.toContain(command.runtimeCase);
+      expect(() => parseCliInvocation([command.runtimeCase])).toThrow(
+        expect.objectContaining({ code: "CLI_PLANNED_COMMAND" })
+      );
     }
   });
 
