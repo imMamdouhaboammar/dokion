@@ -275,6 +275,11 @@ export function readRegistryPackageTar(bytes: Uint8Array): RegistryTarEntry[] {
         size
       });
     }
+    if (!allZero(bytes.slice(payloadEnd, nextOffset))) {
+      throw new DokionError("REGISTRY_PACKAGE_ARCHIVE_INVALID", "Archive entry padding must be zero-filled.", {
+        path
+      });
+    }
     entries.push({ path, bytes: bytes.slice(payloadStart, payloadEnd) });
     offset = nextOffset;
   }
