@@ -116,6 +116,7 @@ async function writeNativeOsvPlaybook(root: string, malformed = false): Promise<
         network: false,
         shell: [capabilityCommand],
       },
+      verification: [],
       success_conditions: ["native_output_adapted", "findings_normalized"],
       failure_policy: "STOP_PIPELINE",
     }],
