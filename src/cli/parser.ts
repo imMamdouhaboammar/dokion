@@ -162,6 +162,75 @@ export function parseCliInvocation(argv: readonly string[]): CliInvocation {
     });
   }
 
+  if (rawCommand === "registry") {
+    const subcommand = tokens[0];
+    if (subcommand === "pack") {
+      const parsed = parseTokens(rawCommand, tokens.slice(1), {
+        "--output": { kind: "value" },
+        "--overwrite": { kind: "boolean" }
+      });
+      if (parsed.positionals.length === 0) {
+        throw new DokionError("CLI_MISSING_ARGUMENT", "Missing source directory for dokion registry pack <directory> --output <path>", {
+          command: rawCommand,
+          subcommand,
+          argument: "directory"
+        });
+      }
+      if (parsed.positionals.length > 1) {
+        throw new DokionError("CLI_INVALID_ARGUMENT", "dokion registry pack accepts exactly one source directory.", {
+          command: rawCommand,
+          subcommand,
+          arguments: parsed.positionals
+        });
+      }
+      return {
+        command: "registry",
+        subcommand: "pack",
+        directory: parsed.positionals[0]!,
+        output: requiredOption(rawCommand, parsed.options, "--output"),
+        overwrite: parsed.options.get("--overwrite") === true,
+        format: outputFormat(rawCommand, parsed.options)
+      };
+    }
+
+    if (subcommand === "verify-package") {
+      const parsed = parseTokens(rawCommand, tokens.slice(1), {
+        "--package": { kind: "value" },
+        "--version": { kind: "value" }
+      });
+      if (parsed.positionals.length === 0) {
+        throw new DokionError("CLI_MISSING_ARGUMENT", "Missing archive path for dokion registry verify-package <archive>", {
+          command: rawCommand,
+          subcommand,
+          argument: "archive"
+        });
+      }
+      if (parsed.positionals.length > 1) {
+        throw new DokionError("CLI_INVALID_ARGUMENT", "dokion registry verify-package accepts exactly one archive path.", {
+          command: rawCommand,
+          subcommand,
+          arguments: parsed.positionals
+        });
+      }
+      const expectedPackageId = parsed.options.get("--package");
+      const expectedVersion = parsed.options.get("--version");
+      return {
+        command: "registry",
+        subcommand: "verify-package",
+        archive: parsed.positionals[0]!,
+        ...(typeof expectedPackageId === "string" ? { expectedPackageId } : {}),
+        ...(typeof expectedVersion === "string" ? { expectedVersion } : {}),
+        format: outputFormat(rawCommand, parsed.options)
+      };
+    }
+
+    throw new DokionError(
+      "CLI_INVALID_ARGUMENT",
+      "Usage: dokion registry <pack|verify-package> ...",
+      { command: rawCommand, subcommand }
+    );
+  }
+
   if (rawCommand === "validate") {
     const parsed = parseTokens(rawCommand, tokens, { "--catalog-only": { kind: "boolean" } });
     requireNoPositionals(rawCommand, parsed.positionals);
