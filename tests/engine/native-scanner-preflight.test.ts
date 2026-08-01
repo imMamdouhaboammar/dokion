@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { runAnalyzeCapability } from "../../src/engine/capability-runner.ts";
+import { listFindings } from "../../src/findings/finding-store.ts";
 import type { LoadedPlaybook, PlaybookStage, PlaybookStep } from "../../src/playbook/types.ts";
 import type { DokionState } from "../../src/state/types.ts";
 
@@ -144,5 +145,10 @@ describe("native scanner engine preflight", () => {
       expect(result.reason).toContain("reserved DOKION_OUTPUT");
       expect(result.evidence.some((path) => path.endsWith("native-failure.json"))).toBe(true);
     }
+    expect(await listFindings(root)).toHaveLength(0);
+    expect(await Bun.file(join(
+      root,
+      ".dokion/evidence/run-preflight/steps/security/dependency-scan/raw-findings.json"
+    )).exists()).toBe(false);
   });
 });
