@@ -36,22 +36,62 @@ export function sha256Digest(bytes: Uint8Array): `sha256:${string}` {
   return `sha256:${createHash("sha256").update(bytes).digest("hex")}`;
 }
 
-export function compareExactSemver(left: string, right: string): number {
-  const parse = (value: string): [number, number, number] => {
-    const match = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:[-+].*)?$/.exec(value);
-    if (!match) {
-      throw new DokionError("REGISTRY_PACKAGE_MANIFEST_INVALID", `Invalid exact semantic version: ${value}`, {
-        version: value
-      });
-    }
-    return [Number(match[1]), Number(match[2]), Number(match[3])];
-  };
+interface ParsedSemver {
+  core: readonly [number, number, number];
+  prerelease: readonly string[] | null;
+}
 
-  const leftParts = parse(left);
-  const rightParts = parse(right);
-  for (let index = 0; index < 3; index += 1) {
-    const difference = leftParts[index]! - rightParts[index]!;
-    if (difference !== 0) return difference < 0 ? -1 : 1;
+function parseExactSemver(value: string): ParsedSemver {
+  const match = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.exec(value);
+  if (!match) {
+    throw new DokionError("REGISTRY_PACKAGE_MANIFEST_INVALID", `Invalid exact semantic version: ${value}`, {
+      version: value
+    });
   }
-  return 0;
+
+  return {
+    core: [Number(match[1]), Number(match[2]), Number(match[3])],
+    prerelease: match[4] === undefined ? null : match[4].split(".")
+  };
+}
+
+function comparePrereleaseIdentifier(left: string, right: string): number {
+  const leftNumeric = /^\d+$/.test(left);
+  const rightNumeric = /^\d+$/.test(right);
+
+  if (leftNumeric && rightNumeric) {
+    const leftNumber = BigInt(left);
+    const rightNumber = BigInt(right);
+    return leftNumber === rightNumber ? 0 : leftNumber < rightNumber ? -1 : 1;
+  }
+  if (leftNumeric !== rightNumeric) return leftNumeric ? -1 : 1;
+  return compareUtf8Bytes(left, right);
+}
+
+export function compareExactSemver(left: string, right: string): number {
+  const leftVersion = parseExactSemver(left);
+  const rightVersion = parseExactSemver(right);
+
+  for (let index = 0; index < leftVersion.core.length; index += 1) {
+    const leftPart = leftVersion.core[index]!;
+    const rightPart = rightVersion.core[index]!;
+    if (leftPart !== rightPart) return leftPart < rightPart ? -1 : 1;
+  }
+
+  if (leftVersion.prerelease === null || rightVersion.prerelease === null) {
+    if (leftVersion.prerelease === rightVersion.prerelease) return 0;
+    return leftVersion.prerelease === null ? 1 : -1;
+  }
+
+  const comparedIdentifiers = Math.min(leftVersion.prerelease.length, rightVersion.prerelease.length);
+  for (let index = 0; index < comparedIdentifiers; index += 1) {
+    const comparison = comparePrereleaseIdentifier(
+      leftVersion.prerelease[index]!,
+      rightVersion.prerelease[index]!
+    );
+    if (comparison !== 0) return comparison;
+  }
+
+  if (leftVersion.prerelease.length === rightVersion.prerelease.length) return 0;
+  return leftVersion.prerelease.length < rightVersion.prerelease.length ? -1 : 1;
 }
