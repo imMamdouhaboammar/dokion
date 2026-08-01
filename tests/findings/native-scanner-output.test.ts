@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, symlink, truncate, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -71,19 +71,33 @@ afterEach(async () => {
 });
 
 describe("native scanner output materialization", () => {
+  test("requires an explicit supported JSON output format for each registered scanner", async () => {
+    const root = await temporaryRoot();
+    const commands = [
+      ["osv-scanner", "osv-scanner --recursive ."],
+      ["gitleaks", "gitleaks detect --report-path .dokion/evidence/gitleaks.json"],
+      ["semgrep", "semgrep --config auto --output .dokion/evidence/semgrep.json"],
+      ["trivy", "trivy fs --output .dokion/evidence/trivy.json ."],
+    ] as const;
+
+    for (const [capabilityId, command] of commands) {
+      await expect(validateNativeScannerCommand(root, capabilityId, command)).rejects.toThrow("JSON output format");
+    }
+  });
+
   test("rejects unsafe and symlink-escaping output paths before execution", async () => {
     const root = await temporaryRoot();
     const outside = await mkdtemp(join(tmpdir(), "dokion-native-outside-"));
     temporaryRoots.push(outside);
 
     await expect(
-      validateNativeScannerCommand(root, "gitleaks", "gitleaks detect --report-path ../outside.json")
+      validateNativeScannerCommand(root, "gitleaks", "gitleaks detect --report-format json --report-path ../outside.json")
     ).rejects.toThrow("repository path policy");
 
     await rm(join(root, ".dokion/evidence"), { recursive: true, force: true });
     await symlink(outside, join(root, ".dokion/evidence"));
     await expect(
-      validateNativeScannerCommand(root, "gitleaks", "gitleaks detect --report-path .dokion/evidence/leaks.json")
+      validateNativeScannerCommand(root, "gitleaks", "gitleaks detect --report-format json --report-path .dokion/evidence/leaks.json")
     ).rejects.toThrow("repository path policy");
   });
 
@@ -144,6 +158,60 @@ describe("native scanner output materialization", () => {
     expect(native).not.toContain("Match");
   });
 
+  test("rejects an oversized file-backed report before loading it into memory", async () => {
+    const root = await temporaryRoot();
+    const reportPath = ".dokion/evidence/gitleaks-large.json";
+    const stdoutPath = ".dokion/evidence/spool/stdout.bin";
+    const stderrPath = ".dokion/evidence/spool/stderr.bin";
+    await truncate(join(root, reportPath), 64 * 1024 * 1024 + 1);
+    await writeFile(join(root, stdoutPath), "");
+    await writeFile(join(root, stderrPath), "");
+
+    await expect(materializeNativeScannerOutput({
+      root,
+      capabilityId: "gitleaks",
+      command: `gitleaks detect --report-format json --report-path ${reportPath}`,
+      result: commandResult({
+        command: "gitleaks detect",
+        exitCode: 0,
+        stdoutArtifact: stdoutPath,
+        stderrArtifact: stderrPath,
+      }),
+      nativeArtifact: ".dokion/evidence/run/steps/gitleaks/native-output.json",
+      convertedArtifact: ".dokion/evidence/run/steps/gitleaks/raw-findings.json",
+    })).rejects.toThrow("exceeds the maximum evidence size");
+
+    expect(await exists(join(root, reportPath))).toBe(false);
+  });
+
+  test("rejects a Trivy payload whose actual format contradicts the declared format", async () => {
+    const root = await temporaryRoot();
+    const reportPath = ".dokion/evidence/trivy.json";
+    const stdoutPath = ".dokion/evidence/spool/stdout.bin";
+    const stderrPath = ".dokion/evidence/spool/stderr.bin";
+    await writeFile(join(root, reportPath), JSON.stringify({
+      bomFormat: "CycloneDX",
+      specVersion: "1.6",
+      components: [],
+    }));
+    await writeFile(join(root, stdoutPath), "");
+    await writeFile(join(root, stderrPath), "");
+
+    await expect(materializeNativeScannerOutput({
+      root,
+      capabilityId: "trivy",
+      command: `trivy fs --format json --output ${reportPath} .`,
+      result: commandResult({
+        command: "trivy fs",
+        exitCode: 0,
+        stdoutArtifact: stdoutPath,
+        stderrArtifact: stderrPath,
+      }),
+      nativeArtifact: ".dokion/evidence/run/steps/trivy/native-output.json",
+      convertedArtifact: ".dokion/evidence/run/steps/trivy/raw-findings.json",
+    })).rejects.toThrow("does not match the declared format");
+  });
+
   test("rejects a findings exit code when the adapted payload contains no findings", async () => {
     const root = await temporaryRoot();
     const stdoutPath = ".dokion/evidence/spool/stdout.json";
@@ -190,5 +258,8 @@ describe("native scanner output materialization", () => {
       nativeArtifact: ".dokion/evidence/run/steps/osv/native-output.json",
       convertedArtifact: ".dokion/evidence/run/steps/osv/raw-findings.json",
     })).rejects.toThrow("exceeded the evidence bound");
+
+    expect(await exists(join(root, stdoutPath))).toBe(false);
+    expect(await exists(join(root, stderrPath))).toBe(false);
   });
 });
