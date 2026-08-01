@@ -1,34 +1,12 @@
 ---
 name: dokion-playbook-hub
-description: Interact with GitHub Native Decentralized Community Playbook Hub, Registry, and Leaderboard to search, pull, fork, publish, and track community playbooks.
+description: Explain the unavailable Registry surface and direct contributors to Issue #47 without running simulated Hub actions.
 ---
 
-# Dokion Community Playbook Hub & Registry — Agent Skill
+# Dokion Federated Registry Status
 
-Use this skill when searching for community playbooks, pulling verified community playbooks, viewing leaderboards, or publishing playbooks to the GitHub Native Decentralized Registry.
+The public Registry command is unavailable while Issue #47 implements versioned sources, immutable package retrieval, digest verification, lockfiles, inert installation, and explicit activation.
 
-## Key Capabilities
+Do not run or recommend `dokion hub search`, `pull`, `publish`, `fork`, `rate`, or `leaderboard`. Do not claim publisher identity, signatures, downloads, ratings, trust scores, or execution success metrics.
 
-1. **Search Community Playbooks**:
-   ```bash
-   dokion hub search --query "ui-review" --category "ui-ux"
-   ```
-
-2. **Pull Verified Community Playbook**:
-   ```bash
-   dokion hub pull amElnagdy/ui-review-loop
-   ```
-   *Pulls community playbook to inert `.dokion/playbook.proposed.json` with SHA-256 verification and anonymous telemetry logging.*
-
-3. **View Community Leaderboard**:
-   ```bash
-   dokion hub leaderboard --category "ui-ux"
-   ```
-
-4. **Fork Community Playbook**:
-   ```bash
-   dokion hub fork amElnagdy/ui-review-loop --author "developer"
-   ```
-
-## Authority Invariants
-- Pulled community playbooks **NEVER** overwrite `.dokion/playbook.json` automatically. They are written to `.dokion/playbook.proposed.json` until explicitly activated by the user.
+Use built-in or user-authored Playbooks until the protocol and CLI lifecycle pass end-to-end verification.
