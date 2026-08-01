@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import Ajv2020, { type ErrorObject } from "ajv/dist/2020.js";
+import type { ErrorObject } from "ajv";
+import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 
 import { validateRegistryDocumentSemantics } from "../../src/registry/protocol-semantics.ts";
