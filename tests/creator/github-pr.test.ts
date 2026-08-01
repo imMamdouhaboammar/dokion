@@ -1,4 +1,4 @@
-import { expect, test, describe } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { GitHubPrDriver } from "../../src/creator/drivers/github-pr.js";
 
 describe("GitHubPrDriver", () => {
@@ -20,10 +20,11 @@ describe("GitHubPrDriver", () => {
     });
 
     expect(memories.length).toBe(1);
-    expect(memories[0].source).toBe("github-pr");
-    expect(memories[0].title).toContain("PR #42: Fix authentication flow");
-    expect(memories[0].content).toContain("Always verify JWT signatures");
-    expect(memories[0].category).toBe("general");
+    const memory = memories[0]!;
+    expect(memory.source).toBe("github-pr");
+    expect(memory.title).toContain("PR #42: Fix authentication flow");
+    expect(memory.content).toContain("Always verify JWT signatures");
+    expect(memory.category).toBe("general");
   });
 
   test("extracts Issue discussion recommendations into actionable memories", async () => {
@@ -44,8 +45,9 @@ describe("GitHubPrDriver", () => {
     });
 
     expect(memories.length).toBe(1);
-    expect(memories[0].source).toBe("github-issue");
-    expect(memories[0].title).toContain("Issue #108: Memory leak during file upload");
-    expect(memories[0].content).toContain("Always dispose stream buffers");
+    const memory = memories[0]!;
+    expect(memory.source).toBe("github-issue");
+    expect(memory.title).toContain("Issue #108: Memory leak during file upload");
+    expect(memory.content).toContain("Always dispose stream buffers");
   });
 });
