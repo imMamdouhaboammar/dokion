@@ -102,14 +102,6 @@ type CliCommandInvocation =
       transcript?: string;
       topic?: string;
       output?: string;
-    }
-  | {
-      command: "hub";
-      action?: "search" | "pull" | "publish" | "leaderboard" | "rate" | "fork" | "merge";
-      query?: string;
-      packageId?: string;
-      category?: string;
-      author?: string;
     };
 
 export type CliInvocation = CliCommandInvocation & { format: CliOutputFormat };

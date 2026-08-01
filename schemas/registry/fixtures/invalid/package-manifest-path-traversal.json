@@ -1,0 +1,45 @@
+{
+  "schema": "dokion.package-manifest.v1",
+  "package": {
+    "namespace": "dokion-labs",
+    "name": "secure-web-app",
+    "version": "1.2.3"
+  },
+  "package_format": "dokion-package-tar-v1",
+  "playbook_path": "playbook.json",
+  "readme_path": "README.md",
+  "license_path": "LICENSE",
+  "compatibility": {
+    "minimum_dokion_version": "0.3.0"
+  },
+  "files": [
+    {
+      "path": "playbook.json",
+      "kind": "file",
+      "media_type": "application/json",
+      "size": 4096,
+      "digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    },
+    {
+      "path": "../outside.sh",
+      "kind": "file",
+      "media_type": "text/plain",
+      "size": 10,
+      "digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    },
+    {
+      "path": "LICENSE",
+      "kind": "file",
+      "media_type": "text/plain",
+      "size": 256,
+      "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    }
+  ],
+  "authority": {
+    "selection_authority": false,
+    "substitution_authority": false,
+    "installation_authority": false,
+    "activation_authority": false,
+    "execution_authority": false
+  }
+}

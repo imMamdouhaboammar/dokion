@@ -1,10 +1,12 @@
 ---
 name: dokion-playbook-hub
-description: Interact with GitHub Native Decentralized Community Playbook Hub, Registry, and Leaderboard to search, pull, fork, publish, and track community playbooks.
+description: Explain the unavailable Registry surface and direct contributors to Issue #47 without running simulated Hub actions.
 ---
 
-# Dokion Community Playbook Hub & Registry — Claude Adapter
+# Dokion Federated Registry Status
 
-Use this skill when searching for community playbooks, pulling verified community playbooks, viewing leaderboards, or publishing playbooks.
+The public Registry command is unavailable while Issue #47 implements versioned sources, immutable package retrieval, digest verification, lockfiles, inert installation, and explicit activation.
 
-Run `dokion hub` to interact with the registry.
+Do not run or recommend `dokion hub search`, `pull`, `publish`, `fork`, `rate`, or `leaderboard`. Do not claim publisher identity, signatures, downloads, ratings, trust scores, or execution success metrics.
+
+Use built-in or user-authored Playbooks until the protocol and CLI lifecycle pass end-to-end verification.

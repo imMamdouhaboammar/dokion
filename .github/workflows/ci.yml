@@ -39,7 +39,9 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Schema conformance
-        run: python3 schemas/conformance_test.py
+        run: |
+          python3 schemas/conformance_test.py
+          bun run validate:registry-protocol
 
       - name: Runtime contract validation
         run: bun run validate:contracts
@@ -139,4 +141,5 @@ jobs:
             bun.lock
             schemas/dokion-playbook.schema.json
             schemas/dokion-state.schema.json
+            schemas/registry/*.schema.json
           if-no-files-found: ignore

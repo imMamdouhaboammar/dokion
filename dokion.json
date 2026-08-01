@@ -211,8 +211,8 @@
       },
       {
         "command": "dokion hub",
-        "usage": "dokion hub <search|pull|fork|leaderboard> [<package-id>]",
-        "purpose": "Interact with GitHub Native Decentralized Community Playbook Hub, Registry, and Leaderboard.",
+        "usage": "dokion hub",
+        "purpose": "Federated Playbook Registry is unavailable while the replacement protocol is implemented under #47.",
         "mode": "READ_ONLY"
       },
       {

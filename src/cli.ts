@@ -15,7 +15,6 @@ import { handleConfigureCommand } from "./cli/handlers/configure.ts";
 import { handleCreatorCommand } from "./cli/handlers/creator.ts";
 import { handleDoctorCommand } from "./cli/handlers/doctor.ts";
 import { handleGoalCommand } from "./cli/handlers/goal.ts";
-import { handleHubCommand } from "./cli/handlers/hub.ts";
 import { handleHooksCommand } from "./cli/handlers/hooks.ts";
 import { handleLoopCommand } from "./cli/handlers/loop.ts";
 import { handleMemoryCommand } from "./cli/handlers/memory.ts";
@@ -343,18 +342,6 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
         ...(invocation.topic !== undefined ? { topic: invocation.topic } : {}),
         ...(invocation.output !== undefined ? { output: invocation.output } : {}),
       });
-      return;
-    }
-    case "hub": {
-      const output = await handleHubCommand(root, {
-        ...(invocation.action !== undefined ? { action: invocation.action } : {}),
-        ...(invocation.query !== undefined ? { query: invocation.query } : {}),
-        ...(invocation.packageId !== undefined ? { packageId: invocation.packageId } : {}),
-        ...(invocation.category !== undefined ? { category: invocation.category } : {}),
-        format: invocation.format,
-        ...(invocation.author !== undefined ? { author: invocation.author } : {}),
-      });
-      console.log(output);
       return;
     }
     case "hooks": {

@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.dokion.dev/dokion.registry-index.v1.schema.json",
+  "title": "Dokion Registry Index v1",
+  "type": "object",
+  "required": ["schema", "source_id", "generated_at", "expires_at", "packages", "authority"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "dokion.registry-index.v1" },
+    "source_id": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sourceId" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "packages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "namespace",
+          "name",
+          "version",
+          "source",
+          "manifest",
+          "artifact",
+          "published_at",
+          "minimum_dokion_version",
+          "deprecation",
+          "revocation"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "namespace": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/packageNamespace" },
+          "name": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/packageName" },
+          "version": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/exactSemver" },
+          "description": { "type": "string", "maxLength": 1000 },
+          "tags": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,31}$" }
+          },
+          "source": {
+            "type": "object",
+            "required": ["transport", "location"],
+            "additionalProperties": false,
+            "properties": {
+              "transport": { "type": "string", "enum": ["local", "https", "git"] },
+              "location": { "type": "string", "minLength": 1, "maxLength": 2048 },
+              "immutable_revision": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/gitCommit" }
+            },
+            "allOf": [
+              {
+                "if": { "properties": { "transport": { "const": "git" } }, "required": ["transport"] },
+                "then": {
+                  "required": ["immutable_revision"],
+                  "properties": {
+                    "location": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" }
+                  }
+                }
+              },
+              {
+                "if": { "properties": { "transport": { "const": "https" } }, "required": ["transport"] },
+                "then": {
+                  "properties": {
+                    "location": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" }
+                  }
+                }
+              }
+            ]
+          },
+          "manifest": {
+            "type": "object",
+            "required": ["location", "digest", "size"],
+            "additionalProperties": false,
+            "properties": {
+              "location": { "type": "string", "minLength": 1, "maxLength": 2048 },
+              "digest": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sha256Digest" },
+              "size": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/positiveInteger" }
+            }
+          },
+          "artifact": {
+            "type": "object",
+            "required": ["location", "digest", "size"],
+            "additionalProperties": false,
+            "properties": {
+              "location": { "type": "string", "minLength": 1, "maxLength": 2048 },
+              "digest": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sha256Digest" },
+              "size": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/positiveInteger" }
+            }
+          },
+          "published_at": { "type": "string", "format": "date-time" },
+          "minimum_dokion_version": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/exactSemver" },
+          "deprecation": {
+            "type": "object",
+            "required": ["state"],
+            "additionalProperties": false,
+            "properties": {
+              "state": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/deprecationState" },
+              "reason": { "type": "string", "maxLength": 1000 },
+              "replacement": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/packageId" }
+            }
+          },
+          "revocation": {
+            "type": "object",
+            "required": ["state"],
+            "additionalProperties": false,
+            "properties": {
+              "state": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/revocationState" },
+              "reason": { "type": "string", "maxLength": 1000 },
+              "revoked_at": { "type": "string", "format": "date-time" }
+            }
+          },
+          "provenance_location": { "type": "string", "minLength": 1, "maxLength": 2048 },
+          "signature_bundle_location": { "type": "string", "minLength": 1, "maxLength": 2048 }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "source": {
+                  "properties": { "transport": { "const": "https" } },
+                  "required": ["transport"]
+                }
+              },
+              "required": ["source"]
+            },
+            "then": {
+              "properties": {
+                "manifest": {
+                  "properties": {
+                    "location": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" }
+                  }
+                },
+                "artifact": {
+                  "properties": {
+                    "location": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" }
+                  }
+                },
+                "provenance_location": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" },
+                "signature_bundle_location": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "authority": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/authorityNone" }
+  }
+}

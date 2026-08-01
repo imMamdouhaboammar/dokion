@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.dokion.dev/dokion.provenance.v1.schema.json",
+  "title": "Dokion Provenance v1",
+  "type": "object",
+  "required": [
+    "schema",
+    "package_id",
+    "version",
+    "manifest",
+    "artifact",
+    "registry_source",
+    "publisher_identity",
+    "signature",
+    "compatibility",
+    "freshness",
+    "deprecation",
+    "revocation",
+    "observed_at",
+    "authority"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "dokion.provenance.v1" },
+    "package_id": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/packageId" },
+    "version": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/exactSemver" },
+    "manifest": { "$ref": "#/$defs/integrityObservation" },
+    "artifact": { "$ref": "#/$defs/integrityObservation" },
+    "registry_source": {
+      "type": "object",
+      "required": ["source_id", "transport", "immutable_source_state", "registry_index_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "source_id": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sourceId" },
+        "transport": { "type": "string", "enum": ["local", "https", "git"] },
+        "immutable_source_state": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/immutableSourceState" },
+        "immutable_revision": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/gitCommit" },
+        "registry_index_digest": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sha256Digest" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "transport": { "const": "git" } }, "required": ["transport"] },
+          "then": { "required": ["immutable_revision"], "properties": { "immutable_source_state": { "const": "PINNED" } } }
+        }
+      ]
+    },
+    "publisher_identity": {
+      "type": "object",
+      "required": ["state"],
+      "additionalProperties": false,
+      "properties": {
+        "state": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/identityState" },
+        "subject": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "evidence_reference": { "type": "string", "minLength": 1, "maxLength": 2048 }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "required": ["state"],
+      "additionalProperties": false,
+      "properties": {
+        "state": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/signatureState" },
+        "bundle_digest": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sha256Digest" },
+        "evidence_reference": { "type": "string", "minLength": 1, "maxLength": 2048 }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "required": ["state", "dokion_version"],
+      "additionalProperties": false,
+      "properties": {
+        "state": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/compatibilityState" },
+        "dokion_version": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/exactSemver" },
+        "reason": { "type": "string", "maxLength": 1000 }
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "required": ["state"],
+      "additionalProperties": false,
+      "properties": {
+        "state": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/freshnessState" },
+        "expires_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "deprecation": {
+      "type": "object",
+      "required": ["state"],
+      "additionalProperties": false,
+      "properties": {
+        "state": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/deprecationState" },
+        "reason": { "type": "string", "maxLength": 1000 }
+      }
+    },
+    "revocation": {
+      "type": "object",
+      "required": ["state"],
+      "additionalProperties": false,
+      "properties": {
+        "state": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/revocationState" },
+        "reason": { "type": "string", "maxLength": 1000 },
+        "observed_revision": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "authority": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/authorityNone" }
+  },
+  "$defs": {
+    "integrityObservation": {
+      "type": "object",
+      "required": ["expected_digest", "integrity_state"],
+      "additionalProperties": false,
+      "properties": {
+        "expected_digest": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sha256Digest" },
+        "observed_digest": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sha256Digest" },
+        "integrity_state": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/integrityState" }
+      },
+      "if": {
+        "properties": {
+          "integrity_state": { "enum": ["MATCH", "MISMATCH"] }
+        },
+        "required": ["integrity_state"]
+      },
+      "then": {
+        "required": ["observed_digest"]
+      },
+      "else": {
+        "not": {
+          "required": ["observed_digest"]
+        }
+      }
+    }
+  }
+}

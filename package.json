@@ -61,6 +61,7 @@
     "typecheck": "tsc --noEmit",
     "build": "bun build src/cli.ts --compile --outfile dist/dokion",
     "validate:contracts": "python3 schemas/conformance_test.py && bun run src/cli.ts validate --catalog-only",
+    "validate:registry-protocol": "python3 schemas/registry/conformance_test.py",
     "validate:distribution": "bun run scripts/validate-distribution.ts",
     "smoke:package": "bun run scripts/smoke-test-package.ts",
     "prepack": "bun run validate:distribution && bun test && bun run typecheck"

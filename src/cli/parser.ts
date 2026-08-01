@@ -464,31 +464,6 @@ export function parseCliInvocation(argv: readonly string[]): CliInvocation {
     };
   }
 
-  if (rawCommand === "hub" || rawCommand === "community") {
-    const parsed = parseTokens(rawCommand, tokens, {
-      "--query": { kind: "value" },
-      "--package": { kind: "value" },
-      "--category": { kind: "value" },
-      "--author": { kind: "value" }
-    });
-    const sub = parsed.positionals[0] as "search" | "pull" | "publish" | "leaderboard" | "rate" | "fork" | "merge" | undefined;
-    const pkgFromPos = parsed.positionals[1];
-    const query = (parsed.options.get("--query") as string) || (sub === "search" ? pkgFromPos : undefined);
-    const packageId = (parsed.options.get("--package") as string) || (sub !== "search" ? pkgFromPos : undefined);
-    const category = parsed.options.get("--category") as string | undefined;
-    const author = parsed.options.get("--author") as string | undefined;
-
-    return {
-      command: "hub",
-      action: sub || "search",
-      ...(query ? { query } : {}),
-      ...(packageId ? { packageId } : {}),
-      ...(category ? { category } : {}),
-      ...(author ? { author } : {}),
-      format: outputFormat(rawCommand, parsed.options)
-    };
-  }
-
   if (SIMPLE_COMMANDS.has(rawCommand as CliSimpleCommand)) {
     const parsed = parseTokens(rawCommand, tokens, {});
     requireNoPositionals(rawCommand, parsed.positionals);
