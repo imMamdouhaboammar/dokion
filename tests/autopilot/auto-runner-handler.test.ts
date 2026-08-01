@@ -21,7 +21,7 @@ async function createFixtureRoot(): Promise<string> {
   return root;
 }
 
-async function writeAnalyzePlaybook(root: string): Promise<void> {
+async function writeAnalyzePlaybook(root: string, verificationCommand = "true"): Promise<void> {
   const raw = await readFile(join(process.cwd(), "playbooks/example.playbook.json"), "utf8");
   const playbook = JSON.parse(raw.replaceAll("sha256:PLACEHOLDER", `sha256:${"a".repeat(64)}`));
   const template = playbook.stages[0].steps[0];
@@ -56,10 +56,10 @@ async function writeAnalyzePlaybook(root: string): Promise<void> {
             read: ["**/*"],
             write: [".dokion/**", "HARDENING.md"],
             network: false,
-            shell: [capabilityCommand, "true"],
+            shell: [capabilityCommand, verificationCommand],
           },
-          verification: ["true"],
-          success_conditions: ["capability_output_recorded"],
+          verification: [verificationCommand],
+          success_conditions: ["capability_output_recorded", "verification_passed"],
           failure_policy: "STOP_PIPELINE",
         },
       ],
@@ -76,12 +76,12 @@ afterEach(async () => {
 });
 
 describe("auto-runner CLI production execution", () => {
-  test("invokes the declared capability and records production evidence instead of running verification as the action", async () => {
+  test("invokes the declared capability, runs verification, and supports --format json", async () => {
     const root = await createFixtureRoot();
     await writeAnalyzePlaybook(root);
 
     await handleAutoRunnerCommand(root, {
-      options: new Map(),
+      options: new Map([["--format", "json"]]),
       flags: new Set(),
       format: "json",
     });
@@ -93,11 +93,32 @@ describe("auto-runner CLI production execution", () => {
     expect(state.stages[0]?.id).toBe("analysis");
     expect(state.stages[0]?.steps[0]?.status).toBe("SUCCEEDED");
     expect(state.stages[0]?.steps[0]?.evidence?.some((path) => path.endsWith("raw-findings.json"))).toBe(true);
+    expect(state.stages[0]?.steps[0]?.verification_results?.some((result) => result.command === "true" && result.exit_code === 0)).toBe(true);
 
     const findings = await listFindings(root);
     expect(findings).toHaveLength(1);
     expect(findings[0]?.title).toBe("fixture finding");
 
     await access(join(root, ".dokion/evidence", state.run.id, "steps", "analysis", "analyze-project", "raw-findings.json"));
+  });
+
+  test("fails an analysis step when its declared verification fails", async () => {
+    const root = await createFixtureRoot();
+    await writeAnalyzePlaybook(root, "false");
+
+    await handleAutoRunnerCommand(root, {
+      options: new Map([["--format", "json"]]),
+      flags: new Set(),
+      format: "json",
+    });
+
+    expect(await readFile(join(root, ".dokion/capability-ran"), "utf8")).toBe("yes");
+
+    const state = await new StateStore(root).load();
+    const step = state.stages[0]?.steps[0];
+    expect(state.run.status).toBe("FAILED");
+    expect(step?.status).toBe("FAILED");
+    expect(step?.verification_results?.some((result) => result.command === "false" && result.exit_code !== 0)).toBe(true);
+    expect(process.exitCode).toBe(1);
   });
 });
