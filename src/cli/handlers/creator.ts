@@ -42,20 +42,21 @@ export async function handleCreatorCommand(options: CreatorCliOptions): Promise<
 
   try {
     const result = await engine.createPlaybook({
-      source,
-      transcriptPath: options.transcript,
-      topic: options.topic,
-      outputPath: options.output,
+      ...(source !== undefined ? { source } : {}),
+      ...(options.transcript !== undefined ? { transcriptPath: options.transcript } : {}),
+      ...(options.topic !== undefined ? { topic: options.topic } : {}),
+      ...(options.output !== undefined ? { outputPath: options.output } : {}),
     });
 
     console.log(`✅ [Playbook Creator] Successfully created Playbook at: ${result.playbookPath}`);
-    console.log(`   • Title: "${result.playbook.metadata.title}"`);
+    console.log(`   • Title: "${result.playbook.project.name}"`);
     console.log(`   • Steps Compiled: ${result.extractedStepsCount}`);
     console.log(`   • Memory Entries Processed: ${result.memoryEntriesProcessed}`);
     console.log(`   • SHA-256 Lock Digest: ${result.digest}`);
     console.log(`\nTo validate and run your new playbook, execute:\n   dokion validate\n   dokion run\n`);
-  } catch (err: any) {
-    console.error(`❌ [Playbook Creator Error]: ${err.message || String(err)}`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`❌ [Playbook Creator Error]: ${message}`);
     process.exitCode = 1;
   }
 }
