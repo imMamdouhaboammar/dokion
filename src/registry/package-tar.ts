@@ -1,6 +1,11 @@
 import { DokionError } from "../core/errors.ts";
 import { compareUtf8Bytes } from "./digests.ts";
-import { assertUniquePackagePaths, archivePathForPackageFile, packagePathFromArchiveEntry } from "./package-paths.ts";
+import {
+  assertUniquePackagePaths,
+  archivePathForPackageFile,
+  PackagePathRegistry,
+  packagePathFromArchiveEntry
+} from "./package-paths.ts";
 import { REGISTRY_PACKAGE_LIMITS } from "./package-limits.ts";
 
 const BLOCK_SIZE = 512;
@@ -204,7 +209,7 @@ export function readRegistryPackageTar(bytes: Uint8Array): RegistryTarEntry[] {
   }
 
   const entries: RegistryTarEntry[] = [];
-  const paths: string[] = [];
+  const paths = new PackagePathRegistry();
   let totalPayloadBytes = 0;
   let offset = 0;
   let terminated = false;
@@ -239,13 +244,11 @@ export function readRegistryPackageTar(bytes: Uint8Array): RegistryTarEntry[] {
     const name = readText(header, 0, 100);
     const prefix = readText(header, 345, 155);
     const archivePath = prefix ? `${prefix}/${name}` : name;
-    const path = packagePathFromArchiveEntry(archivePath);
-    paths.push(path);
-    assertUniquePackagePaths(paths);
+    const path = paths.add(packagePathFromArchiveEntry(archivePath));
 
-    if (paths.length > REGISTRY_PACKAGE_LIMITS.maximumFiles) {
+    if (paths.size > REGISTRY_PACKAGE_LIMITS.maximumFiles) {
       throw new DokionError("REGISTRY_PACKAGE_TOO_MANY_FILES", "Package archive exceeds the file-count bound.", {
-        count: paths.length,
+        count: paths.size,
         maximum: REGISTRY_PACKAGE_LIMITS.maximumFiles
       });
     }
