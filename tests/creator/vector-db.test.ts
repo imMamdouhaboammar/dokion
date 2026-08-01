@@ -1,4 +1,4 @@
-import { expect, test, describe } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { VectorDbDriver } from "../../src/creator/drivers/vector-db.js";
 
 describe("VectorDbDriver", () => {
@@ -18,9 +18,10 @@ describe("VectorDbDriver", () => {
     });
 
     expect(memories.length).toBe(1);
-    expect(memories[0].title).toContain("ADR-005");
-    expect(memories[0].source).toBe("vector-db");
-    expect(memories[0].category).toBe("architecture");
+    const memory = memories[0]!;
+    expect(memory.title).toContain("ADR-005");
+    expect(memory.source).toBe("vector-db");
+    expect(memory.category).toBe("architecture");
   });
 
   test("fetches Qdrant / ChromaDB payload formatted records", async () => {
@@ -38,7 +39,8 @@ describe("VectorDbDriver", () => {
     });
 
     expect(memories.length).toBe(1);
-    expect(memories[0].source).toBe("qdrant");
-    expect(memories[0].content).toContain("Atomic Commits");
+    const memory = memories[0]!;
+    expect(memory.source).toBe("qdrant");
+    expect(memory.content).toContain("Atomic Commits");
   });
 });
