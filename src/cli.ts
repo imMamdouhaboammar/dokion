@@ -34,6 +34,7 @@ import { listFindings } from "./findings/finding-store.ts";
 import { inspectProject } from "./inspect/project-inspector.ts";
 import { loadActivePlaybook } from "./playbook/load-playbook.ts";
 import { buildRegistryPackage } from "./registry/package-builder.ts";
+import { pullRegistryPackage } from "./registry/pull-service.ts";
 import { verifyRegistryPackage } from "./registry/package-verifier.ts";
 import { writeHardeningReport } from "./report/render-hardening.ts";
 import { DOKION_VERSION } from "./runtime/package-metadata.ts";
@@ -219,6 +220,18 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
             sourceDirectory: invocation.directory,
             outputPath: invocation.output,
             overwrite: invocation.overwrite
+          }),
+          invocation.format
+        );
+        return;
+      }
+      if (invocation.subcommand === "pull") {
+        print(
+          await pullRegistryPackage({
+            configPath: invocation.configPath,
+            source: invocation.source,
+            packageReference: invocation.packageReference,
+            cacheRoot: invocation.cacheRoot
           }),
           invocation.format
         );

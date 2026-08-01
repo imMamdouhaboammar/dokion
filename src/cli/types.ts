@@ -51,6 +51,14 @@ export type CliInvocation =
       expectedPackageId?: string;
       expectedVersion?: string;
     } & CliFormatted)
+  | ({
+      command: "registry";
+      subcommand: "pull";
+      packageReference: string;
+      source: string;
+      configPath: string;
+      cacheRoot: string;
+    } & CliFormatted)
   | ({ command: "loop"; subcommand: "audit" | "init" | "cost" | "sync" | "context"; pattern?: string } & CliFormatted)
   | ({
       command: "goal";

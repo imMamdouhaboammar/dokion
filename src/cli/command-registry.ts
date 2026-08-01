@@ -13,18 +13,18 @@ const HUB_PURPOSE =
 const REGISTRY_PACKAGE_COMMAND: CliCommandDescriptor = {
   id: "registry",
   manifestCommand: "dokion registry",
-  manifestUsage: "dokion registry <pack|verify-package> ...",
-  purpose: "Build deterministic Playbook packages and verify them without extraction, installation, or activation.",
-  manifestWrites: ["<user-selected-output>"],
+  manifestUsage: "dokion registry <pack|verify-package|pull> ...",
+  purpose: "Build deterministic Playbook packages, verify them read-only, and retrieve verified artifacts into an immutable cache without installation or activation.",
+  manifestWrites: ["<user-selected-output>", "<user-selected-cache>"],
   manifestApproval: "BEFORE_WRITE",
   specMarker: "`dokion registry`",
   runtimeCase: "registry",
-  helpLine: "  registry <pack|verify-package> ...",
+  helpLine: "  registry <pack|verify-package|pull> ...",
   helpGroup: "Configure",
   helpOrder: 7,
   status: "IMPLEMENTED",
   executionMode: "CONFIGURE",
-  writeScope: ["<user-selected-output>"],
+  writeScope: ["<user-selected-output>", "<user-selected-cache>"],
   approvalClass: "BEFORE_WRITE",
   geminiFiles: []
 };
