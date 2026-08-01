@@ -138,9 +138,37 @@ describe("native scanner output adapters", () => {
     expect(result).toEqual({ version: 1, findings: [] });
   });
 
-  test("rejects unsupported capabilities and malformed native payloads", () => {
+  test("rejects unsupported capabilities and malformed top-level payloads", () => {
     expect(resolveNativeScannerAdapter("unknown-scanner")).toBeNull();
     expect(() => adaptNativeScannerOutput("unknown-scanner", {})).toThrow("No native scanner adapter");
     expect(() => adaptNativeScannerOutput("osv-scanner", { results: "not-an-array" })).toThrow("OSV SCANNER JSON");
+  });
+
+  test("rejects malformed nested records instead of silently dropping or fabricating findings", () => {
+    expect(() => adaptNativeScannerOutput("osv-scanner", {
+      results: [{
+        source: { path: "bun.lock" },
+        packages: [{
+          package: { name: "example", version: "1.0.0", ecosystem: "npm" },
+          vulnerabilities: [{ summary: "missing advisory id" }],
+        }],
+      }],
+    })).toThrow("OSV SCANNER JSON");
+
+    expect(() => adaptNativeScannerOutput("gitleaks", [{}])).toThrow("GITLEAKS JSON");
+    expect(() => adaptNativeScannerOutput("semgrep", {
+      results: [{
+        path: "src/run.ts",
+        start: { line: 1 },
+        end: { line: 1 },
+        extra: { message: "missing rule id", severity: "ERROR" },
+      }],
+    })).toThrow("SEMGREP JSON");
+    expect(() => adaptNativeScannerOutput("trivy", {
+      Results: [{
+        Target: "package-lock.json",
+        Vulnerabilities: [{ Severity: "HIGH", Title: "missing vulnerability id" }],
+      }],
+    })).toThrow("TRIVY JSON");
   });
 });
