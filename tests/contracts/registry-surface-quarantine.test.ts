@@ -20,14 +20,16 @@ describe("Registry command and documentation quarantine", () => {
     expect(descriptor?.purpose).toContain("unavailable");
     expect(descriptor?.purpose).toContain("#47");
     expect(descriptor?.writeScope).toEqual([]);
+    expect(descriptor?.geminiFiles).toEqual([]);
     expect(() => parseCliInvocation(["hub"])).toThrow(
       expect.objectContaining({ code: "CLI_PLANNED_COMMAND" })
     );
   });
 
   test("removes executable-looking Hub guidance from shipped adapters and manifest", async () => {
+    expect(await Bun.file(`${root}/commands/dokion/hub.toml`).exists()).toBe(false);
+
     const surfaces = await Promise.all([
-      read("commands/dokion/hub.toml"),
       read(".claude/skills/dokion-playbook-hub/SKILL.md"),
       read("dokion.json")
     ]);
