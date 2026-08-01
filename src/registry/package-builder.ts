@@ -166,6 +166,33 @@ function parseBuildConfig(bytes: Uint8Array): RegistryPackageBuildConfig {
   };
 }
 
+async function assertSafeSourcePath(sourceDirectory: string, packagePath: string): Promise<void> {
+  const segments = packagePath.split("/");
+  let current = sourceDirectory;
+  for (const segment of segments.slice(0, -1)) {
+    current = join(current, segment);
+    let stat;
+    try {
+      stat = await lstat(current);
+    } catch (error) {
+      const errorCode = (error as NodeJS.ErrnoException).code;
+      if (errorCode === "ENOENT" || errorCode === "ENOTDIR") {
+        throw new DokionError("REGISTRY_PACKAGE_REQUIRED_FILE_MISSING", `Missing declared package file: ${packagePath}`, {
+          path: packagePath
+        });
+      }
+      throw error;
+    }
+    if (!stat.isDirectory() || stat.isSymbolicLink()) {
+      throw new DokionError(
+        "REGISTRY_PACKAGE_ENTRY_TYPE_UNSUPPORTED",
+        `Package source path components must be real directories: ${packagePath}`,
+        { path: packagePath, component: current }
+      );
+    }
+  }
+}
+
 async function readRegularFile(path: string, packagePath: string): Promise<Uint8Array> {
   let handle;
   try {
@@ -320,6 +347,7 @@ export async function buildRegistryPackage(options: BuildRegistryPackageOptions)
   const manifestFiles: RegistryPackageManifestFile[] = [];
   let totalPayloadBytes = 0;
   for (const path of sortedPaths) {
+    await assertSafeSourcePath(sourceDirectory, path);
     const bytes = await readRegularFile(join(sourceDirectory, ...path.split("/")), path);
     rejectLifecycleScripts(path, bytes);
     totalPayloadBytes += bytes.length;
