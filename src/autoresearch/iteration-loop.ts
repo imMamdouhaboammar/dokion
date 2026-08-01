@@ -85,11 +85,14 @@ export async function executeAutoresearchStepLoop(
     );
     if (!committed) {
       await options.onGitRollback?.();
-      return failureResult(
-        currentIteration,
-        startTime,
-        `Failed commit: commit callback did not confirm persistence for step ${options.stepId}`
-      );
+      return {
+        iteration: currentIteration,
+        changeDescription: `Failed commit: commit callback did not confirm persistence for step ${options.stepId}`,
+        verifyPassed: true,
+        guardPassed: true,
+        action: "ROLLBACK",
+        durationMs: Date.now() - startTime,
+      };
     }
   }
 
