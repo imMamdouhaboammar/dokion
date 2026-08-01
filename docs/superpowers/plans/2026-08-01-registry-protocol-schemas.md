@@ -4,9 +4,9 @@
 
 **Goal:** Define and verify the versioned contracts required for Dokion's federated Playbook Registry, immutable package distribution, project lockfiles, source configuration, and provenance reporting.
 
-**Architecture:** JSON Schema Draft 2020-12 is the protocol boundary. Registry indexes point to immutable manifests and artifacts by SHA-256 digest, package manifests enumerate and bind every package file, source configuration grants no selection or execution authority, lockfiles preserve exact resolved state, and provenance exposes separate integrity, source, identity, and signature states. CI validates every schema, positive fixture, and negative authority or integrity case.
+**Architecture:** JSON Schema Draft 2020-12 provides structural validation. Explicit semantic validators enforce cross-field invariants that JSON Schema cannot express reliably, including unique source identities, unique package paths, declared core-file membership, and digest-state consistency. Registry indexes bind final manifest and artifact bytes by SHA-256. Package manifests bind payload files but never hash themselves or the containing archive. Registry metadata grants no selection or execution authority.
 
-**Tech Stack:** Bun 1.3.14, TypeScript, Bun test, Python jsonschema, JSON Schema Draft 2020-12.
+**Tech Stack:** Bun 1.3.14, TypeScript, Bun test, AJV 8, Python 3.13, Python jsonschema, JSON Schema Draft 2020-12.
 
 ## Global Constraints
 
@@ -19,6 +19,7 @@
 - Unknown fields fail closed unless a schema explicitly defines an extension point.
 - Ratings, downloads, installs, success rates, trust scores, and publisher-verification claims are out of scope.
 - Every schema is versioned with an exact `schema` discriminator.
+- Digest ownership must be acyclic.
 - Every commit represents one reviewable contract or verification behavior.
 
 ---
@@ -32,11 +33,11 @@
 - Consumes: repository schema files and protocol fixtures
 - Produces: a failing contract requiring all six v1 schemas, exact identifiers, and positive and negative fixtures
 
-- [ ] Assert that the Registry root, Registry index, package manifest, Registry config, Playbooks lockfile, and provenance schemas exist.
-- [ ] Assert that each schema uses Draft 2020-12, rejects unknown top-level fields, and has the exact v1 discriminator.
-- [ ] Assert that valid fixtures pass AJV validation.
-- [ ] Assert that floating Git refs, malformed digests, authority claims, ambiguous trust fields, and unpinned installs fail.
-- [ ] Commit the failing contract and record the CI failure.
+- [x] Assert that the Registry root, Registry index, package manifest, Registry config, Playbooks lockfile, and provenance schemas exist.
+- [x] Assert that each schema uses Draft 2020-12, rejects unknown top-level fields, and has the exact v1 discriminator.
+- [x] Assert that valid fixtures pass AJV validation.
+- [x] Assert that floating Git refs, malformed digests, authority claims, ambiguous trust fields, and unpinned installs fail.
+- [x] Commit the failing contract and record the CI failure.
 
 ### Task 2: Define shared protocol conventions
 
@@ -45,143 +46,169 @@
 - Create: `docs/protocol/registry-schema-conventions.md`
 
 **Interfaces:**
-- Produces: reusable definitions for digest, package ID, semantic version, URI, immutable revision, timestamp, and trust states
+- Produces: reusable definitions for digest, package ID, exact SemVer, credential-free HTTPS URI, immutable revision, timestamp, and trust states
 
-- [ ] Define lowercase SHA-256 digest format.
-- [ ] Define namespaced package identifiers and exact semantic versions.
-- [ ] Define immutable Git commit references as 40-character hexadecimal SHAs.
-- [ ] Define explicit integrity, source, identity, signature, compatibility, deprecation, and revocation states.
-- [ ] Document canonical JSON requirements and extension policy.
-- [ ] Run focused tests and commit.
+- [x] Define lowercase SHA-256 digest format.
+- [x] Define namespaced package identifiers and exact semantic versions, including SemVer prerelease leading-zero rules.
+- [x] Define immutable Git commit references as 40-character hexadecimal SHAs.
+- [x] Define explicit integrity, source, identity, signature, compatibility, deprecation, and revocation states.
+- [x] Document canonical JSON requirements, extension policy, and acyclic digest ownership.
+- [x] Run focused tests and commit.
 
 ### Task 3: Define Registry root schema
 
 **Files:**
 - Create: `schemas/registry/dokion.registry-root.v1.schema.json`
 - Create: `schemas/registry/fixtures/valid/registry-root.json`
-- Create: `schemas/registry/fixtures/invalid/registry-root-authority.json`
+- Create refusal fixtures under: `schemas/registry/fixtures/invalid/registry-root-*.json`
 
 **Interfaces:**
-- Produces: Registry identity, index locations, expiry, source metadata, and zero-authority declaration
+- Produces: Registry identity, transport-bound index locations, expiry, immutable revision evidence, and zero-authority declaration
 
-- [ ] Require source ID, generated time, expiry, index references, and authority flags fixed to false.
-- [ ] Require every index reference to include location, digest, size, and optional immutable source revision.
-- [ ] Reject Registry roots that claim installation, activation, selection, substitution, or execution authority.
-- [ ] Run focused tests and commit.
+- [x] Require source ID, generated time, expiry, index references, and authority flags fixed to false.
+- [x] Require every index reference to include location, digest, and size.
+- [x] Require immutable revision evidence for Git-owned indexes.
+- [x] Require credential-free HTTPS index locations for HTTPS sources.
+- [x] Reject Registry roots that claim installation, activation, selection, substitution, or execution authority.
+- [x] Run focused tests and commit.
 
 ### Task 4: Define Registry index schema
 
 **Files:**
 - Create: `schemas/registry/dokion.registry-index.v1.schema.json`
 - Create: `schemas/registry/fixtures/valid/registry-index.json`
-- Create: `schemas/registry/fixtures/invalid/registry-index-mutable-git.json`
+- Create refusal fixtures under: `schemas/registry/fixtures/invalid/registry-index-*.json`
 
 **Interfaces:**
-- Produces: deterministic package version entries resolved to exact manifest and artifact digests
+- Produces: deterministic package-version entries resolved to exact manifest and artifact digests
 
-- [ ] Require source ID, index digest context, package namespace, name, exact version, manifest location and digest, artifact location and digest, size, publication time, and minimum Dokion version.
-- [ ] Support local, HTTPS, and immutable Git transports.
-- [ ] Require 40-character commit pins for Git transport.
-- [ ] Represent deprecation and revocation without popularity metrics.
-- [ ] Run focused tests and commit.
+- [x] Require source ID, package namespace, name, exact version, manifest location and digest, artifact location and digest, size, publication time, and minimum Dokion version.
+- [x] Support local, HTTPS, and immutable Git transports.
+- [x] Require 40-character commit pins for Git transport.
+- [x] Constrain forwarded manifest, artifact, provenance, and signature locations for HTTPS sources.
+- [x] Represent deprecation and revocation without popularity metrics.
+- [x] Run focused tests and commit.
 
-### Task 5: Define package manifest schema
+### Task 5: Define package manifest schema and semantic invariants
 
 **Files:**
 - Create: `schemas/registry/dokion.package-manifest.v1.schema.json`
 - Create: `schemas/registry/fixtures/valid/package-manifest.json`
-- Create: `schemas/registry/fixtures/invalid/package-manifest-path-traversal.json`
+- Create refusal fixtures under: `schemas/registry/fixtures/invalid/package-manifest-*.json`
+- Create semantic validator: `src/registry/protocol-semantics.ts`
 
 **Interfaces:**
-- Produces: immutable file inventory for a deterministic `dokion-package/` archive
+- Produces: immutable payload inventory for a deterministic `dokion-package-tar-v1` archive
 
-- [ ] Require package ID, exact version, Playbook path, archive digest, archive size, compatibility, license path, README path, and file inventory.
-- [ ] Require every file entry to include relative path, media type, byte size, and digest.
-- [ ] Reject absolute paths, `..`, empty segments, backslash paths, symlinks, hardlinks, lifecycle scripts, and duplicate file paths.
-- [ ] Keep declared capabilities informational and non-authoritative.
-- [ ] Run focused tests and commit.
+- [x] Require package identity, exact version, package format, Playbook path, compatibility, license path, README path, and payload-file inventory.
+- [x] Keep the artifact digest and artifact size outside the manifest to avoid circular hashing.
+- [x] Exclude `manifest.json` from its own payload-file inventory.
+- [x] Require every payload entry to include relative path, media type, byte size, and digest.
+- [x] Reject absolute paths, `..`, empty segments, backslash paths, and manifest self-reference structurally.
+- [x] Reject duplicate file paths semantically.
+- [x] Require `playbook_path`, `readme_path`, and `license_path` to reference listed payload files.
+- [x] Keep declared capabilities informational and non-authoritative.
+- [x] Defer archive-level symlink, hardlink, special-file, lifecycle-script, and expansion-bound checks to the package builder and verifier phase.
+- [x] Run focused tests and commit.
 
-### Task 6: Define Registry configuration schema
+### Task 6: Define Registry configuration schema and identity invariants
 
 **Files:**
 - Create: `schemas/registry/dokion.registry-config.v1.schema.json`
 - Create: `schemas/registry/fixtures/valid/registry-config.json`
-- Create: `schemas/registry/fixtures/invalid/registry-config-credentials.json`
+- Create refusal fixtures under: `schemas/registry/fixtures/invalid/registry-config-*.json`
+- Extend: `src/registry/protocol-semantics.ts`
 
 **Interfaces:**
 - Produces: deterministic global or project source configuration with explicit priority and network policy
 
-- [ ] Require unique source names and IDs.
-- [ ] Support local, HTTPS, and immutable Git source configuration.
-- [ ] Record cache and expiry policy without storing credentials.
-- [ ] Reject URL user-info and embedded secrets.
-- [ ] Keep source configuration outside package selection and activation authority.
-- [ ] Run focused tests and commit.
+- [x] Compose local, HTTPS, and Git source variants with Draft 2020-12 `unevaluatedProperties: false` instead of duplicating common fields.
+- [x] Require unique source names and IDs semantically.
+- [x] Support local, HTTPS, and immutable Git source configuration.
+- [x] Record cache and expiry policy without storing credentials.
+- [x] Reject URL user-info and embedded secrets.
+- [x] Keep source configuration outside package selection and activation authority.
+- [x] Run focused tests and commit.
 
 ### Task 7: Define Playbooks lockfile schema
 
 **Files:**
 - Create: `schemas/registry/dokion.playbooks-lock.v1.schema.json`
 - Create: `schemas/registry/fixtures/valid/playbooks-lock.json`
-- Create: `schemas/registry/fixtures/invalid/playbooks-lock-floating-version.json`
+- Create refusal fixtures under: `schemas/registry/fixtures/invalid/playbooks-lock-*.json`
 
 **Interfaces:**
 - Produces: reproducible project installation state with exact version, digests, source proof, verification results, and explicit activation state
 
-- [ ] Require deterministic ordering metadata and compare-and-swap revision.
-- [ ] Require exact package version, manifest digest, artifact digest, file digests, Registry index digest, source ID, sanitized location, source revision, install time, and installing Dokion version.
-- [ ] Record `installed_inert`, `active`, or `inactive` explicitly.
-- [ ] Record previous version only as rollback evidence.
-- [ ] Reject floating versions and authority claims.
-- [ ] Run focused tests and commit.
+- [x] Require compare-and-swap revision metadata.
+- [x] Require exact package version, manifest digest, artifact digest, file digests, Registry index digest, source ID, sanitized location, source revision, install time, and installing Dokion version.
+- [x] Record `installed_inert`, `active`, or `inactive` explicitly.
+- [x] Record previous version only as rollback evidence.
+- [x] Reject floating versions, embedded credentials for HTTPS and Git sources, and authority claims.
+- [x] Run focused tests and commit.
 
-### Task 8: Define provenance schema
+### Task 8: Define provenance schema and semantic integrity checks
 
 **Files:**
 - Create: `schemas/registry/dokion.provenance.v1.schema.json`
-- Create: `schemas/registry/fixtures/valid/provenance.json`
-- Create: `schemas/registry/fixtures/invalid/provenance-ambiguous-verified.json`
+- Create positive fixtures under: `schemas/registry/fixtures/valid/provenance*.json`
+- Create refusal fixtures under: `schemas/registry/fixtures/invalid/provenance-*.json`
+- Extend: `src/registry/protocol-semantics.ts`
 
 **Interfaces:**
 - Produces: separate evidence for bytes, Registry metadata, immutable source, publisher identity, signature, compatibility, freshness, deprecation, and revocation
 
-- [ ] Require artifact and manifest digest verification results.
-- [ ] Represent publisher identity and signatures as separate states.
-- [ ] Reject a top-level or nested generic `verified` field.
-- [ ] Allow unavailable signature evidence without implying identity verification.
-- [ ] Run focused tests and commit.
+- [x] Require expected digests and explicit integrity states.
+- [x] Require observed digests only for `MATCH` and `MISMATCH`; forbid them for `NOT_CHECKED` and `UNAVAILABLE`.
+- [x] Reject `MATCH` when expected and observed digests differ.
+- [x] Reject `MISMATCH` when expected and observed digests are equal.
+- [x] Represent publisher identity and signatures as separate states.
+- [x] Reject a generic `verified` field.
+- [x] Allow unavailable evidence without implying identity or byte verification.
+- [x] Run focused tests and commit.
 
 ### Task 9: Extend conformance validation
 
 **Files:**
-- Modify: `schemas/conformance_test.py`
+- Create and modify: `schemas/registry/conformance_test.py`
+- Create: `schemas/registry/invalid-fixture-expectations.json`
 - Modify: `package.json`
+- Modify: `.github/workflows/ci.yml`
 - Test: `tests/registry/protocol-schemas.test.ts`
+- Test: `tests/registry/python-conformance.test.ts`
 
 **Interfaces:**
-- Produces: positive fixture validation and negative fixture refusal in both Python and Bun CI paths
+- Produces: positive fixture validation and exact negative refusal causes in both Python and Bun CI paths
 
-- [ ] Load every Registry schema into a local reference registry.
-- [ ] Validate every `fixtures/valid` document against its declared schema.
-- [ ] Require every `fixtures/invalid` document to fail for the intended reason.
-- [ ] Add a dedicated `validate:registry-protocol` script.
-- [ ] Run contract validation, Bun tests, typecheck, build, and distribution checks.
-- [ ] Commit.
+- [x] Load every Registry schema into a local reference Registry.
+- [x] Validate every `schemas/registry/fixtures/valid/*.json` document structurally and semantically.
+- [x] Require every `schemas/registry/fixtures/invalid/*.json` document to fail at its declared JSON pointer and keyword.
+- [x] Recursively inspect Python `ValidationError.context` so combinators do not hide the actual refusal cause.
+- [x] Assert the expectation matrix exactly matches the invalid-fixture directory.
+- [x] Mutate and reject all five authority fields across all six contracts.
+- [x] Add a dedicated `validate:registry-protocol` script and invoke it explicitly in CI.
+- [ ] Run contract validation, all Bun tests, typecheck, build, release, distribution, clean-install, Gemini, and residue checks on the final reviewed head.
+- [ ] Commit final GREEN evidence.
 
-### Task 10: Document protocol ownership and review
+### Task 10: Document protocol ownership and complete review
 
 **Files:**
 - Create: `docs/protocol/registry-v1.md`
+- Create: `docs/protocol/registry-schema-conventions.md`
+- Create and update: `docs/protocol/registry-v1-verification.md`
 - Modify: `docs/architecture/registry-truth-audit.md`
 - Modify: `docs/superpowers/plans/2026-08-01-registry-protocol-schemas.md`
 
 **Interfaces:**
-- Produces: implementation status, schema ownership, migration boundaries, and next-phase package builder prerequisites
+- Produces: implementation status, schema ownership, migration boundaries, review evidence, and package-builder prerequisites
 
-- [ ] Document which fields are authoritative and which are display-only.
-- [ ] Include validated examples generated from fixtures.
-- [ ] Record RED and GREEN CI evidence.
-- [ ] Run CodeRabbit and scoped security review when available.
-- [ ] Resolve critical and major findings.
-- [ ] Mark completed checklist items only after evidence exists.
-- [ ] Merge without squashing the meaningful commit sequence.
+- [x] Document which fields are authoritative and which are display-only.
+- [x] Document acyclic manifest and artifact digest ownership.
+- [x] Include examples validated from repository fixtures.
+- [x] Record RED evidence and the first GREEN CI baseline.
+- [x] Run CodeRabbit and receive actionable review findings.
+- [x] Address the reported structural and semantic findings in code and tests.
+- [ ] Run CodeRabbit again on the final head and resolve remaining critical and major findings.
+- [ ] Record the final GREEN CI run and exact fixture/test counts.
+- [ ] Record the unavailable Codex Security execution environment without claiming a scan.
+- [ ] Merge by rebase, not squash, so the meaningful commit sequence reaches `main`.
