@@ -59,7 +59,7 @@ export function manifestFileForCommand(commandId: string): string {
 }
 
 export function specificationFileForCommand(commandId: string): string {
-  return CLI_COMMAND_SPEC_FILES[commandId] ?? "SPECIFICATION.md";
+  return CLI_COMMAND_SPEC_FILES[commandId] ?? "SPEC.md";
 }
 
 export function implementedCliCommands(): readonly CliCommandDescriptor[] {
