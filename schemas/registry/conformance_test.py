@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Offline JSON Schema conformance for the Dokion Registry protocol."""
+"""Offline JSON Schema and semantic conformance for the Dokion Registry protocol."""
 
 from __future__ import annotations
 
 import json
 import sys
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 from jsonschema import Draft202012Validator, FormatChecker
 from jsonschema.exceptions import SchemaError
@@ -15,6 +16,7 @@ from referencing import Registry, Resource
 ROOT = Path(__file__).resolve().parent
 VALID_FIXTURES = ROOT / "fixtures" / "valid"
 INVALID_FIXTURES = ROOT / "fixtures" / "invalid"
+EXPECTATIONS_PATH = ROOT / "invalid-fixture-expectations.json"
 
 FIXTURE_SCHEMAS = {
     "registry-root": "dokion.registry-root.v1.schema.json",
@@ -24,6 +26,13 @@ FIXTURE_SCHEMAS = {
     "playbooks-lock": "dokion.playbooks-lock.v1.schema.json",
     "provenance": "dokion.provenance.v1.schema.json",
 }
+
+
+@dataclass(frozen=True)
+class ProtocolError:
+    path: str
+    keyword: str
+    message: str
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -40,6 +49,117 @@ def fixture_contract(path: Path) -> str:
         if name == prefix or name.startswith(f"{prefix}-"):
             return schema_file
     raise ValueError(f"No schema mapping for fixture {path.name}")
+
+
+def json_pointer(parts: Iterable[object]) -> str:
+    encoded = [str(part).replace("~", "~0").replace("/", "~1") for part in parts]
+    return "" if not encoded else "/" + "/".join(encoded)
+
+
+def semantic_errors(schema_name: str, document: dict[str, Any]) -> list[ProtocolError]:
+    errors: list[ProtocolError] = []
+
+    if schema_name == "dokion.package-manifest.v1":
+        files = document.get("files") if isinstance(document.get("files"), list) else []
+        seen_paths: dict[str, int] = {}
+        for index, item in enumerate(files):
+            if not isinstance(item, dict) or not isinstance(item.get("path"), str):
+                continue
+            path = item["path"]
+            if path in seen_paths:
+                errors.append(
+                    ProtocolError(
+                        path=f"/files/{index}/path",
+                        keyword="duplicateFilePath",
+                        message=f"Package path {path} duplicates files[{seen_paths[path]}].path.",
+                    )
+                )
+            else:
+                seen_paths[path] = index
+
+        for field in ("playbook_path", "readme_path", "license_path"):
+            declared_path = document.get(field)
+            if isinstance(declared_path, str) and declared_path not in seen_paths:
+                errors.append(
+                    ProtocolError(
+                        path=f"/{field}",
+                        keyword="declaredPathMissing",
+                        message=f"{field} must reference a payload file listed in files[].path.",
+                    )
+                )
+
+    if schema_name == "dokion.registry-config.v1":
+        sources = document.get("sources") if isinstance(document.get("sources"), list) else []
+        seen_names: dict[str, int] = {}
+        seen_ids: dict[str, int] = {}
+        for index, source in enumerate(sources):
+            if not isinstance(source, dict):
+                continue
+            name = source.get("name")
+            if isinstance(name, str):
+                if name in seen_names:
+                    errors.append(
+                        ProtocolError(
+                            path=f"/sources/{index}/name",
+                            keyword="duplicateSourceName",
+                            message=f"Registry source name {name} duplicates sources[{seen_names[name]}].name.",
+                        )
+                    )
+                else:
+                    seen_names[name] = index
+            source_id = source.get("id")
+            if isinstance(source_id, str):
+                if source_id in seen_ids:
+                    errors.append(
+                        ProtocolError(
+                            path=f"/sources/{index}/id",
+                            keyword="duplicateSourceId",
+                            message=f"Registry source ID {source_id} duplicates sources[{seen_ids[source_id]}].id.",
+                        )
+                    )
+                else:
+                    seen_ids[source_id] = index
+
+    if schema_name == "dokion.provenance.v1":
+        for field in ("manifest", "artifact"):
+            observation = document.get(field)
+            if not isinstance(observation, dict):
+                continue
+            expected = observation.get("expected_digest")
+            observed = observation.get("observed_digest")
+            state = observation.get("integrity_state")
+            if state == "MATCH" and expected != observed:
+                errors.append(
+                    ProtocolError(
+                        path=f"/{field}/integrity_state",
+                        keyword="integrityStateMismatch",
+                        message=f"{field}.integrity_state cannot be MATCH when digests differ.",
+                    )
+                )
+            if state == "MISMATCH" and expected == observed:
+                errors.append(
+                    ProtocolError(
+                        path=f"/{field}/integrity_state",
+                        keyword="integrityStateMismatch",
+                        message=f"{field}.integrity_state cannot be MISMATCH when digests are equal.",
+                    )
+                )
+
+    return errors
+
+
+def schema_errors(
+    validator: Draft202012Validator,
+    document: dict[str, Any],
+) -> list[ProtocolError]:
+    return [
+        ProtocolError(
+            path=json_pointer(error.absolute_path),
+            keyword=str(error.validator),
+            message=error.message,
+        )
+        for error in validator.iter_errors(document)
+    ]
 
 
 def main() -> int:
@@ -71,19 +191,51 @@ def main() -> int:
     failures: list[str] = []
 
     for fixture_path in sorted(VALID_FIXTURES.glob("*.json")):
-        schema = schemas[fixture_contract(fixture_path)]
+        schema_file = fixture_contract(fixture_path)
+        schema = schemas[schema_file]
+        schema_name = str(schema["properties"]["schema"]["const"])
         validator = Draft202012Validator(schema, registry=registry, format_checker=FormatChecker())
-        errors = sorted(validator.iter_errors(load_json(fixture_path)), key=lambda error: list(error.absolute_path))
+        document = load_json(fixture_path)
+        errors = schema_errors(validator, document) + semantic_errors(schema_name, document)
         if errors:
-            rendered = "; ".join(error.message for error in errors)
+            rendered = "; ".join(f"{error.path or '/'} [{error.keyword}] {error.message}" for error in errors)
             failures.append(f"VALID fixture rejected: {fixture_path.name}: {rendered}")
 
+    expectations = load_json(EXPECTATIONS_PATH)
+    invalid_paths = {path.name for path in INVALID_FIXTURES.glob("*.json")}
+    expectation_paths = set(expectations)
+    if invalid_paths != expectation_paths:
+        missing = sorted(invalid_paths - expectation_paths)
+        stale = sorted(expectation_paths - invalid_paths)
+        failures.append(f"Invalid fixture expectation mismatch: missing={missing}, stale={stale}")
+
     for fixture_path in sorted(INVALID_FIXTURES.glob("*.json")):
-        schema = schemas[fixture_contract(fixture_path)]
+        expectation = expectations.get(fixture_path.name)
+        if not isinstance(expectation, dict):
+            continue
+        schema_name = expectation.get("schema")
+        expected_path = expectation.get("path")
+        expected_keyword = expectation.get("keyword")
+        if not all(isinstance(value, str) for value in (schema_name, expected_path, expected_keyword)):
+            failures.append(f"Invalid expectation entry: {fixture_path.name}")
+            continue
+
+        schema_file = f"{schema_name}.schema.json"
+        schema = schemas.get(schema_file)
+        if schema is None:
+            failures.append(f"Unknown schema in expectation: {fixture_path.name}: {schema_name}")
+            continue
+
         validator = Draft202012Validator(schema, registry=registry, format_checker=FormatChecker())
-        errors = list(validator.iter_errors(load_json(fixture_path)))
-        if not errors:
-            failures.append(f"INVALID fixture accepted: {fixture_path.name}")
+        document = load_json(fixture_path)
+        errors = schema_errors(validator, document) + semantic_errors(schema_name, document)
+        matched = any(error.path == expected_path and error.keyword == expected_keyword for error in errors)
+        if not matched:
+            rendered = "; ".join(f"{error.path or '/'} [{error.keyword}] {error.message}" for error in errors)
+            failures.append(
+                f"INVALID fixture missed intended cause: {fixture_path.name}: "
+                f"expected {expected_path or '/'} [{expected_keyword}], observed {rendered or 'no errors'}"
+            )
 
     if failures:
         for failure in failures:
