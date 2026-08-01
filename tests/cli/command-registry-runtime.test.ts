@@ -91,7 +91,7 @@ Configure:
   create [--from-memory <source>] [--transcript <path>] [--topic <topic>]
   reset --state-only
   playbooks <import|validate|sync|list>
-  registry <pack|verify-package> ...
+  registry <pack|verify-package|pull> ...
 
 Execute:
   run
@@ -132,7 +132,7 @@ Dokion never installs, selects, substitutes, reorders, or enables capabilities.`
       id: "registry",
       status: "IMPLEMENTED",
       executionMode: "CONFIGURE",
-      writeScope: ["<user-selected-output>"],
+      writeScope: ["<user-selected-output>", "<user-selected-cache>"],
       approvalClass: "BEFORE_WRITE"
     });
     expect(registry.resolveCliCommand("not-a-command")).toBeUndefined();
