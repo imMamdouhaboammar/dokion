@@ -1,126 +1,60 @@
-# Dokion Community Playbook Hub & Registry — Architectural Design
+# Community Playbook Hub Design
 
-**Spec Date:** 2026-08-01  
-**Status:** Approved for Implementation  
-**Target:** Production-Grade Community Playbook Hub & Telemetry Runtime  
+Status: Superseded  
+Original date: 2026-08-01  
+Superseded by: Issue #47, ADR-0003, ADR-0004, and ADR-0005
 
----
+## Why this design was superseded
 
-## 1. Executive Overview
+The original design combined a hardcoded catalog, local telemetry spool, ranking formula, in-memory publishing, synthesized Playbook proposals, and a static storefront. It described those components as a decentralized marketplace even though they did not form a verifiable distribution protocol.
 
-Dokion is the premier **Playbooks Engineering Runtime for AI Coding Agents**. While Dokion ships with core built-in playbooks, software engineering workflows evolve rapidly across domains (UI/UX, Security, Backend, AI Slop Remediation, Mobile).
+The implementation could not prove that:
 
-The **Community Playbook Hub & Registry** establishes a decentralized, verified, and telemetry-backed marketplace where engineers and AI coding agents can:
-1. **Discover & Pull**: Search, inspect, and pull verified community playbooks (`dokion playbooks pull <owner/playbook>`).
-2. **Fork & Adapt**: Clone community playbooks into inert local proposals, customize them, and merge local updates (`dokion playbooks fork`, `dokion playbooks merge`).
-3. **Publish & Share**: Cryptographically sign (SHA-256) and publish custom playbooks (`dokion playbooks publish`).
-4. **Telemetry & Leaderboard**: Track anonymous execution success rates, active installs, downloads, and rank playbooks via a dynamic Leaderboard algorithm (`dokion playbooks leaderboard`).
+- Registry metadata came from an independently configured source
+- pull preserved and verified publisher-authored package bytes
+- publish created remote immutable content another client could retrieve
+- installation wrote a reproducible project lockfile
+- activation remained a separate user-authorized transition
+- publisher identity, signatures, metrics, or rankings had trustworthy evidence
+- the public website reflected current CLI and protocol behavior
 
----
+Those gaps conflict with Dokion's fail-closed execution and evidence model. The simulated Hub was quarantined in the first delivery round under Issue #47.
 
-## 2. System Architecture & Components
+## Replacement decisions
 
-```
-┌───────────────────────────────────────────────────────────────────────────────────────────┐
-│                           DOKION PLAYBOOK HUB & REGISTRY SYSTEM                           │
-└─────────────────────────────────────────────┬─────────────────────────────────────────────┘
-                                              │
-         ┌────────────────────────────────────┼────────────────────────────────────┐
-         ▼                                    ▼                                    ▼
-┌──────────────────────────┐      ┌──────────────────────────┐      ┌──────────────────────────┐
-│ REGISTRY ENGINE          │      │ TELEMETRY ENGINE         │      │ LEADERBOARD & RANKING    │
-├──────────────────────────┤      ├──────────────────────────┤      ├──────────────────────────┤
-│ • Index & Search         │      │ • Opt-In Event Tracking  │      │ • Dynamic Composite Score│
-│ • Local & Remote Cache   │      │ • Local Spooling         │      │ • Download Metrics       │
-│ • Cryptographic SHA-256  │      │ • Success/Failure Rates  │      │ • Verified Badges        │
-│ • Fork & Merge Lineage   │      │ • Anonymized UUIDs       │      │ • Category Filters       │
-└──────────────────────────┘      └──────────────────────────┘      └──────────────────────────┘
-```
+- ADR-0003 defines a federated content-addressed Registry with local filesystem, HTTPS static, and immutable Git source transports.
+- ADR-0004 separates integrity, publisher identity, signatures, source state, installation, and activation. Registry metadata never grants execution authority.
+- ADR-0005 makes the documentation site and Store static readers of validated snapshots rather than package authority.
 
-### 2.1 Core Modules
+The replacement program defines versioned Registry, package, provenance, source configuration, and lockfile schemas before restoring network retrieval or Store actions.
 
-1. **`src/registry/hub.ts`**: Main Registry Client managing remote fetching, local caching, search indexing, and package resolution.
-2. **`src/registry/types.ts`**: Schema types for `HubPlaybookPackage`, `PublisherProfile`, `RatingRecord`, `LeaderboardEntry`, `ForkLineage`.
-3. **`src/registry/leaderboard.ts`**: Dynamic ranking score calculator evaluating downloads, success rate, user ratings, and verified publisher status.
-4. **`src/registry/fork-merge.ts`**: Lineage-aware forking and merging engine for customizing community playbooks.
-5. **`src/telemetry/index.ts` & `src/telemetry/client.ts`**: Privacy-first, opt-in event spooler tracking downloads, execution turns, step failures, and completion verification.
-6. **`src/cli/handlers/hub.ts`**: CLI command dispatcher for `dokion playbooks hub|search|pull|publish|leaderboard|rate|fork|merge`.
+## Removed assumptions
 
----
+The following assumptions from the original document are rejected:
 
-## 3. Data Schema Contracts
+- an in-memory array is not a Registry
+- a SHA-256-shaped string is not proof that remote bytes were retrieved and verified
+- synthesizing a new Playbook from metadata is not package pull
+- appending to a local catalog is not publish
+- a local telemetry event is not a download, install, or execution metric
+- one `verified` boolean cannot represent integrity, identity, signature, freshness, and compatibility
+- installation does not authorize execution
+- browser-visible sample data cannot be presented as product evidence
 
-### 3.1 `HubPlaybookPackage` Interface
-```typescript
-export interface HubPlaybookPackage {
-  id: string; // e.g. "amElnagdy/ui-review-loop"
-  name: string;
-  version: string;
-  description: string;
-  category: "ui-ux" | "security" | "backend" | "devops" | "ai-slop-remediation" | "testing" | "general";
-  tags: string[];
-  publisher: {
-    handle: string;
-    verified: boolean;
-    trustScore: number;
-  };
-  digest: string; // SHA-256 digest of playbook.json
-  playbookUrl: string;
-  stats: {
-    downloads: number;
-    activeInstalls: number;
-    rating: number; // 1.0 to 5.0
-    ratingsCount: number;
-    successRate: number; // percentage e.g. 98.4
-  };
-  createdAt: string;
-  updatedAt: string;
-}
-```
+## Current implementation boundary
 
-### 3.2 Telemetry Event Schema
-```typescript
-export interface TelemetryEvent {
-  eventId: string;
-  eventType: "PLAYBOOK_PULLED" | "PLAYBOOK_EXECUTED" | "STEP_FAILED" | "RUN_COMPLETED";
-  playbookId: string;
-  digest: string;
-  timestamp: string;
-  anonymousSessionId: string;
-  durationMs?: number;
-  success?: boolean;
-}
-```
+Until the replacement protocol is delivered:
 
----
+- unconfigured Registry search returns an explicit unavailable state
+- pull fails with `REGISTRY_SOURCE_REQUIRED`
+- publish, ranking, rating, fork, merge, and other unsupported Registry actions fail with `REGISTRY_NOT_IMPLEMENTED`
+- Playbook sync fails instead of reporting a no-op success
+- the public page contains documentation and rebuild status only
 
-## 4. Ranking & Leaderboard Algorithm
+## Authoritative continuation
 
-The Leaderboard computes a composite score $S$ for every community playbook:
+Implementation continues through Issue #47 and the plan at:
 
-$$S = \Big(W_d \times \log_{10}(D + 1)\Big) + \Big(W_r \times R\Big) + \Big(W_s \times \frac{\text{SuccessRate}}{100}\Big) + B_v$$
+`docs/superpowers/plans/2026-08-01-registry-truth-audit.md`
 
-Where:
-- $D$: Total verified downloads ($W_d = 25$)
-- $R$: Average star rating 1–5 ($W_r = 15$)
-- $\text{SuccessRate}$: Execution completion rate ($W_s = 40$)
-- $B_v$: Verified Publisher Bonus ($+20$ points)
-
----
-
-## 5. Security & Authority Guarantees
-
-1. **Inert Pull Policy**: Pulled community playbooks are saved as `.dokion/playbook.proposed.json`. They **NEVER** overwrite the active `.dokion/playbook.json` without explicit user activation (`dokion playbooks sync` or manual copy).
-2. **Cryptographic Verification**: Every pulled playbook's SHA-256 digest is verified before proposal creation.
-3. **Privacy-First Telemetry**: Telemetry contains zero sensitive information (no code, no credentials, no file paths, no IP addresses). Can be disabled via `DOKION_TELEMETRY_DISABLED=1`.
-
----
-
-## 6. Verification & Test Plan
-
-1. **Unit Tests**:
-   - `tests/registry/hub.test.ts`: Search, index filtering, package resolution, forking, merging.
-   - `tests/registry/leaderboard.test.ts`: Score calculation, category sorting, verified publisher boost.
-   - `tests/telemetry/telemetry.test.ts`: Opt-in check, event spooling, anonymization, batch flushing.
-2. **Integration Tests**:
-   - `tests/cli/hub-cli.test.ts`: End-to-end testing of `dokion playbooks search|pull|publish|leaderboard|rate`.
+This file remains as historical evidence of the rejected architecture. It must not be used as an implementation specification.
