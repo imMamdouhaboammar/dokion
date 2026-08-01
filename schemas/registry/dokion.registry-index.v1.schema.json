@@ -49,11 +49,20 @@
             "allOf": [
               {
                 "if": { "properties": { "transport": { "const": "git" } }, "required": ["transport"] },
-                "then": { "required": ["immutable_revision"] }
+                "then": {
+                  "required": ["immutable_revision"],
+                  "properties": {
+                    "location": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" }
+                  }
+                }
               },
               {
                 "if": { "properties": { "transport": { "const": "https" } }, "required": ["transport"] },
-                "then": { "properties": { "location": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" } } }
+                "then": {
+                  "properties": {
+                    "location": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" }
+                  }
+                }
               }
             ]
           },
@@ -101,7 +110,36 @@
           },
           "provenance_location": { "type": "string", "minLength": 1, "maxLength": 2048 },
           "signature_bundle_location": { "type": "string", "minLength": 1, "maxLength": 2048 }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "source": {
+                  "properties": { "transport": { "const": "https" } },
+                  "required": ["transport"]
+                }
+              },
+              "required": ["source"]
+            },
+            "then": {
+              "properties": {
+                "manifest": {
+                  "properties": {
+                    "location": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" }
+                  }
+                },
+                "artifact": {
+                  "properties": {
+                    "location": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" }
+                  }
+                },
+                "provenance_location": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" },
+                "signature_bundle_location": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" }
+              }
+            }
+          }
+        ]
       }
     },
     "authority": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/authorityNone" }
