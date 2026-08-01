@@ -102,14 +102,28 @@ jobs:
       - name: Verify no tracked mutation or credential residue
         shell: bash
         run: |
-          git diff --exit-code
-          git diff --cached --exit-code
-          test ! -e .npmrc
-          test ! -e bunfig.toml
-          test ! -e .env
-          test ! -e .dokion
-          test ! -e HARDENING.md
-          test -z "$(find . -maxdepth 1 -type f -name '*.tgz' -print -quit)"
+          set -uo pipefail
+          status=0
+          git diff --exit-code || status=1
+          git diff --cached --exit-code || status=1
+          for path in .npmrc bunfig.toml .env .dokion HARDENING.md; do
+            if [[ -e "$path" ]]; then
+              echo "::error::Unexpected repository artifact remains after verification: $path"
+              if [[ -d "$path" ]]; then
+                find "$path" -maxdepth 3 -print
+              else
+                ls -la "$path"
+              fi
+              status=1
+            fi
+          done
+          mapfile -t archives < <(find . -maxdepth 1 -type f -name '*.tgz' -print)
+          if (( ${#archives[@]} > 0 )); then
+            echo "::error::Unexpected package archives remain after verification"
+            printf '%s\n' "${archives[@]}"
+            status=1
+          fi
+          exit "$status"
 
       - name: Upload diagnostics
         if: always()
