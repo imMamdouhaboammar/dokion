@@ -40,6 +40,12 @@ export type CapabilityRunResult =
       verificationResults: VerificationResult[];
     };
 
+interface NamedEvidenceMetadata {
+  phase: "REMEDIATION" | "VERIFICATION";
+  finding_id?: string;
+  command_index?: number;
+}
+
 function invocationCommands(step: PlaybookStep): string[] {
   const verification = new Set(step.verification ?? []);
   return (step.permissions?.shell ?? []).filter((command) => !verification.has(command));
@@ -70,7 +76,7 @@ async function writeNamedCommandEvidence(
   root: string,
   relativePath: string,
   result: CommandResult,
-  metadata: Record<string, unknown>
+  metadata: NamedEvidenceMetadata
 ): Promise<string> {
   await writeJsonAtomic(join(root, relativePath), {
     ...metadata,
@@ -154,11 +160,65 @@ export async function runAnalyzeCapability(input: {
     rawArtifact,
     runId: input.state.run.id
   });
+  const findingIds = findings.map((finding) => finding.id);
+  const evidence = [commandArtifact, rawArtifact];
+  const verificationResults: VerificationResult[] = [
+    { command, exit_code: result.exitCode, artifact: commandArtifact, ran_at: result.endedAt }
+  ];
+  const verificationCommands = input.step.verification ?? [];
+
+  if (verificationCommands.length === 0) {
+    return {
+      status: "FAILED",
+      reason: "No verification command is declared for analysis capability",
+      findingIds,
+      evidence,
+      verificationResults
+    };
+  }
+
+  for (const [index, verificationCommand] of verificationCommands.entries()) {
+    if (!(input.step.permissions?.shell ?? []).includes(verificationCommand)) {
+      return {
+        status: "FAILED",
+        reason: "Verification command is outside permissions.shell",
+        findingIds,
+        evidence,
+        verificationResults
+      };
+    }
+
+    const verification = await runCommand(input.root, verificationCommand, {
+      timeoutSeconds: input.step.timeout_seconds ?? 300
+    });
+    const artifact = `.dokion/evidence/${input.state.run.id}/steps/${input.stage.id}/${input.step.id}/verification-${index + 1}.json`;
+    evidence.push(await writeNamedCommandEvidence(input.root, artifact, verification, {
+      phase: "VERIFICATION",
+      command_index: index + 1
+    }));
+    verificationResults.push({
+      command: verificationCommand,
+      exit_code: verification.exitCode,
+      artifact,
+      ran_at: verification.endedAt
+    });
+
+    if (verification.exitCode !== 0) {
+      return {
+        status: "FAILED",
+        reason: `Verification command exited ${verification.exitCode}`,
+        findingIds,
+        evidence,
+        verificationResults
+      };
+    }
+  }
+
   return {
     status: "SUCCEEDED",
-    findingIds: findings.map((finding) => finding.id),
-    evidence: [commandArtifact, rawArtifact],
-    verificationResults: [{ command, exit_code: result.exitCode, artifact: commandArtifact, ran_at: result.endedAt }]
+    findingIds,
+    evidence,
+    verificationResults
   };
 }
 
@@ -210,7 +270,10 @@ export async function runRemediationCapability(input: {
       }
     });
     const remediationArtifact = `.dokion/evidence/${input.state.run.id}/findings/${finding.id}/remediation.json`;
-    evidence.push(await writeNamedCommandEvidence(input.root, remediationArtifact, result, { finding_id: finding.id, phase: "REMEDIATION" }));
+    evidence.push(await writeNamedCommandEvidence(input.root, remediationArtifact, result, {
+      finding_id: finding.id,
+      phase: "REMEDIATION"
+    }));
 
     const validation = await validateRepair({
       root: input.root,
@@ -271,9 +334,14 @@ export async function runRemediationCapability(input: {
     const findingVerificationArtifacts: string[] = [];
     for (const [index, verificationCommand] of (input.step.verification ?? []).entries()) {
       assertAllowed(input.step, verificationCommand);
-      const verification = await runCommand(input.root, verificationCommand, input.step.timeout_seconds ?? 300);
+      const verification = await runCommand(input.root, verificationCommand, {
+        timeoutSeconds: input.step.timeout_seconds ?? 300
+      });
       const artifact = `.dokion/evidence/${input.state.run.id}/findings/${finding.id}/verification-${index + 1}.json`;
-      findingVerificationArtifacts.push(await writeNamedCommandEvidence(input.root, artifact, verification, { finding_id: finding.id, phase: "VERIFICATION" }));
+      findingVerificationArtifacts.push(await writeNamedCommandEvidence(input.root, artifact, verification, {
+        finding_id: finding.id,
+        phase: "VERIFICATION"
+      }));
       verificationResults.push({ command: verificationCommand, exit_code: verification.exitCode, artifact, ran_at: verification.endedAt });
       evidence.push(artifact);
       if (verification.exitCode !== 0) {

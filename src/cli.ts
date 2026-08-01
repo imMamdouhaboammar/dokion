@@ -259,9 +259,7 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
       try {
         const loaded = await loadActivePlaybook(root);
         playbook = loaded.data as any;
-      } catch {
-        // Fallback minimal playbook
-      }
+      } catch {}
       if (invocation.command === "autopilot") {
         print(await handleAutopilotCommand({
           playbook,
@@ -274,7 +272,8 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
     }
     case "auto-runner": {
       if (invocation.command === "auto-runner") {
-        await handleAutoRunnerCommand(root, invocation);
+        const runnerReport = await handleAutoRunnerCommand(root, invocation);
+        if (!runnerReport.completed) process.exitCode = 1;
       }
       return;
     }
@@ -339,21 +338,21 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
     }
     case "create": {
       await handleCreatorCommand({
-        fromMemory: invocation.fromMemory,
-        transcript: invocation.transcript,
-        topic: invocation.topic,
-        output: invocation.output,
+        ...(invocation.fromMemory !== undefined ? { fromMemory: invocation.fromMemory } : {}),
+        ...(invocation.transcript !== undefined ? { transcript: invocation.transcript } : {}),
+        ...(invocation.topic !== undefined ? { topic: invocation.topic } : {}),
+        ...(invocation.output !== undefined ? { output: invocation.output } : {}),
       });
       return;
     }
     case "hub": {
       const output = await handleHubCommand(root, {
-        action: invocation.action,
-        query: invocation.query,
-        packageId: invocation.packageId,
-        category: invocation.category,
+        ...(invocation.action !== undefined ? { action: invocation.action } : {}),
+        ...(invocation.query !== undefined ? { query: invocation.query } : {}),
+        ...(invocation.packageId !== undefined ? { packageId: invocation.packageId } : {}),
+        ...(invocation.category !== undefined ? { category: invocation.category } : {}),
         format: invocation.format,
-        author: invocation.author,
+        ...(invocation.author !== undefined ? { author: invocation.author } : {}),
       });
       console.log(output);
       return;

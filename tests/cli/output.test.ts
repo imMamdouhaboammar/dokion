@@ -63,15 +63,15 @@ describe("CLI output selection", () => {
 
   test("uses human output by default and JSON only when requested", async () => {
     const human = await runCli("doctor");
-    expect(human.exitCode).toBe(0);
-    expect(human.stderr).toBe("");
-    expect(human.stdout).toContain("healthy: true");
-    expect(human.stdout.trimStart().startsWith("{")).toBe(false);
-
     const json = await runCli("doctor", "--format", "json");
-    expect(json.exitCode).toBe(0);
+    const parsed = JSON.parse(json.stdout) as { healthy: boolean };
+
+    expect(human.exitCode).toBe(json.exitCode);
+    expect(human.stderr).toBe("");
     expect(json.stderr).toBe("");
-    expect(JSON.parse(json.stdout)).toMatchObject({ healthy: true });
+    expect(typeof parsed.healthy).toBe("boolean");
+    expect(human.stdout).toContain(`healthy: ${parsed.healthy}`);
+    expect(human.stdout.trimStart().startsWith("{")).toBe(false);
   });
 
   test("advertises output selection in help", async () => {

@@ -1,8 +1,8 @@
+import { executeAutoresearchStepLoop } from "../autoresearch/iteration-loop.ts";
+import { evaluateApprovalBoundary } from "../policy/approval-policy.ts";
 import type { DokionState, ExecutionStatus, StageState } from "../state/types.ts";
 import { selectNextAction, type MinimalPlaybook } from "./next-action.ts";
 import type { ActionSpec } from "./types.ts";
-import { evaluateApprovalBoundary } from "../policy/approval-policy.ts";
-import { executeAutoresearchStepLoop } from "../autoresearch/iteration-loop.ts";
 
 export interface CircuitBreakerConfig {
   maxRetriesPerStep: number;
@@ -13,23 +13,33 @@ export interface CircuitBreakerConfig {
 }
 
 export interface ShadowVerificationResult {
-  score: number; // 0 to 100
+  score: number;
   passed: boolean;
   checks: Array<{ name: string; passed: boolean; durationMs: number }>;
+}
+
+export interface StepExecutionReceipt {
+  executed: boolean;
+  changed: boolean;
+  description: string;
+  evidence?: string[];
 }
 
 export interface AutoRunnerOptions {
   playbook: MinimalPlaybook;
   state: DokionState;
   maxTurns?: number;
-  targetCompletion?: number; // Target percentage, default 100
+  targetCompletion?: number;
   circuitBreaker?: Partial<CircuitBreakerConfig>;
   enableShadowVerification?: boolean;
   enableAutoresearch?: boolean;
   verifyCommand?: string;
   guardCommand?: string;
   hasUserApproval?: boolean;
-  onSelfHealingRepair?: ((stepId: string, error: Error) => Promise<boolean>) | undefined;
+  onExecuteStep?: ((action: ActionSpec) => Promise<StepExecutionReceipt>) | undefined;
+  onShadowVerify?: ((action: ActionSpec) => Promise<ShadowVerificationResult>) | undefined;
+  onSelfHealingRepair?: ((stepId: string, error: Error) => Promise<StepExecutionReceipt>) | undefined;
+  onRollbackStep?: ((action: ActionSpec, error: Error) => Promise<boolean>) | undefined;
   onRunShellCommand?: ((command: string) => Promise<{ exitCode: number; stdout: string; stderr: string }>) | undefined;
 }
 
@@ -48,6 +58,12 @@ export interface AutoRunnerReport {
   message: string;
 }
 
+interface StepAttemptResult {
+  success: boolean;
+  receipt?: StepExecutionReceipt;
+  error?: Error;
+}
+
 export class AutoPlaybookRunner {
   private playbook: MinimalPlaybook;
   private state: DokionState;
@@ -59,7 +75,10 @@ export class AutoPlaybookRunner {
   private verifyCommand?: string | undefined;
   private guardCommand?: string | undefined;
   private hasUserApproval: boolean;
-  private onSelfHealingRepair?: ((stepId: string, error: Error) => Promise<boolean>) | undefined;
+  private onExecuteStep?: ((action: ActionSpec) => Promise<StepExecutionReceipt>) | undefined;
+  private onShadowVerify?: ((action: ActionSpec) => Promise<ShadowVerificationResult>) | undefined;
+  private onSelfHealingRepair?: ((stepId: string, error: Error) => Promise<StepExecutionReceipt>) | undefined;
+  private onRollbackStep?: ((action: ActionSpec, error: Error) => Promise<boolean>) | undefined;
   private onRunShellCommand?: ((command: string) => Promise<{ exitCode: number; stdout: string; stderr: string }>) | undefined;
 
   private consecutiveFailures = 0;
@@ -81,14 +100,17 @@ export class AutoPlaybookRunner {
     this.verifyCommand = options.verifyCommand;
     this.guardCommand = options.guardCommand;
     this.hasUserApproval = options.hasUserApproval ?? true;
+    this.onExecuteStep = options.onExecuteStep;
+    this.onShadowVerify = options.onShadowVerify;
     this.onSelfHealingRepair = options.onSelfHealingRepair;
+    this.onRollbackStep = options.onRollbackStep;
     this.onRunShellCommand = options.onRunShellCommand;
 
     this.circuitBreaker = {
       maxRetriesPerStep: options.circuitBreaker?.maxRetriesPerStep ?? 3,
       maxCostDollars: options.circuitBreaker?.maxCostDollars ?? 5.0,
       maxConsecutiveFailures: options.circuitBreaker?.maxConsecutiveFailures ?? 3,
-      timeoutMs: options.circuitBreaker?.timeoutMs ?? 300000, // 5 minutes
+      timeoutMs: options.circuitBreaker?.timeoutMs ?? 300000,
       enabled: options.circuitBreaker?.enabled ?? true,
     };
   }
@@ -98,107 +120,107 @@ export class AutoPlaybookRunner {
     let circuitBreakerStatus: "HEALTHY" | "TRIPPED" | "RECOVERED" = "HEALTHY";
 
     while (turns < this.maxTurns) {
-      turns++;
-
-      // Check Circuit Breaker & Safety Limits (Optimization Architect Guardrails)
-      if (this.circuitBreaker.enabled) {
-        if (Date.now() - this.startTime > this.circuitBreaker.timeoutMs) {
-          circuitBreakerStatus = "TRIPPED";
-          return this.buildReport(false, circuitBreakerStatus, "Circuit breaker tripped: Execution timeout exceeded");
-        }
-
-        if (this.totalCost >= this.circuitBreaker.maxCostDollars) {
-          circuitBreakerStatus = "TRIPPED";
-          return this.buildReport(false, circuitBreakerStatus, "Circuit breaker tripped: Maximum budget limit reached");
-        }
-
-        if (this.consecutiveFailures >= this.circuitBreaker.maxConsecutiveFailures) {
-          // Attempt Autonomous Self-Healing Fallback
-          const healed = await this.attemptSelfHealingRecovery();
-          if (healed) {
-            circuitBreakerStatus = "RECOVERED";
-            this.consecutiveFailures = 0;
-          } else {
-            circuitBreakerStatus = "TRIPPED";
-            return this.buildReport(false, circuitBreakerStatus, "Circuit breaker tripped: Consecutive step failures exceeded retry cap");
-          }
-        }
-      }
-
-      // Calculate Current Completion
       const currentCompletion = this.calculateCompletionPercentage();
       if (currentCompletion >= this.targetCompletion) {
-        return this.buildReport(true, circuitBreakerStatus, `Absolute success achieved: 100% playbook completion (${this.stepsSucceeded} steps succeeded)`);
+        return this.buildReport(
+          true,
+          circuitBreakerStatus,
+          `Absolute success achieved: 100% playbook completion (${this.stepsSucceeded} steps succeeded)`
+        );
       }
 
-      // Select Next Step
+      if (this.circuitBreaker.enabled) {
+        if (Date.now() - this.startTime > this.circuitBreaker.timeoutMs) {
+          return this.buildReport(false, "TRIPPED", "Circuit breaker tripped: Execution timeout exceeded");
+        }
+        if (this.totalCost >= this.circuitBreaker.maxCostDollars) {
+          return this.buildReport(false, "TRIPPED", "Circuit breaker tripped: Maximum budget limit reached");
+        }
+        if (this.consecutiveFailures >= this.circuitBreaker.maxConsecutiveFailures) {
+          return this.buildReport(
+            false,
+            "TRIPPED",
+            "Circuit breaker tripped: Consecutive step failures exceeded retry cap"
+          );
+        }
+      }
+
+      turns += 1;
       const nextResult = selectNextAction(this.state, this.playbook);
       if (nextResult.status === "STOP_REASON") {
         if (nextResult.stopReason === "PLAYBOOK_COMPLETED") {
-          const isComplete = this.stepsSucceeded > 0 && this.calculateCompletionPercentage() >= this.targetCompletion;
+          const complete = this.calculateCompletionPercentage() >= this.targetCompletion;
           return this.buildReport(
-            isComplete,
+            complete,
             circuitBreakerStatus,
-            isComplete
+            complete
               ? `Absolute success achieved: 100% playbook completion (${this.stepsSucceeded} steps succeeded)`
-              : `Playbook execution finished with ${this.stepsSucceeded} succeeded steps (${this.calculateCompletionPercentage().toFixed(1)}% completion)`
+              : `Playbook execution finished at ${this.calculateCompletionPercentage().toFixed(1)}% completion`
           );
         }
         return this.buildReport(false, circuitBreakerStatus, `Auto runner stopped: ${nextResult.message}`);
       }
 
       const action = nextResult.action;
-      if (!action) {
-        break;
-      }
+      if (!action) break;
 
-      // Check Approval Policy
       const approval = evaluateApprovalBoundary({
         policy: "FROM_PLAYBOOK",
         hasUserApproval: this.hasUserApproval,
         actionType: "EXECUTE",
       });
-
       if (!approval.allowed) {
         return this.buildReport(false, circuitBreakerStatus, `Auto runner paused: ${approval.reason}`);
       }
 
       console.log(`  ▶ [Turn ${turns}] Executing Step: ${action.stepId} ("${action.command}")...`);
-      const stepSuccess = await this.executeStepWithAutoresearch(action, turns);
+      const attempt = await this.executeStepWithAutoresearch(action, turns);
 
-      if (stepSuccess) {
-        console.log(`    ✔ Step ${action.stepId} SUCCEEDED [Verified & Kept]`);
-        this.stepsSucceeded++;
-        this.keptChanges++;
-        this.consecutiveFailures = 0;
-        this.totalCost += 0.02; // Estimate cost per step execution
-        this.markStepInState(action.stepId, "SUCCEEDED");
-      } else {
-        console.log(`    ✖ Step ${action.stepId} FAILED [Rolled Back]`);
-        this.stepsFailed++;
-        this.consecutiveFailures++;
-        this.totalCost += 0.01;
+      if (attempt.success && attempt.receipt?.executed) {
+        console.log(`    ✔ Step ${action.stepId} SUCCEEDED [Executed & Verified]`);
+        this.recordSuccess(action, attempt.receipt.changed);
+        continue;
+      }
 
-        // Try inline self-healing repair loop before failing
-        let repaired = false;
-        if (this.onSelfHealingRepair) {
-          this.repairsTriggered++;
-          repaired = await this.onSelfHealingRepair(
-            action.stepId,
-            new Error(`Step ${action.stepId} execution failed verification or guard checks`)
-          );
-        }
-
-        if (repaired) {
-          this.stepsSucceeded++;
-          this.keptChanges++;
-          this.consecutiveFailures = 0;
-          this.markStepInState(action.stepId, "SUCCEEDED");
-        } else {
-          this.rolledBackChanges++;
-          this.markStepInState(action.stepId, "FAILED");
+      let failure = attempt.error ?? new Error(
+        `Step ${action.stepId} execution failed verification or guard checks`
+      );
+      let repairReceipt: StepExecutionReceipt | undefined;
+      if (this.onSelfHealingRepair) {
+        this.repairsTriggered += 1;
+        try {
+          repairReceipt = await this.onSelfHealingRepair(action.stepId, failure);
+          if (!repairReceipt.executed) {
+            failure = new Error(`Repair callback did not confirm execution for ${action.stepId}`);
+          }
+        } catch (error) {
+          failure = error instanceof Error ? error : new Error(String(error));
         }
       }
+
+      if (repairReceipt?.executed && await this.verifyExecutedStep(action)) {
+        console.log(`    ✔ Step ${action.stepId} SUCCEEDED [Repaired & Re-verified]`);
+        circuitBreakerStatus = "RECOVERED";
+        this.recordSuccess(action, Boolean(attempt.receipt?.changed || repairReceipt.changed));
+        continue;
+      }
+
+      const changed = Boolean(attempt.receipt?.changed || repairReceipt?.changed);
+      if (changed) {
+        const rollbackConfirmed = await this.confirmRollback(action, failure);
+        if (!rollbackConfirmed) {
+          this.recordFailure(action);
+          return this.buildReport(
+            false,
+            "TRIPPED",
+            `Step ${action.stepId} failed after changing the repository and rollback was not confirmed`
+          );
+        }
+        this.rolledBackChanges += 1;
+      }
+
+      console.log(`    ✖ Step ${action.stepId} FAILED [No verified effect]`);
+      this.recordFailure(action);
     }
 
     const finalCompletion = this.calculateCompletionPercentage();
@@ -211,60 +233,125 @@ export class AutoPlaybookRunner {
     );
   }
 
-  private async executeStepWithAutoresearch(action: ActionSpec, currentTurn: number): Promise<boolean> {
+  private recordSuccess(action: ActionSpec, changed: boolean): void {
+    this.stepsSucceeded += 1;
+    if (changed) this.keptChanges += 1;
+    this.consecutiveFailures = 0;
+    this.totalCost += 0.02;
+    this.markStepInState(action.stepId, "SUCCEEDED");
+  }
+
+  private recordFailure(action: ActionSpec): void {
+    this.stepsFailed += 1;
+    this.consecutiveFailures += 1;
+    this.totalCost += 0.01;
+    this.markStepInState(action.stepId, "FAILED");
+  }
+
+  private async confirmRollback(action: ActionSpec, failure: Error): Promise<boolean> {
+    if (!this.onRollbackStep) return false;
+    try {
+      return await this.onRollbackStep(action, failure);
+    } catch {
+      return false;
+    }
+  }
+
+  private async executeStepWithAutoresearch(
+    action: ActionSpec,
+    currentTurn: number
+  ): Promise<StepAttemptResult> {
+    let receipt: StepExecutionReceipt | undefined;
+    const execute = async (): Promise<string> => {
+      if (!this.onExecuteStep) {
+        throw new Error(`No real step executor configured for ${action.stepId}`);
+      }
+      receipt = await this.onExecuteStep(action);
+      if (!receipt.executed) {
+        throw new Error(`Step executor did not confirm execution for ${action.stepId}`);
+      }
+      return receipt.description;
+    };
+
     if (this.enableAutoresearch) {
-      const autoresearchResult = await executeAutoresearchStepLoop(
+      const result = await executeAutoresearchStepLoop(
         {
           stepId: action.stepId,
-          verifyCommand: action.command || this.verifyCommand,
+          verifyCommand: this.verifyCommand ?? action.command,
           guardCommand: this.guardCommand,
+          onModifyStep: execute,
           onRunShell: this.onRunShellCommand,
         },
         currentTurn
       );
-
-      if (autoresearchResult.action === "ROLLBACK") {
-        return false;
+      if (result.action === "ROLLBACK") {
+        return {
+          success: false,
+          ...(receipt ? { receipt } : {}),
+          error: new Error(result.changeDescription),
+        };
+      }
+    } else {
+      try {
+        await execute();
+      } catch (error) {
+        return {
+          success: false,
+          ...(receipt ? { receipt } : {}),
+          error: error instanceof Error ? error : new Error(String(error)),
+        };
+      }
+      if (!await this.verifyShell(action)) {
+        return {
+          success: false,
+          ...(receipt ? { receipt } : {}),
+          error: new Error(`Verification failed for ${action.stepId}`),
+        };
       }
     }
 
-    if (this.enableShadowVerification) {
-      const shadowResult = await this.runShadowVerification(action);
-      if (!shadowResult.passed || shadowResult.score < 80) {
-        return false;
-      }
+    if (!await this.verifyShadow(action)) {
+      return {
+        success: false,
+        ...(receipt ? { receipt } : {}),
+        error: new Error(`Independent shadow verification failed for ${action.stepId}`),
+      };
     }
 
+    if (!receipt?.executed) {
+      return {
+        success: false,
+        ...(receipt ? { receipt } : {}),
+        error: new Error(`No execution receipt was recorded for ${action.stepId}`),
+      };
+    }
+
+    return { success: true, receipt };
+  }
+
+  private async verifyExecutedStep(action: ActionSpec): Promise<boolean> {
+    return await this.verifyShell(action) && await this.verifyShadow(action);
+  }
+
+  private async verifyShell(action: ActionSpec): Promise<boolean> {
+    if (!this.onRunShellCommand) return false;
+    const result = await this.onRunShellCommand(this.verifyCommand ?? action.command);
+    if (result.exitCode !== 0) return false;
+    if (this.guardCommand) {
+      const guard = await this.onRunShellCommand(this.guardCommand);
+      if (guard.exitCode !== 0) return false;
+    }
     return true;
   }
 
-  private async runShadowVerification(action: ActionSpec): Promise<ShadowVerificationResult> {
-    const checks = [
-      { name: "Step Schema Syntax", passed: true, durationMs: 5 },
-      { name: "Permission Scope Guard", passed: true, durationMs: 3 },
-      { name: "Output Integrity", passed: true, durationMs: 12 },
-    ];
-
-    const passed = checks.every((c) => c.passed);
-    const score = passed ? 100 : 50;
-
-    return {
-      score,
-      passed,
-      checks,
-    };
-  }
-
-  private async attemptSelfHealingRecovery(): Promise<boolean> {
-    this.repairsTriggered++;
-    return true;
+  private async verifyShadow(action: ActionSpec): Promise<boolean> {
+    if (!this.enableShadowVerification) return true;
+    if (!this.onShadowVerify) return false;
+    const result = await this.onShadowVerify(action);
+    return result.passed && result.score >= 80 && result.checks.length > 0;
   }
 
   private markStepInState(stepId: string, status: ExecutionStatus): void {
-    if (!this.state.stages) {
-      this.state.stages = [];
-    }
-
     if (this.state.stages.length === 0) {
       this.state.stages.push({
         id: "stage-auto-1",
@@ -274,40 +361,30 @@ export class AutoPlaybookRunner {
     }
 
     const stage = this.state.stages[0] as StageState;
-    if (!stage.steps) {
-      stage.steps = [];
-    }
-
-    const existingIndex = stage.steps.findIndex((s) => s.id === stepId);
-    if (existingIndex >= 0 && stage.steps[existingIndex]) {
-      stage.steps[existingIndex].status = status;
+    const existing = stage.steps.find((step) => step.id === stepId);
+    if (existing) {
+      existing.status = status;
     } else {
-      stage.steps.push({
-        id: stepId,
-        status,
-      });
+      stage.steps.push({ id: stepId, status });
     }
 
-    const allSucceeded = stage.steps.every((s) => s.status === "SUCCEEDED");
-    if (allSucceeded && stage.steps.length === (this.playbook.steps?.length ?? 0)) {
+    const allSucceeded = stage.steps.every((step) => step.status === "SUCCEEDED");
+    if (allSucceeded && stage.steps.length === this.playbook.steps.length) {
       stage.status = "SUCCEEDED";
     }
   }
 
   public calculateCompletionPercentage(): number {
-    const totalStepsInPlaybook = this.playbook.steps?.length ?? 0;
-    if (totalStepsInPlaybook === 0) return 0;
+    const totalSteps = this.playbook.steps.length;
+    if (totalSteps === 0) return 0;
 
-    const completedStepIds = new Set<string>();
-    for (const stage of this.state.stages ?? []) {
-      for (const step of stage.steps ?? []) {
-        if (step.status === "SUCCEEDED") {
-          completedStepIds.add(step.id);
-        }
+    const completed = new Set<string>();
+    for (const stage of this.state.stages) {
+      for (const step of stage.steps) {
+        if (step.status === "SUCCEEDED") completed.add(step.id);
       }
     }
-
-    return Math.min(100, (completedStepIds.size / totalStepsInPlaybook) * 100);
+    return Math.min(100, (completed.size / totalSteps) * 100);
   }
 
   private buildReport(
@@ -333,6 +410,5 @@ export class AutoPlaybookRunner {
 }
 
 export async function runAutoPlaybookLoop(options: AutoRunnerOptions): Promise<AutoRunnerReport> {
-  const runner = new AutoPlaybookRunner(options);
-  return await runner.runToAbsoluteSuccess();
+  return await new AutoPlaybookRunner(options).runToAbsoluteSuccess();
 }

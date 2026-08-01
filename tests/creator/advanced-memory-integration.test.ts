@@ -1,12 +1,31 @@
-import { expect, test, describe } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { PlaybookCreatorEngine } from "../../src/creator/engine.js";
+
+const temporaryRoots: string[] = [];
+
+function createTemporaryRoot(): string {
+  const root = mkdtempSync(join(tmpdir(), "dokion-advanced-memory-"));
+  temporaryRoots.push(root);
+  return root;
+}
+
+afterEach(() => {
+  for (const root of temporaryRoots.splice(0)) {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
 describe("PlaybookCreatorEngine Integration with Advanced Memory Drivers", () => {
   test("synthesizes playbook from combined ADR, Vector DB, Knowledge Graph, and PR sources", async () => {
+    const root = createTemporaryRoot();
     const engine = new PlaybookCreatorEngine();
     const result = await engine.createPlaybook({
       topic: "Enterprise Code Review & Architecture Best Practices",
       source: "adr",
+      outputPath: join(root, ".dokion", "playbook.json"),
       customMemories: [
         {
           id: "mem-adr-1",

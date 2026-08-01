@@ -1,4 +1,4 @@
-import { expect, test, describe } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { KnowledgeGraphDriver } from "../../src/creator/drivers/knowledge-graph.js";
 
 describe("KnowledgeGraphDriver", () => {
@@ -12,9 +12,10 @@ describe("KnowledgeGraphDriver", () => {
     });
 
     expect(memories.length).toBe(2);
-    expect(memories[0].source).toBe("knowledge-graph");
-    expect(memories[0].content).toContain("ServiceA mandates StrictAuthCheck");
-    expect(memories[0].category).toBe("architecture");
+    const firstMemory = memories[0]!;
+    expect(firstMemory.source).toBe("knowledge-graph");
+    expect(firstMemory.content).toContain("ServiceA mandates StrictAuthCheck");
+    expect(firstMemory.category).toBe("architecture");
   });
 
   test("parses graph nodes with relationships", async () => {
@@ -30,7 +31,8 @@ describe("KnowledgeGraphDriver", () => {
     });
 
     expect(memories.length).toBe(1);
-    expect(memories[0].title).toBe("ADR-008: Event-Driven Pipeline");
-    expect(memories[0].content).toContain("requires schema registry validation");
+    const memory = memories[0]!;
+    expect(memory.title).toBe("ADR-008: Event-Driven Pipeline");
+    expect(memory.content).toContain("requires schema registry validation");
   });
 });

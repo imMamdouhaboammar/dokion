@@ -92,9 +92,11 @@ async function fixture(): Promise<string> {
             responsibility: "Find the seeded defect.",
             mode: "ANALYZE",
             required: true,
-            permissions: { read: ["src/**"], write: [".dokion/**", "HARDENING.md"], network: false, shell: [analyze] },
+            permissions: { read: ["src/**"], write: [".dokion/**", "HARDENING.md"], network: false, shell: [analyze, "bun test"] },
             approval: "NEVER",
             validation: { require_evidence_artifact: true },
+            verification: ["bun test"],
+            success_conditions: ["capability_output_recorded", "verification_passed"],
             failure_policy: "STOP_PIPELINE"
           },
           {

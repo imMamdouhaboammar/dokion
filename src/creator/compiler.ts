@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import type { DokionPlaybook, PlaybookStep } from "../playbook/types.js";
 import { validatePlaybookData } from "../contracts/schema-validator.ts";
+import type { DokionPlaybook, PlaybookStep } from "../playbook/types.js";
 import type { ExtractedActionStep } from "./types.js";
 
 export class PlaybookCompiler {
@@ -8,11 +8,12 @@ export class PlaybookCompiler {
     steps: ExtractedActionStep[],
     options?: { topic?: string; title?: string; description?: string }
   ): Promise<DokionPlaybook> {
-    const topicName = options?.topic || "Custom Workflow";
-    const title = options?.title || (options?.topic ? `${options.topic} Playbook` : "Generated Engineering Playbook");
-    const description = options?.description || `Synthesized Playbook by Dokion Creator Engine for topic: ${topicName}`;
-
-    const placeholderDigest = "sha256:" + "0".repeat(64);
+    const topicName = options?.topic ?? "Custom Workflow";
+    const title = options?.title ?? (
+      options?.topic ? `${options.topic} Playbook` : "Generated Engineering Playbook"
+    );
+    const description = options?.description
+      ?? `Synthesized Playbook by Dokion Creator Engine for topic: ${topicName}`;
 
     const compiledSteps: PlaybookStep[] = steps.map((step, index) => {
       const stepPayload = JSON.stringify({
@@ -21,8 +22,11 @@ export class PlaybookCompiler {
         command: step.command,
         verificationCommands: step.verificationCommands,
       });
-
       const sha256 = createHash("sha256").update(stepPayload).digest("hex");
+      const previousStep = index > 0 ? steps[index - 1] : undefined;
+      const verification = step.verificationCommands?.length
+        ? step.verificationCommands
+        : ["git status --short"];
 
       return {
         id: step.id,
@@ -36,15 +40,15 @@ export class PlaybookCompiler {
         responsibility: step.description,
         mode: "FIX_WITH_APPROVAL",
         required: true,
-        approval: "BEFORE_WRITE",
+        approval: "ALWAYS",
         failure_policy: "STOP_STAGE",
-        verification: step.verificationCommands && step.verificationCommands.length > 0 ? step.verificationCommands : ["git status --short"],
-        depends_on: index > 0 ? [steps[index - 1].id] : undefined,
+        verification,
+        ...(previousStep !== undefined ? { depends_on: [previousStep.id] } : {}),
         permissions: {
           read: ["**/*"],
           write: [".dokion/**"],
           network: false,
-          shell: step.command ? [step.command] : undefined,
+          ...(step.command !== undefined ? { shell: [step.command] } : {}),
         },
       };
     });
@@ -53,7 +57,7 @@ export class PlaybookCompiler {
       $schema: "../schemas/dokion-playbook.schema.json",
       version: "1.0.0",
       project: {
-        name: title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        name: title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
         target: "BASELINE",
         notes: description,
       },
@@ -80,12 +84,11 @@ export class PlaybookCompiler {
         sources: ["dokion.json"],
         require_verified: false,
         require_digest: false,
-        "on_unverified": "STOP_STEP",
+        on_unverified: "STOP_STEP",
       },
       defaults: {
-        approval: "BEFORE_WRITE",
+        approval: "ALWAYS",
         failure_policy: "STOP_STAGE",
-        mode: "FIX_WITH_APPROVAL",
         retry_count: 1,
         maximum_iterations: 1,
         parallel_execution: false,
@@ -100,10 +103,15 @@ export class PlaybookCompiler {
       ],
     };
 
-    // Validate generated playbook against JSON Schema
-    const issues = await validatePlaybookData(process.cwd(), playbook, ".dokion/playbook.json");
+    const issues = await validatePlaybookData(
+      process.cwd(),
+      playbook,
+      ".dokion/playbook.json"
+    );
     if (issues.length > 0) {
-      throw new Error(`Generated Playbook failed schema contract validation: ${JSON.stringify(issues)}`);
+      throw new Error(
+        `Generated Playbook failed schema contract validation: ${JSON.stringify(issues)}`
+      );
     }
 
     return playbook;

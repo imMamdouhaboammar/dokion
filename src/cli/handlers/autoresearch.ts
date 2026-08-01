@@ -1,7 +1,7 @@
-import type { CliOutputFormat } from "../types.ts";
 import { createInitialState, classifyGoal } from "../../autoresearch/orchestrator.ts";
-import { executeAutoresearchStepLoop } from "../../autoresearch/iteration-loop.ts";
+import { DokionError } from "../../core/errors.ts";
 import { writeCliResult } from "../output.ts";
+import type { CliOutputFormat } from "../types.ts";
 
 export interface AutoresearchCliOptions {
   positionals: string[];
@@ -18,7 +18,7 @@ export async function handleAutoresearchCommand(
   const goal = invocation.positionals.slice(1).join(" ") || "Harden codebase and optimize test suite";
   const maxCyclesStr = invocation.options.get("--max-cycles");
   const maxCycles = typeof maxCyclesStr === "string" ? parseInt(maxCyclesStr, 10) : 50;
-  const isDryRun = invocation.flags.has("dry-run");
+  const isDryRun = invocation.dryRun === true || invocation.flags.has("dry-run");
 
   const initialState = createInitialState(goal, maxCycles);
 
@@ -44,33 +44,14 @@ export async function handleAutoresearchCommand(
     return;
   }
 
-  // Execute single orchestrator iteration pass
-  const stepResult = await executeAutoresearchStepLoop(
+  throw new DokionError(
+    "UNSUPPORTED_EXECUTION",
+    "Autoresearch non-dry mode requires production execution callbacks and is not available yet",
     {
-      stepId: "autoresearch-pass",
-      verifyCommand: initialState.predicate.command,
-    },
-    1
+      root,
+      goal,
+      predicate: initialState.predicate.command,
+      next: "Use dokion autoresearch --dry-run to inspect the plan, then execute an approved playbook through dokion run or dokion auto-runner."
+    }
   );
-
-  const report = {
-    goal,
-    archetype: initialState.archetype,
-    status: stepResult.action === "KEEP" ? "CONVERGED" : "PLATEAU",
-    iterationResult: stepResult,
-    completionPercentage: stepResult.action === "KEEP" ? 100 : 50,
-  };
-
-  if (invocation.format === "human") {
-    console.log(`\n🤖 Dokion Autoresearch Orchestrator\n`);
-    console.log(`  Goal:        ${goal}`);
-    console.log(`  Archetype:   ${initialState.archetype}`);
-    console.log(`  Verify Cmd:  ${initialState.predicate.command}`);
-    console.log(`  Verify Pass: ${stepResult.verifyPassed ? "YES" : "NO"}`);
-    console.log(`  Guard Pass:  ${stepResult.guardPassed ? "YES" : "NO"}`);
-    console.log(`  Action:      ${stepResult.action}`);
-    console.log(`  Duration:    ${stepResult.durationMs}ms\n`);
-  } else {
-    writeCliResult(report, invocation.format);
-  }
 }
