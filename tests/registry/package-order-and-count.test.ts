@@ -70,6 +70,8 @@ function emptyFileHeader(path: string): Uint8Array {
   writeString(block, 156, 1, "0");
   writeString(block, 257, 6, "ustar\0");
   writeString(block, 263, 2, "00");
+  writeOctal(block, 329, 8, 0);
+  writeOctal(block, 337, 8, 0);
   const checksum = block.reduce((sum, byte) => sum + byte, 0);
   writeString(block, 148, 8, `${checksum.toString(8).padStart(6, "0")}\0 `);
   return block;
