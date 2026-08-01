@@ -58,6 +58,38 @@ function invalid(format: NativeScannerAdapter, reason: string, details: Record<s
   throw new DokionError("INVALID_STATE", `${format.replaceAll("_", " ")} is invalid: ${reason}`, details);
 }
 
+function requireObject(
+  format: NativeScannerAdapter,
+  value: unknown,
+  reason: string,
+  details: Record<string, unknown>
+): JsonObject {
+  const parsed = object(value);
+  if (!parsed) invalid(format, reason, details);
+  return parsed;
+}
+
+function requireArray(
+  format: NativeScannerAdapter,
+  value: unknown,
+  reason: string,
+  details: Record<string, unknown>
+): unknown[] {
+  const parsed = array(value);
+  if (!parsed) invalid(format, reason, details);
+  return parsed;
+}
+
+function optionalArray(
+  format: NativeScannerAdapter,
+  owner: JsonObject,
+  key: string,
+  details: Record<string, unknown>
+): unknown[] {
+  if (owner[key] === undefined) return [];
+  return requireArray(format, owner[key], `${key} must be an array`, details);
+}
+
 export function resolveNativeScannerAdapter(capabilityId: string): NativeScannerAdapter | null {
   switch (capabilityId.trim().toLowerCase()) {
     case "osv-scanner":
@@ -88,32 +120,82 @@ function adaptOsv(payload: unknown): RawFindingEnvelope {
   if (!root || !results) invalid("OSV_SCANNER_JSON", "results must be an array");
 
   const findings: RawFinding[] = [];
-  for (const resultValue of results) {
-    const result = object(resultValue);
-    if (!result) continue;
-    const sourcePath = string(object(result.source)?.path);
-    for (const packageValue of array(result.packages) ?? []) {
-      const packageResult = object(packageValue);
-      const packageInfo = object(packageResult?.package);
-      if (!packageResult || !packageInfo) continue;
-      const packageName = string(packageInfo.name) ?? "unknown package";
+  for (const [resultIndex, resultValue] of results.entries()) {
+    const result = requireObject(
+      "OSV_SCANNER_JSON",
+      resultValue,
+      "result must be an object",
+      { resultIndex }
+    );
+    const source = result.source === undefined
+      ? undefined
+      : requireObject("OSV_SCANNER_JSON", result.source, "source must be an object", { resultIndex });
+    const sourcePath = string(source?.path);
+    const packages = requireArray(
+      "OSV_SCANNER_JSON",
+      result.packages,
+      "packages must be an array",
+      { resultIndex }
+    );
+
+    for (const [packageIndex, packageValue] of packages.entries()) {
+      const packageResult = requireObject(
+        "OSV_SCANNER_JSON",
+        packageValue,
+        "package result must be an object",
+        { resultIndex, packageIndex }
+      );
+      const packageInfo = requireObject(
+        "OSV_SCANNER_JSON",
+        packageResult.package,
+        "package metadata must be an object",
+        { resultIndex, packageIndex }
+      );
+      const packageName = string(packageInfo.name);
+      if (!packageName) {
+        invalid("OSV_SCANNER_JSON", "package name is required", { resultIndex, packageIndex });
+      }
       const packageVersion = string(packageInfo.version);
       const ecosystem = string(packageInfo.ecosystem);
+      const vulnerabilities = requireArray(
+        "OSV_SCANNER_JSON",
+        packageResult.vulnerabilities,
+        "vulnerabilities must be an array",
+        { resultIndex, packageIndex }
+      );
 
-      for (const vulnerabilityValue of array(packageResult.vulnerabilities) ?? []) {
-        const vulnerability = object(vulnerabilityValue);
-        const id = string(vulnerability?.id);
-        if (!vulnerability || !id) continue;
-        const findingSeverity = severity(object(vulnerability.database_specific)?.severity);
+      for (const [vulnerabilityIndex, vulnerabilityValue] of vulnerabilities.entries()) {
+        const vulnerability = requireObject(
+          "OSV_SCANNER_JSON",
+          vulnerabilityValue,
+          "vulnerability must be an object",
+          { resultIndex, packageIndex, vulnerabilityIndex }
+        );
+        const id = string(vulnerability.id);
+        if (!id) {
+          invalid("OSV_SCANNER_JSON", "vulnerability id is required", {
+            resultIndex,
+            packageIndex,
+            vulnerabilityIndex,
+          });
+        }
+        const databaseSpecific = vulnerability.database_specific === undefined
+          ? undefined
+          : requireObject(
+              "OSV_SCANNER_JSON",
+              vulnerability.database_specific,
+              "database_specific must be an object",
+              { resultIndex, packageIndex, vulnerabilityIndex }
+            );
+        const findingSeverity = severity(databaseSpecific?.severity);
         const summary = string(vulnerability.summary);
         const details = string(vulnerability.details);
         const packageLabel = packageVersion ? `${packageName}@${packageVersion}` : packageName;
+        const aliases = strings(vulnerability.aliases);
         const descriptionParts = [
           `Affected dependency: ${packageLabel}${ecosystem ? ` (${ecosystem})` : ""}.`,
           details,
-          strings(vulnerability.aliases).length > 0
-            ? `Aliases: ${strings(vulnerability.aliases).join(", ")}.`
-            : undefined,
+          aliases.length > 0 ? `Aliases: ${aliases.join(", ")}.` : undefined,
         ].filter((part): part is string => Boolean(part));
 
         findings.push({
@@ -123,7 +205,7 @@ function adaptOsv(payload: unknown): RawFindingEnvelope {
           rule_id: id,
           ...(sourcePath ? { location: { file: sourcePath } } : {}),
           blocks_release: blocksRelease(findingSeverity),
-          tags: unique(["dependency", ecosystem, packageName, ...strings(vulnerability.aliases)]),
+          tags: unique(["dependency", ecosystem, packageName, ...aliases]),
         });
       }
     }
@@ -136,11 +218,18 @@ function adaptGitleaks(payload: unknown): RawFindingEnvelope {
   if (!entries) invalid("GITLEAKS_JSON", "root must be an array");
 
   const findings: RawFinding[] = [];
-  for (const entryValue of entries) {
-    const entry = object(entryValue);
-    if (!entry) continue;
-    const ruleId = string(entry.RuleID) ?? "gitleaks-secret";
-    const description = string(entry.Description) ?? "Potential secret detected";
+  for (const [entryIndex, entryValue] of entries.entries()) {
+    const entry = requireObject(
+      "GITLEAKS_JSON",
+      entryValue,
+      "finding must be an object",
+      { entryIndex }
+    );
+    const ruleId = string(entry.RuleID);
+    const description = string(entry.Description);
+    if (!ruleId || !description) {
+      invalid("GITLEAKS_JSON", "RuleID and Description are required", { entryIndex });
+    }
     const file = string(entry.File);
     const line = finiteNumber(entry.StartLine);
     const endLine = finiteNumber(entry.EndLine);
@@ -184,25 +273,45 @@ function adaptSemgrep(payload: unknown): RawFindingEnvelope {
   if (!root || !results) invalid("SEMGREP_JSON", "results must be an array");
 
   const findings: RawFinding[] = [];
-  for (const resultValue of results) {
-    const result = object(resultValue);
-    const extra = object(result?.extra);
-    if (!result || !extra) continue;
-    const ruleId = string(result.check_id) ?? "semgrep-finding";
-    const message = string(extra.message) ?? ruleId;
-    const findingSeverity = severity(extra.severity, "MEDIUM");
+  for (const [resultIndex, resultValue] of results.entries()) {
+    const result = requireObject(
+      "SEMGREP_JSON",
+      resultValue,
+      "result must be an object",
+      { resultIndex }
+    );
+    const extra = requireObject(
+      "SEMGREP_JSON",
+      result.extra,
+      "extra must be an object",
+      { resultIndex }
+    );
+    const ruleId = string(result.check_id);
+    const message = string(extra.message);
     const file = string(result.path);
-    const line = finiteNumber(object(result.start)?.line);
-    const endLine = finiteNumber(object(result.end)?.line);
+    if (!ruleId || !message || !file) {
+      invalid("SEMGREP_JSON", "check_id, path, and extra.message are required", { resultIndex });
+    }
+    const start = result.start === undefined
+      ? undefined
+      : requireObject("SEMGREP_JSON", result.start, "start must be an object", { resultIndex });
+    const end = result.end === undefined
+      ? undefined
+      : requireObject("SEMGREP_JSON", result.end, "end must be an object", { resultIndex });
+    const findingSeverity = severity(extra.severity, "MEDIUM");
+    const line = finiteNumber(start?.line);
+    const endLine = finiteNumber(end?.line);
 
     findings.push({
       severity: findingSeverity,
       title: message.split("\n", 1)[0] ?? ruleId,
       description: message,
       rule_id: ruleId,
-      ...(file || line !== undefined
-        ? { location: { ...(file ? { file } : {}), ...(line !== undefined ? { line } : {}), ...(endLine !== undefined ? { end_line: endLine } : {}) } }
-        : {}),
+      location: {
+        file,
+        ...(line !== undefined ? { line } : {}),
+        ...(endLine !== undefined ? { end_line: endLine } : {}),
+      },
       blocks_release: blocksRelease(findingSeverity),
       tags: unique(["sast", ...metadataTags(extra.metadata)]),
     });
@@ -226,20 +335,34 @@ function trivyLocation(target: string | undefined, entry: JsonObject): RawFindin
 function adaptTrivy(payload: unknown): RawFindingEnvelope {
   const root = object(payload);
   if (!root) invalid("TRIVY_JSON", "root must be an object");
-  if (string(root.bomFormat) === "CycloneDX") return { version: 1, findings: [] };
+  if (string(root.bomFormat) === "CycloneDX") {
+    requireArray("TRIVY_JSON", root.components, "components must be an array", {});
+    return { version: 1, findings: [] };
+  }
   const results = array(root.Results);
   if (!results) invalid("TRIVY_JSON", "Results must be an array or bomFormat must be CycloneDX");
 
   const findings: RawFinding[] = [];
-  for (const resultValue of results) {
-    const result = object(resultValue);
-    if (!result) continue;
+  for (const [resultIndex, resultValue] of results.entries()) {
+    const result = requireObject(
+      "TRIVY_JSON",
+      resultValue,
+      "result must be an object",
+      { resultIndex }
+    );
     const target = string(result.Target);
 
-    for (const itemValue of array(result.Vulnerabilities) ?? []) {
-      const item = object(itemValue);
-      const ruleId = string(item?.VulnerabilityID);
-      if (!item || !ruleId) continue;
+    for (const [itemIndex, itemValue] of optionalArray("TRIVY_JSON", result, "Vulnerabilities", { resultIndex }).entries()) {
+      const item = requireObject(
+        "TRIVY_JSON",
+        itemValue,
+        "vulnerability must be an object",
+        { resultIndex, itemIndex }
+      );
+      const ruleId = string(item.VulnerabilityID);
+      if (!ruleId) {
+        invalid("TRIVY_JSON", "VulnerabilityID is required", { resultIndex, itemIndex });
+      }
       const findingSeverity = severity(item.Severity, "MEDIUM");
       const packageName = string(item.PkgName);
       const installed = string(item.InstalledVersion);
@@ -261,10 +384,25 @@ function adaptTrivy(payload: unknown): RawFindingEnvelope {
       });
     }
 
-    for (const itemValue of array(result.Misconfigurations) ?? []) {
-      const item = object(itemValue);
-      const ruleId = string(item?.ID);
-      if (!item || !ruleId) continue;
+    for (const [itemIndex, itemValue] of optionalArray("TRIVY_JSON", result, "Misconfigurations", { resultIndex }).entries()) {
+      const item = requireObject(
+        "TRIVY_JSON",
+        itemValue,
+        "misconfiguration must be an object",
+        { resultIndex, itemIndex }
+      );
+      const ruleId = string(item.ID);
+      if (!ruleId) {
+        invalid("TRIVY_JSON", "misconfiguration ID is required", { resultIndex, itemIndex });
+      }
+      if (item.CauseMetadata !== undefined) {
+        requireObject(
+          "TRIVY_JSON",
+          item.CauseMetadata,
+          "CauseMetadata must be an object",
+          { resultIndex, itemIndex }
+        );
+      }
       const findingSeverity = severity(item.Severity, "MEDIUM");
       findings.push({
         severity: findingSeverity,
@@ -278,10 +416,17 @@ function adaptTrivy(payload: unknown): RawFindingEnvelope {
       });
     }
 
-    for (const itemValue of array(result.Secrets) ?? []) {
-      const item = object(itemValue);
-      const ruleId = string(item?.RuleID) ?? "trivy-secret";
-      if (!item) continue;
+    for (const [itemIndex, itemValue] of optionalArray("TRIVY_JSON", result, "Secrets", { resultIndex }).entries()) {
+      const item = requireObject(
+        "TRIVY_JSON",
+        itemValue,
+        "secret finding must be an object",
+        { resultIndex, itemIndex }
+      );
+      const ruleId = string(item.RuleID);
+      if (!ruleId) {
+        invalid("TRIVY_JSON", "secret RuleID is required", { resultIndex, itemIndex });
+      }
       const findingSeverity = severity(item.Severity, "HIGH");
       findings.push({
         severity: findingSeverity,
