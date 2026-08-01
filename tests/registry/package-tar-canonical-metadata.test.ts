@@ -65,7 +65,7 @@ describe("dokion-package-tar-v1 canonical USTAR metadata", () => {
 
   test("rejects a noncanonical regular-file type flag", () => {
     const archive = mutateHeader((bytes) => writeAscii(bytes, 156, 1, "\0"));
-    expectCode(() => readRegistryPackageTar(archive), "REGISTRY_PACKAGE_ARCHIVE_INVALID", "typeflag");
+    expectCode(() => readRegistryPackageTar(archive), "REGISTRY_PACKAGE_ENTRY_TYPE_UNSUPPORTED", "typeflag");
   });
 
   test("rejects an unsupported USTAR version", () => {
