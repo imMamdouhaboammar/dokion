@@ -1,4 +1,4 @@
-import { readFile, rm } from "node:fs/promises";
+import { readFile, rm, stat } from "node:fs/promises";
 import { resolve } from "node:path";
 
 import { DokionError } from "../core/errors.ts";
@@ -13,6 +13,10 @@ import {
 } from "./scanner-output-adapters.ts";
 import type { RawFindingEnvelope } from "./types.ts";
 
+const MAX_NATIVE_SCANNER_BYTES = 64 * 1024 * 1024;
+
+type NativeScannerFormat = "json" | "cyclonedx";
+
 export interface NativeScannerOutput {
   adapter: NativeScannerAdapter;
   envelope: RawFindingEnvelope;
@@ -22,6 +26,7 @@ export interface NativeScannerOutput {
 
 export interface NativeScannerCommandPreflight {
   adapter: NativeScannerAdapter;
+  declaredFormat: NativeScannerFormat;
   declaredOutputPath?: string;
 }
 
@@ -51,11 +56,55 @@ function captureFlagValues(command: string, names: readonly string[]): string[] 
   return [...new Set(values)];
 }
 
+function hasFlag(command: string, name: string): boolean {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?:^|\\s)${escaped}(?=\\s|$)`).test(command);
+}
+
+function requireSingleFormat(
+  capabilityId: string,
+  values: string[],
+  allowed: readonly NativeScannerFormat[]
+): NativeScannerFormat {
+  const normalized = [...new Set(values.map((value) => value.trim().toLowerCase()))];
+  if (normalized.length !== 1 || !allowed.includes(normalized[0] as NativeScannerFormat)) {
+    fail("Native scanner command must declare one supported JSON output format", {
+      capabilityId,
+      declaredFormats: normalized,
+      allowedFormats: allowed,
+    });
+  }
+  return normalized[0] as NativeScannerFormat;
+}
+
+function declaredOutputFormat(capabilityId: string, command: string): NativeScannerFormat {
+  switch (capabilityId.trim().toLowerCase()) {
+    case "osv-scanner":
+      return requireSingleFormat(capabilityId, captureFlagValues(command, ["--format"]), ["json"]);
+    case "gitleaks":
+      return requireSingleFormat(capabilityId, captureFlagValues(command, ["--report-format"]), ["json"]);
+    case "semgrep":
+      if (hasFlag(command, "--json") || captureFlagValues(command, ["--json-output"]).length === 1) {
+        return "json";
+      }
+      fail("Native scanner command must declare one supported JSON output format", {
+        capabilityId,
+        allowedFormats: ["json"],
+      });
+    case "trivy":
+      return requireSingleFormat(capabilityId, captureFlagValues(command, ["--format"]), ["json", "cyclonedx"]);
+    default:
+      throw new DokionError("UNSUPPORTED_EXECUTION", `No native scanner adapter is registered for ${capabilityId}`);
+  }
+}
+
 function declaredOutputPath(capabilityId: string, command: string): string | undefined {
   const normalized = capabilityId.trim().toLowerCase();
   const flags = normalized === "gitleaks"
     ? ["--report-path"]
-    : ["--output", "--output-file", "-o"];
+    : normalized === "semgrep"
+      ? ["--json-output", "--output", "--output-file", "-o"]
+      : ["--output", "--output-file", "-o"];
   const values = captureFlagValues(command, flags);
   if (values.length > 1) {
     fail("Native scanner command declares multiple output paths", { capabilityId, values });
@@ -74,8 +123,9 @@ export async function validateNativeScannerCommand(
     throw new DokionError("UNSUPPORTED_EXECUTION", `No native scanner adapter is registered for ${capabilityId}`);
   }
 
+  const declaredFormat = declaredOutputFormat(capabilityId, command);
   const outputPath = declaredOutputPath(capabilityId, command);
-  if (!outputPath) return { adapter };
+  if (!outputPath) return { adapter, declaredFormat };
   if (reservedArtifacts.includes(outputPath)) {
     fail("Native scanner output path collides with an internal Dokion artifact", {
       capabilityId,
@@ -93,7 +143,11 @@ export async function validateNativeScannerCommand(
     });
   }
 
-  return { adapter, declaredOutputPath: decision.canonicalPath ?? outputPath };
+  return {
+    adapter,
+    declaredFormat,
+    declaredOutputPath: decision.canonicalPath ?? outputPath,
+  };
 }
 
 function scrubSensitiveFields(value: unknown, capabilityId: string): unknown {
@@ -125,15 +179,44 @@ function parseJson(bytes: Uint8Array, capabilityId: string): unknown {
 
 async function readNativeArtifact(sourcePath: string, capabilityId: string): Promise<Uint8Array> {
   try {
-    const bytes = await readFile(sourcePath);
-    if (bytes.byteLength === 0) {
+    const metadata = await stat(sourcePath);
+    if (!metadata.isFile()) {
+      fail("Native scanner output is not a regular file", { capabilityId, sourcePath });
+    }
+    if (metadata.size === 0) {
       fail("Native scanner emitted an empty JSON artifact", { capabilityId });
     }
-    return bytes;
+    if (metadata.size > MAX_NATIVE_SCANNER_BYTES) {
+      fail("Native scanner output exceeds the maximum evidence size", {
+        capabilityId,
+        bytes: metadata.size,
+        maximumBytes: MAX_NATIVE_SCANNER_BYTES,
+      });
+    }
+    return await readFile(sourcePath);
   } catch (error) {
     if (error instanceof DokionError) throw error;
     throw new DokionError("INVALID_STATE", `Native scanner ${capabilityId} did not create a readable JSON artifact`, {
       cause: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
+function assertDeclaredFormatMatchesPayload(
+  capabilityId: string,
+  declaredFormat: NativeScannerFormat,
+  payload: unknown
+): void {
+  if (capabilityId.trim().toLowerCase() !== "trivy") return;
+  const actualFormat = payload && typeof payload === "object" && !Array.isArray(payload)
+    && (payload as Record<string, unknown>).bomFormat === "CycloneDX"
+    ? "cyclonedx"
+    : "json";
+  if (actualFormat !== declaredFormat) {
+    fail("Native scanner payload does not match the declared format", {
+      capabilityId,
+      declaredFormat,
+      actualFormat,
     });
   }
 }
@@ -153,6 +236,8 @@ export async function materializeNativeScannerOutput(
   const persistedNativeArtifact = preflight.declaredOutputPath ?? input.nativeArtifact;
   const nativePath = resolve(input.root, persistedNativeArtifact);
   const convertedPath = resolve(input.root, input.convertedArtifact);
+  let nativePersisted = false;
+  let convertedPersisted = false;
 
   try {
     if (!nativeScannerAcceptsExitCode(input.capabilityId, input.result.exitCode)) {
@@ -171,6 +256,7 @@ export async function materializeNativeScannerOutput(
 
     const bytes = await readNativeArtifact(sourcePath, input.capabilityId);
     const payload = parseJson(bytes, input.capabilityId);
+    assertDeclaredFormatMatchesPayload(input.capabilityId, preflight.declaredFormat, payload);
     const sanitizedPayload = scrubSensitiveFields(payload, input.capabilityId);
     const envelope = adaptNativeScannerOutput(input.capabilityId, sanitizedPayload);
     if (input.result.exitCode === 1 && envelope.findings.length === 0) {
@@ -180,7 +266,9 @@ export async function materializeNativeScannerOutput(
       });
     }
     await writeJsonAtomic(nativePath, sanitizedPayload);
+    nativePersisted = true;
     await writeJsonAtomic(convertedPath, envelope);
+    convertedPersisted = true;
     return {
       adapter: preflight.adapter,
       envelope,
@@ -193,8 +281,8 @@ export async function materializeNativeScannerOutput(
       resolve(input.root, input.result.stdoutArtifact.artifactPath),
       resolve(input.root, input.result.stderrArtifact.artifactPath),
     ]);
-    cleanup.delete(nativePath);
-    cleanup.delete(convertedPath);
+    if (nativePersisted) cleanup.delete(nativePath);
+    if (convertedPersisted) cleanup.delete(convertedPath);
     await Promise.all([...cleanup].map((path) => rm(path, { force: true })));
   }
 }
