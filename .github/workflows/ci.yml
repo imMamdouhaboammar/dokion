@@ -90,10 +90,13 @@ jobs:
         run: |
           set -euo pipefail
           VALIDATOR_ROOT="$(mktemp -d)"
+          EXTENSION_ROOT="$VALIDATOR_ROOT/extension"
+          mkdir -p "$EXTENSION_ROOT"
           trap 'rm -rf "$VALIDATOR_ROOT"' EXIT
+          git archive HEAD | tar -x -C "$EXTENSION_ROOT"
           (
             cd "$VALIDATOR_ROOT"
-            bunx @google/gemini-cli@0.51.0 extensions validate "$GITHUB_WORKSPACE"
+            bunx @google/gemini-cli@0.51.0 extensions validate "$EXTENSION_ROOT"
           ) 2>&1 | tee "$GITHUB_WORKSPACE/gemini-extension.log"
 
       - name: Verify no tracked mutation or credential residue
