@@ -113,10 +113,5 @@ export function parseRegistryPackageManifest(bytes: Uint8Array): RegistryPackage
     });
   }
 
-  const manifest = value as RegistryPackageManifest;
-  const sortedPaths = manifest.files.map((file) => file.path).sort((left, right) => left.localeCompare(right));
-  if (!manifest.files.every((file, index) => file.path === sortedPaths[index])) {
-    throw new DokionError("REGISTRY_PACKAGE_MANIFEST_INVALID", "Package manifest file entries must use canonical path order.");
-  }
-  return manifest;
+  return value as RegistryPackageManifest;
 }
