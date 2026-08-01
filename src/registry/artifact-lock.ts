@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { constants } from "node:fs";
-import { lstat, mkdir, open, readdir, rm, unlink } from "node:fs/promises";
+import { lstat, open, readdir, rm, unlink } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 import { DokionError } from "../core/errors.ts";
+import { ensureSafeDirectoryPath } from "./filesystem-safety.ts";
 
 const LOCK_WAIT_MILLISECONDS = 10;
 const LOCK_MAXIMUM_ATTEMPTS = 500;
@@ -46,7 +47,7 @@ export async function withRegistryArtifactLock<T>(
   action: () => Promise<T>
 ): Promise<T> {
   const lockDirectory = join(resolve(cacheRoot), ".locks");
-  await mkdir(lockDirectory, { recursive: true });
+  await ensureSafeDirectoryPath(lockDirectory, "REGISTRY_CACHE_LOCKED");
   const lockPath = join(lockDirectory, `${digestHex(digest)}.lock`);
   let handle;
 
@@ -101,7 +102,7 @@ export async function cleanupStaleRegistryArtifactTemps(
   now = Date.now()
 ): Promise<string[]> {
   const directory = registryArtifactTemporaryDirectory(cacheRoot);
-  await mkdir(directory, { recursive: true });
+  await ensureSafeDirectoryPath(directory);
   const removed: string[] = [];
   for (const name of await readdir(directory)) {
     if (!name.includes(".dokion-tmp-")) continue;
