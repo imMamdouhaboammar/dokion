@@ -2,6 +2,10 @@ import { createHash } from "node:crypto";
 
 import { DokionError } from "../core/errors.ts";
 
+export function compareUtf8Bytes(left: string, right: string): number {
+  return Buffer.compare(Buffer.from(left, "utf8"), Buffer.from(right, "utf8"));
+}
+
 function canonicalValue(value: unknown): unknown {
   if (value === null || typeof value === "string" || typeof value === "boolean") return value;
   if (typeof value === "number") {
@@ -15,7 +19,7 @@ function canonicalValue(value: unknown): unknown {
     return Object.fromEntries(
       Object.entries(value as Record<string, unknown>)
         .filter(([, item]) => item !== undefined)
-        .sort(([left], [right]) => left.localeCompare(right))
+        .sort(([left], [right]) => compareUtf8Bytes(left, right))
         .map(([key, item]) => [key, canonicalValue(item)])
     );
   }
