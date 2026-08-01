@@ -7,7 +7,9 @@ import {
   CLI_COMMAND_REGISTRY,
   expectedGeminiCommandFiles,
   implementedCliCommands,
-  plannedCliCommands
+  manifestFileForCommand,
+  plannedCliCommands,
+  specificationFileForCommand
 } from "../../src/cli/command-registry.ts";
 import { parseCliInvocation } from "../../src/cli/parser.ts";
 
@@ -24,12 +26,30 @@ interface DokionManifest {
   };
 }
 
+interface RegistryCliManifest {
+  schema: "dokion.registry-cli.v1";
+  commands: ManifestCommand[];
+}
+
 async function read(path: string): Promise<string> {
   return Bun.file(join(root, path)).text();
 }
 
-async function readManifest(): Promise<DokionManifest> {
-  return JSON.parse(await read("dokion.json")) as DokionManifest;
+const commandCache = new Map<string, ManifestCommand[]>();
+async function readCommands(path: string): Promise<ManifestCommand[]> {
+  const cached = commandCache.get(path);
+  if (cached) return cached;
+
+  const document = JSON.parse(await read(path)) as DokionManifest | RegistryCliManifest;
+  const commands = "dokion_cli" in document ? document.dokion_cli.commands : document.commands;
+  commandCache.set(path, commands);
+  return commands;
+}
+
+async function commandEntry(commandId: string, manifestCommand: string): Promise<ManifestCommand | undefined> {
+  const source = manifestFileForCommand(commandId);
+  const commands = await readCommands(source);
+  return commands.find((command) => command.command === manifestCommand);
 }
 
 async function runHelp(): Promise<string> {
@@ -54,23 +74,23 @@ function sorted(values: Iterable<string>): string[] {
 }
 
 describe("canonical CLI command registry", () => {
-  test("records the complete manifest command inventory in manifest order", async () => {
-    const manifest = await readManifest();
+  test("records the complete manifest command inventory in registry order", async () => {
+    const observed: string[] = [];
+    for (const descriptor of CLI_COMMAND_REGISTRY) {
+      const entry = await commandEntry(descriptor.id, descriptor.manifestCommand);
+      expect(entry).toBeDefined();
+      observed.push(entry!.command);
+    }
 
-    expect(manifest.dokion_cli.commands.map((command) => command.command)).toEqual(
-      CLI_COMMAND_REGISTRY.map((command) => command.manifestCommand)
-    );
+    expect(observed).toEqual(CLI_COMMAND_REGISTRY.map((command) => command.manifestCommand));
     expect(new Set(CLI_COMMAND_REGISTRY.map((command) => command.id)).size).toBe(CLI_COMMAND_REGISTRY.length);
-    expect(implementedCliCommands()).toHaveLength(33);
+    expect(implementedCliCommands()).toHaveLength(34);
     expect(plannedCliCommands()).toHaveLength(1);
   });
 
   test("records source-specific manifest usage without hiding current differences", async () => {
-    const manifest = await readManifest();
-    const byCommand = new Map(manifest.dokion_cli.commands.map((command) => [command.command, command]));
-
     for (const descriptor of CLI_COMMAND_REGISTRY) {
-      const entry = byCommand.get(descriptor.manifestCommand);
+      const entry = await commandEntry(descriptor.id, descriptor.manifestCommand);
       const expectedUsage = "manifestUsage" in descriptor ? descriptor.manifestUsage : undefined;
       expect(entry).toBeDefined();
       expect(entry?.usage).toBe(expectedUsage);
@@ -78,13 +98,19 @@ describe("canonical CLI command registry", () => {
   });
 
   test("keeps the specification aware of every declared command", async () => {
-    const specification = await read("SPEC.md");
+    const baseSpecification = await read("SPEC.md");
 
-    expect(specification).toContain("| `dokion tools list` · `skills list` · `plugins list` · `loops list` · `goals list` |");
+    expect(baseSpecification).toContain("| `dokion tools list` · `skills list` · `plugins list` · `loops list` · `goals list` |");
+    expect(baseSpecification).toContain("`dokion approve`");
 
-    expect(specification).toContain("`dokion approve`");
-
+    const specifications = new Map<string, string>();
     for (const descriptor of CLI_COMMAND_REGISTRY) {
+      const path = specificationFileForCommand(descriptor.id);
+      let specification = specifications.get(path);
+      if (!specification) {
+        specification = await read(path);
+        specifications.set(path, specification);
+      }
       expect(specification).toContain(descriptor.specMarker);
     }
   });
