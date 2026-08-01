@@ -24,6 +24,7 @@ function commandResult(input: {
   stdoutArtifact: string;
   stderrArtifact: string;
   truncated?: boolean;
+  stderr?: string;
 }): CommandResult {
   const now = new Date().toISOString();
   const spool = (artifactPath: string, truncated = false) => ({
@@ -45,7 +46,7 @@ function commandResult(input: {
     shellParsing: true,
     degradations: [],
     stdout: "",
-    stderr: "",
+    stderr: input.stderr ?? "",
     stdoutArtifact: spool(input.stdoutArtifact, input.truncated ?? false),
     stderrArtifact: spool(input.stderrArtifact),
     exitCode: input.exitCode,
@@ -85,7 +86,23 @@ describe("native scanner output materialization", () => {
     }
   });
 
-  test("rejects unsafe and symlink-escaping output paths before execution", async () => {
+  test("does not infer flags from quoted script text or accept shell-expanded output paths", async () => {
+    const root = await temporaryRoot();
+
+    await expect(validateNativeScannerCommand(
+      root,
+      "osv-scanner",
+      `bun -e "console.log('--format json')"`
+    )).rejects.toThrow("JSON output format");
+
+    await expect(validateNativeScannerCommand(
+      root,
+      "gitleaks",
+      `gitleaks detect --report-format json --report-path "$REPORT"`
+    )).rejects.toThrow("shell expansion");
+  });
+
+  test("rejects unsafe, symlink-escaping, and canonically reserved output paths before execution", async () => {
     const root = await temporaryRoot();
     const outside = await mkdtemp(join(tmpdir(), "dokion-native-outside-"));
     temporaryRoots.push(outside);
@@ -99,6 +116,17 @@ describe("native scanner output materialization", () => {
     await expect(
       validateNativeScannerCommand(root, "gitleaks", "gitleaks detect --report-format json --report-path .dokion/evidence/leaks.json")
     ).rejects.toThrow("repository path policy");
+
+    await rm(join(root, ".dokion/evidence"), { force: true });
+    const reservedDirectory = join(root, ".dokion/evidence/run/steps/osv");
+    await mkdir(reservedDirectory, { recursive: true });
+    await symlink(reservedDirectory, join(root, ".dokion/evidence/alias"));
+    await expect(validateNativeScannerCommand(
+      root,
+      "osv-scanner",
+      "osv-scanner --format json --output .dokion/evidence/alias/raw-findings.json",
+      [".dokion/evidence/run/steps/osv/raw-findings.json"]
+    )).rejects.toThrow("collides with an internal Dokion artifact");
   });
 
   test("moves a sanitized file-backed Gitleaks report into immutable run-scoped evidence", async () => {
@@ -158,6 +186,56 @@ describe("native scanner output materialization", () => {
     expect(native).not.toContain("Match");
   });
 
+  test("removes Semgrep source excerpts and metavariables before persisting evidence", async () => {
+    const root = await temporaryRoot();
+    const reportPath = ".dokion/evidence/semgrep.json";
+    const stdoutPath = ".dokion/evidence/spool/stdout.bin";
+    const stderrPath = ".dokion/evidence/spool/stderr.bin";
+    const nativeArtifact = ".dokion/evidence/run/steps/semgrep/native-output.json";
+    const convertedArtifact = ".dokion/evidence/run/steps/semgrep/raw-findings.json";
+    const secret = "source-secret-value";
+
+    await writeFile(join(root, reportPath), JSON.stringify({
+      results: [{
+        check_id: "hardcoded-secret",
+        path: "src/config.ts",
+        start: { line: 1 },
+        end: { line: 1 },
+        extra: {
+          message: "Hardcoded secret",
+          severity: "ERROR",
+          lines: `const token = '${secret}'`,
+          metavars: { "$TOKEN": { abstract_content: secret } },
+          dataflow_trace: { taint_source: [{ content: secret }] },
+        },
+      }],
+    }));
+    await writeFile(join(root, stdoutPath), "");
+    await writeFile(join(root, stderrPath), "");
+
+    const result = await materializeNativeScannerOutput({
+      root,
+      capabilityId: "semgrep",
+      command: `semgrep --config auto --json --output ${reportPath}`,
+      result: commandResult({
+        command: "semgrep",
+        exitCode: 0,
+        stdoutArtifact: stdoutPath,
+        stderrArtifact: stderrPath,
+      }),
+      nativeArtifact,
+      convertedArtifact,
+    });
+
+    expect(result.envelope.findings).toHaveLength(1);
+    const native = await readFile(join(root, nativeArtifact), "utf8");
+    const converted = await readFile(join(root, convertedArtifact), "utf8");
+    expect(native).not.toContain(secret);
+    expect(converted).not.toContain(secret);
+    expect(native).not.toContain("metavars");
+    expect(native).not.toContain("dataflow_trace");
+  });
+
   test("rejects an oversized file-backed report before loading it into memory", async () => {
     const root = await temporaryRoot();
     const reportPath = ".dokion/evidence/gitleaks-large.json";
@@ -183,6 +261,34 @@ describe("native scanner output materialization", () => {
     })).rejects.toThrow("exceeds the maximum evidence size");
 
     expect(await exists(join(root, reportPath))).toBe(false);
+  });
+
+  test("rejects a symbolic link when stdout is the native scanner artifact", async () => {
+    const root = await temporaryRoot();
+    const outside = await mkdtemp(join(tmpdir(), "dokion-native-link-target-"));
+    temporaryRoots.push(outside);
+    const target = join(outside, "report.json");
+    const stdoutPath = ".dokion/evidence/spool/stdout.json";
+    const stderrPath = ".dokion/evidence/spool/stderr.bin";
+    await writeFile(target, JSON.stringify({ results: [] }));
+    await symlink(target, join(root, stdoutPath));
+    await writeFile(join(root, stderrPath), "");
+
+    await expect(materializeNativeScannerOutput({
+      root,
+      capabilityId: "osv-scanner",
+      command: "osv-scanner --format json --recursive .",
+      result: commandResult({
+        command: "osv-scanner --format json --recursive .",
+        exitCode: 0,
+        stdoutArtifact: stdoutPath,
+        stderrArtifact: stderrPath,
+      }),
+      nativeArtifact: ".dokion/evidence/run/steps/osv/native-output.json",
+      convertedArtifact: ".dokion/evidence/run/steps/osv/raw-findings.json",
+    })).rejects.toThrow("symbolic link");
+
+    expect(await exists(target)).toBe(true);
   });
 
   test("rejects a Trivy payload whose actual format contradicts the declared format", async () => {
@@ -211,6 +317,39 @@ describe("native scanner output materialization", () => {
       nativeArtifact: ".dokion/evidence/run/steps/trivy/native-output.json",
       convertedArtifact: ".dokion/evidence/run/steps/trivy/raw-findings.json",
     })).rejects.toThrow("does not match the declared format");
+  });
+
+  test("records bounded diagnostics when native output is malformed", async () => {
+    const root = await temporaryRoot();
+    const stdoutPath = ".dokion/evidence/spool/stdout.json";
+    const stderrPath = ".dokion/evidence/spool/stderr.bin";
+    const nativeArtifact = ".dokion/evidence/run/steps/osv/native-output.json";
+    const failureArtifact = ".dokion/evidence/run/steps/osv/native-failure.json";
+    await writeFile(join(root, stdoutPath), JSON.stringify({ results: "invalid" }));
+    await writeFile(join(root, stderrPath), "scanner diagnostic");
+
+    await expect(materializeNativeScannerOutput({
+      root,
+      capabilityId: "osv-scanner",
+      command: "osv-scanner --format json --recursive .",
+      result: commandResult({
+        command: "osv-scanner --format json --recursive .",
+        exitCode: 1,
+        stdoutArtifact: stdoutPath,
+        stderrArtifact: stderrPath,
+        stderr: "scanner diagnostic",
+      }),
+      nativeArtifact,
+      convertedArtifact: ".dokion/evidence/run/steps/osv/raw-findings.json",
+    })).rejects.toThrow("OSV SCANNER JSON");
+
+    expect(await exists(join(root, stdoutPath))).toBe(false);
+    expect(await exists(join(root, stderrPath))).toBe(false);
+    expect(await exists(join(root, failureArtifact))).toBe(true);
+    const failure = await readFile(join(root, failureArtifact), "utf8");
+    expect(failure).toContain("scanner diagnostic");
+    expect(failure).toContain("sha256:");
+    expect(failure).not.toContain("results\":\"invalid");
   });
 
   test("rejects a findings exit code when the adapted payload contains no findings", async () => {
