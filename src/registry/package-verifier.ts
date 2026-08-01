@@ -8,6 +8,7 @@ import { compareExactSemver, compareUtf8Bytes, sha256Digest } from "./digests.ts
 import type { RegistryPackageManifest, RegistryPackageManifestFile } from "./package-manifest.ts";
 import { parseRegistryPackageManifest } from "./package-manifest.ts";
 import { assertUniquePackagePaths, normalizePackagePath } from "./package-paths.ts";
+import { rejectPackageLifecycleScripts } from "./package-policy.ts";
 import { REGISTRY_PACKAGE_LIMITS } from "./package-limits.ts";
 import { readRegistryPackageTar } from "./package-tar.ts";
 
@@ -92,15 +93,36 @@ function manifestFileMap(files: readonly RegistryPackageManifestFile[]): Map<str
   return new Map(files.map((file) => [normalizePackagePath(file.path), file]));
 }
 
+function archiveOpenError(archivePath: string, error: unknown): DokionError {
+  const errorCode = (error as NodeJS.ErrnoException).code;
+  const details = {
+    archivePath,
+    errorCode: errorCode ?? "UNKNOWN",
+    cause: error instanceof Error ? error.message : String(error)
+  };
+
+  if (errorCode === "ENOENT" || errorCode === "ENOTDIR") {
+    return new DokionError("REGISTRY_PACKAGE_ARCHIVE_INVALID", "Package archive does not exist.", details);
+  }
+  if (errorCode === "EACCES" || errorCode === "EPERM") {
+    return new DokionError(
+      "REGISTRY_PACKAGE_ARCHIVE_INVALID",
+      "Package archive is not readable with the current filesystem permissions.",
+      details
+    );
+  }
+  if (errorCode === "ELOOP") {
+    return new DokionError("REGISTRY_PACKAGE_ARCHIVE_INVALID", "Package archive must not be a symbolic link.", details);
+  }
+  return new DokionError("REGISTRY_PACKAGE_ARCHIVE_INVALID", "Package archive could not be opened safely.", details);
+}
+
 async function readArchiveBytes(archivePath: string): Promise<Uint8Array> {
   let handle;
   try {
     handle = await open(archivePath, constants.O_RDONLY | constants.O_NOFOLLOW);
   } catch (error) {
-    throw new DokionError("REGISTRY_PACKAGE_ARCHIVE_INVALID", "Package archive must be a regular non-symlink file.", {
-      archivePath,
-      cause: error instanceof Error ? error.message : String(error)
-    });
+    throw archiveOpenError(archivePath, error);
   }
 
   try {
@@ -205,6 +227,7 @@ export async function verifyRegistryPackage(
         observed: digest
       });
     }
+    rejectPackageLifecycleScripts(path, entry.bytes);
     verifiedFiles.push({
       path,
       size: declaration.size,
