@@ -1,0 +1,92 @@
+{
+  "package-manifest-duplicate-path.json": {
+    "schema": "dokion.package-manifest.v1",
+    "path": "/files/3/path",
+    "keyword": "duplicateFilePath"
+  },
+  "package-manifest-missing-readme.json": {
+    "schema": "dokion.package-manifest.v1",
+    "path": "/readme_path",
+    "keyword": "declaredPathMissing"
+  },
+  "package-manifest-path-traversal.json": {
+    "schema": "dokion.package-manifest.v1",
+    "path": "/files/1/path",
+    "keyword": "pattern"
+  },
+  "package-manifest-self-reference.json": {
+    "schema": "dokion.package-manifest.v1",
+    "path": "/files/0/path",
+    "keyword": "not"
+  },
+  "playbooks-lock-floating-version.json": {
+    "schema": "dokion.playbooks-lock.v1",
+    "path": "/packages/0/version",
+    "keyword": "pattern"
+  },
+  "playbooks-lock-git-credentials.json": {
+    "schema": "dokion.playbooks-lock.v1",
+    "path": "/packages/0/source/location",
+    "keyword": "pattern"
+  },
+  "provenance-ambiguous-verified.json": {
+    "schema": "dokion.provenance.v1",
+    "path": "",
+    "keyword": "additionalProperties"
+  },
+  "provenance-integrity-mismatch.json": {
+    "schema": "dokion.provenance.v1",
+    "path": "/manifest/integrity_state",
+    "keyword": "integrityStateMismatch"
+  },
+  "provenance-unobserved-match.json": {
+    "schema": "dokion.provenance.v1",
+    "path": "/manifest",
+    "keyword": "required"
+  },
+  "registry-config-credentials.json": {
+    "schema": "dokion.registry-config.v1",
+    "path": "/sources/0/url",
+    "keyword": "pattern"
+  },
+  "registry-config-duplicate-id.json": {
+    "schema": "dokion.registry-config.v1",
+    "path": "/sources/1/id",
+    "keyword": "duplicateSourceId"
+  },
+  "registry-config-duplicate-name.json": {
+    "schema": "dokion.registry-config.v1",
+    "path": "/sources/1/name",
+    "keyword": "duplicateSourceName"
+  },
+  "registry-index-invalid-semver.json": {
+    "schema": "dokion.registry-index.v1",
+    "path": "/packages/0/version",
+    "keyword": "pattern"
+  },
+  "registry-index-mutable-git.json": {
+    "schema": "dokion.registry-index.v1",
+    "path": "/packages/0/source/immutable_revision",
+    "keyword": "pattern"
+  },
+  "registry-index-unsafe-https-location.json": {
+    "schema": "dokion.registry-index.v1",
+    "path": "/packages/0/manifest/location",
+    "keyword": "pattern"
+  },
+  "registry-root-authority.json": {
+    "schema": "dokion.registry-root.v1",
+    "path": "/authority/activation_authority",
+    "keyword": "const"
+  },
+  "registry-root-git-index-unpinned.json": {
+    "schema": "dokion.registry-root.v1",
+    "path": "/indexes/0",
+    "keyword": "required"
+  },
+  "registry-root-unsafe-https-index.json": {
+    "schema": "dokion.registry-root.v1",
+    "path": "/indexes/0/location",
+    "keyword": "pattern"
+  }
+}
