@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
@@ -236,7 +236,9 @@ describe("Registry pull and immutable artifact cache", () => {
       packageReference: fixture.packageReference,
       cacheRoot: fixture.cache
     });
+    await rm(first.cachePath, { force: true });
     await writeFile(first.cachePath, "corrupted", "utf8");
+    await chmod(first.cachePath, 0o444);
 
     await expectCode(pullRegistryPackage({
       configPath: fixture.configPath,
@@ -341,7 +343,7 @@ describe("Registry pull and immutable artifact cache", () => {
       packageReference: fixture.packageReference,
       cacheRoot: fixture.cache
     }), "REGISTRY_PACKAGE_LIFECYCLE_SCRIPT");
-    expect(error.message).toContain("lifecycle");
+    expect(error.message.toLowerCase()).toContain("lifecycle");
     expect(await Bun.file(cachePathForDigest(fixture.cache, sha256Digest(malicious))).exists()).toBe(false);
   });
 
