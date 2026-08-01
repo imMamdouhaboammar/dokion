@@ -1,0 +1,26 @@
+{
+  "schema": "dokion.registry-root.v1",
+  "source": {
+    "id": "example.registry",
+    "name": "example-registry",
+    "transport": "git",
+    "location": "https://github.com/example/registry.git",
+    "immutable_revision": "1111111111111111111111111111111111111111"
+  },
+  "generated_at": "2026-08-01T07:00:00Z",
+  "expires_at": "2026-08-02T07:00:00Z",
+  "indexes": [
+    {
+      "location": "indexes/stable.json",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "size": 1024
+    }
+  ],
+  "authority": {
+    "selection_authority": false,
+    "substitution_authority": false,
+    "installation_authority": false,
+    "activation_authority": false,
+    "execution_authority": false
+  }
+}
