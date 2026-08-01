@@ -1,4 +1,5 @@
-import { lstat, readFile } from "node:fs/promises";
+import { constants } from "node:fs";
+import { open } from "node:fs/promises";
 import { resolve } from "node:path";
 
 import { DokionError } from "../core/errors.ts";
@@ -91,32 +92,51 @@ function manifestFileMap(files: readonly RegistryPackageManifestFile[]): Map<str
   return new Map(files.map((file) => [normalizePackagePath(file.path), file]));
 }
 
+async function readArchiveBytes(archivePath: string): Promise<Uint8Array> {
+  let handle;
+  try {
+    handle = await open(archivePath, constants.O_RDONLY | constants.O_NOFOLLOW);
+  } catch (error) {
+    throw new DokionError("REGISTRY_PACKAGE_ARCHIVE_INVALID", "Package archive must be a regular non-symlink file.", {
+      archivePath,
+      cause: error instanceof Error ? error.message : String(error)
+    });
+  }
+
+  try {
+    const stat = await handle.stat();
+    if (!stat.isFile() || stat.nlink !== 1) {
+      throw new DokionError("REGISTRY_PACKAGE_ARCHIVE_INVALID", "Package archive must be a single-link regular file.", {
+        archivePath,
+        links: stat.nlink
+      });
+    }
+    if (stat.size > REGISTRY_PACKAGE_LIMITS.maximumArchiveBytes) {
+      throw new DokionError("REGISTRY_PACKAGE_TOO_LARGE", "Package archive exceeds the archive size bound.", {
+        size: stat.size,
+        maximum: REGISTRY_PACKAGE_LIMITS.maximumArchiveBytes
+      });
+    }
+
+    const archiveBytes = await handle.readFile();
+    if (archiveBytes.length !== stat.size) {
+      throw new DokionError("REGISTRY_PACKAGE_ARCHIVE_INVALID", "Package archive changed while it was read.", {
+        archivePath,
+        expectedSize: stat.size,
+        observedSize: archiveBytes.length
+      });
+    }
+    return archiveBytes;
+  } finally {
+    await handle.close();
+  }
+}
+
 export async function verifyRegistryPackage(
   options: VerifyRegistryPackageOptions
 ): Promise<RegistryPackageVerificationEvidence> {
   const archivePath = resolve(options.archivePath);
-  const stat = await lstat(archivePath).catch(() => null);
-  if (!stat?.isFile() || stat.isSymbolicLink()) {
-    throw new DokionError("REGISTRY_PACKAGE_ARCHIVE_INVALID", "Package archive must be a regular non-symlink file.", {
-      archivePath
-    });
-  }
-  if (stat.size > REGISTRY_PACKAGE_LIMITS.maximumArchiveBytes) {
-    throw new DokionError("REGISTRY_PACKAGE_TOO_LARGE", "Package archive exceeds the archive size bound.", {
-      size: stat.size,
-      maximum: REGISTRY_PACKAGE_LIMITS.maximumArchiveBytes
-    });
-  }
-
-  const archiveBytes = await readFile(archivePath);
-  if (archiveBytes.length !== stat.size) {
-    throw new DokionError("REGISTRY_PACKAGE_ARCHIVE_INVALID", "Package archive changed while it was read.", {
-      archivePath,
-      expectedSize: stat.size,
-      observedSize: archiveBytes.length
-    });
-  }
-
+  const archiveBytes = await readArchiveBytes(archivePath);
   const entries = readRegistryPackageTar(archiveBytes);
   const manifestEntries = entries.filter((entry) => entry.path === "manifest.json");
   if (manifestEntries.length !== 1) {
