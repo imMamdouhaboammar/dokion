@@ -89,9 +89,9 @@ Configure:
   configure
   validate [--catalog-only]
   create [--from-memory <source>] [--transcript <path>] [--topic <topic>]
-  registry <pack|verify-package> ...
   reset --state-only
   playbooks <import|validate|sync|list>
+  registry <pack|verify-package> ...
 
 Execute:
   run
