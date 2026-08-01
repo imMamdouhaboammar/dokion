@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.dokion.dev/dokion.playbooks-lock.v1.schema.json",
+  "title": "Dokion Playbooks Lockfile v1",
+  "type": "object",
+  "required": ["schema", "revision", "generated_at", "dokion_version", "packages", "authority"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "dokion.playbooks-lock.v1" },
+    "revision": { "type": "integer", "minimum": 1 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "dokion_version": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/exactSemver" },
+    "packages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "package_id",
+          "version",
+          "source",
+          "registry_index_digest",
+          "manifest_digest",
+          "artifact_digest",
+          "files",
+          "provenance_state",
+          "compatibility_state",
+          "installed_at",
+          "installed_by_dokion_version",
+          "lifecycle_state"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "package_id": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/packageId" },
+          "version": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/exactSemver" },
+          "source": {
+            "type": "object",
+            "required": ["name", "id", "transport", "location"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sourceName" },
+              "id": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sourceId" },
+              "transport": { "type": "string", "enum": ["local", "https", "git"] },
+              "location": { "type": "string", "minLength": 1, "maxLength": 2048 },
+              "immutable_revision": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/gitCommit" }
+            },
+            "allOf": [
+              {
+                "if": { "properties": { "transport": { "const": "git" } }, "required": ["transport"] },
+                "then": { "required": ["immutable_revision"] }
+              },
+              {
+                "if": { "properties": { "transport": { "const": "https" } }, "required": ["transport"] },
+                "then": { "properties": { "location": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" } } }
+              }
+            ]
+          },
+          "registry_index_digest": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sha256Digest" },
+          "manifest_digest": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sha256Digest" },
+          "artifact_digest": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sha256Digest" },
+          "files": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["path", "digest", "size"],
+              "additionalProperties": false,
+              "properties": {
+                "path": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/relativePackagePath" },
+                "digest": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sha256Digest" },
+                "size": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/nonNegativeInteger" }
+              }
+            }
+          },
+          "provenance_state": {
+            "type": "object",
+            "required": ["integrity", "immutable_source", "publisher_identity", "signature", "freshness", "revocation"],
+            "additionalProperties": false,
+            "properties": {
+              "integrity": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/integrityState" },
+              "immutable_source": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/immutableSourceState" },
+              "publisher_identity": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/identityState" },
+              "signature": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/signatureState" },
+              "freshness": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/freshnessState" },
+              "revocation": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/revocationState" }
+            }
+          },
+          "compatibility_state": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/compatibilityState" },
+          "installed_at": { "type": "string", "format": "date-time" },
+          "installed_by_dokion_version": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/exactSemver" },
+          "lifecycle_state": { "type": "string", "enum": ["installed_inert", "inactive", "active"] },
+          "previous_version": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/exactSemver" },
+          "publication_receipt": { "type": "string", "minLength": 1, "maxLength": 2048 }
+        }
+      }
+    },
+    "authority": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/authorityNone" }
+  }
+}
