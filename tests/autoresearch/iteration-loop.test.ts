@@ -57,6 +57,29 @@ describe("Autoresearch Iteration Loop", () => {
     expect(rolledBack).toBe(true);
   });
 
+  test("preserves passed checks when persistence fails and rollback runs", async () => {
+    let rolledBack = false;
+    const result = await executeAutoresearchStepLoop(
+      {
+        stepId: "commit-failure",
+        onModifyStep: async () => "Applied verified change",
+        onRunShell: async () => ({ exitCode: 0, stdout: "PASS", stderr: "" }),
+        onGitCommit: async () => false,
+        onGitRollback: async () => {
+          rolledBack = true;
+          return true;
+        },
+      },
+      1
+    );
+
+    expect(result.action).toBe("ROLLBACK");
+    expect(result.verifyPassed).toBe(true);
+    expect(result.guardPassed).toBe(true);
+    expect(result.changeDescription).toContain("commit callback");
+    expect(rolledBack).toBe(true);
+  });
+
   test("fails closed when the modify callback is missing", async () => {
     const result = await executeAutoresearchStepLoop(
       {
