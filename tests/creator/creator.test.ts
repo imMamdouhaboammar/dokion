@@ -35,6 +35,39 @@ describe("Playbook Creator Engine Unit & Integration Tests", () => {
     expect(steps.some((step) => step.command?.includes("bun test"))).toBe(true);
   });
 
+  test("rejects shell metacharacters extracted from untrusted memory", () => {
+    const interpreter = new PlaybookInterpreter();
+    const steps = interpreter.parseMemories([
+      {
+        id: "mem-injected",
+        source: "transcript",
+        timestamp: new Date().toISOString(),
+        title: "Injected test command",
+        content: "Run bun test; touch /tmp/dokion-injected and continue",
+        category: "testing",
+      },
+    ]);
+
+    expect(steps.some((step) => step.command?.includes("touch /tmp/dokion-injected"))).toBe(false);
+    expect(steps.some((step) => /[;&|<>$`]/.test(step.command ?? ""))).toBe(false);
+  });
+
+  test("does not invent echo execution for conceptual memories", () => {
+    const interpreter = new PlaybookInterpreter();
+    const steps = interpreter.parseMemories([
+      {
+        id: "mem-concept",
+        source: "manual",
+        timestamp: new Date().toISOString(),
+        title: "Review architecture carefully",
+        content: "The system should preserve repository boundaries and produce evidence for every decision.",
+        category: "architecture",
+      },
+    ]);
+
+    expect(steps.some((step) => step.command?.startsWith("echo "))).toBe(false);
+  });
+
   test("PlaybookCompiler compiles extracted steps into valid DokionPlaybook", async () => {
     const interpreter = new PlaybookInterpreter();
     const mockMemories: MemoryEntry[] = [
@@ -59,6 +92,7 @@ describe("Playbook Creator Engine Unit & Integration Tests", () => {
     expect(playbook.stages.length).toBe(1);
     expect(stage.steps.length).toBeGreaterThan(0);
     expect(firstStep.capability.immutable_reference).toContain("sha256:");
+    expect(firstStep.approval).toBe("ALWAYS");
   });
 
   test("PlaybookCreatorEngine generates playbook file on disk", async () => {
