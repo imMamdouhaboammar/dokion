@@ -8,7 +8,9 @@ import { writeCommandEvidence } from "../evidence/evidence-store.ts";
 import { listFindings, normalizeFindingEnvelope, updateFinding } from "../findings/finding-store.ts";
 import {
   materializeNativeScannerOutput,
+  nativeScannerStderrSummary,
   validateNativeScannerCommand,
+  writeNativeScannerFailureEvidence,
   type NativeScannerCommandPreflight
 } from "../findings/native-scanner-output.ts";
 import { resolveNativeScannerAdapter } from "../findings/scanner-output-adapters.ts";
@@ -115,6 +117,12 @@ async function removeArtifacts(root: string, artifacts: Array<string | undefined
   await Promise.all(uniqueArtifacts.map((path) => rm(join(root, path), { force: true })));
 }
 
+function failureArtifactFrom(error: unknown): string | undefined {
+  if (!(error instanceof DokionError)) return undefined;
+  const artifact = error.details.failureArtifact;
+  return typeof artifact === "string" ? artifact : undefined;
+}
+
 export async function runAnalyzeCapability(input: {
   root: string;
   loaded: LoadedPlaybook;
@@ -127,6 +135,7 @@ export async function runAnalyzeCapability(input: {
   const stepEvidenceRoot = `.dokion/evidence/${input.state.run.id}/steps/${input.stage.id}/${input.step.id}`;
   const rawArtifact = `${stepEvidenceRoot}/raw-findings.json`;
   const nativeArtifact = `${stepEvidenceRoot}/native-output.json`;
+  const nativeFailureArtifact = `${stepEvidenceRoot}/native-failure.json`;
   const nativeAdapter = resolveNativeScannerAdapter(input.step.capability.id);
   let nativePreflight: NativeScannerCommandPreflight | undefined;
   if (nativeAdapter) {
@@ -134,13 +143,14 @@ export async function runAnalyzeCapability(input: {
       input.root,
       input.step.capability.id,
       command,
-      [nativeArtifact, rawArtifact]
+      [nativeArtifact, rawArtifact, nativeFailureArtifact]
     );
   }
   await mkdir(dirname(join(input.root, rawArtifact)), { recursive: true });
   await Promise.all([
     rm(join(input.root, rawArtifact), { force: true }),
-    rm(join(input.root, nativeArtifact), { force: true })
+    rm(join(input.root, nativeArtifact), { force: true }),
+    rm(join(input.root, nativeFailureArtifact), { force: true })
   ]);
 
   const result = await runCommand(input.root, command, {
@@ -160,7 +170,7 @@ export async function runAnalyzeCapability(input: {
     command_index: 1,
     command,
     stdout: nativeAdapter ? "Native scanner output captured into sanitized evidence" : result.stdout,
-    stderr: nativeAdapter ? "" : result.stderr,
+    stderr: nativeAdapter ? nativeScannerStderrSummary(result) : result.stderr,
     exit_code: result.exitCode,
     started_at: result.startedAt,
     ended_at: result.endedAt,
@@ -175,6 +185,22 @@ export async function runAnalyzeCapability(input: {
   const wroteDokionProtocol = await Bun.file(join(input.root, rawArtifact)).exists();
 
   if (nativeAdapter && wroteDokionProtocol) {
+    const bypassError = new DokionError(
+      "INVALID_STATE",
+      "Registered native scanner wrote reserved DOKION_OUTPUT; adapter bypass is forbidden"
+    );
+    const diagnosticArtifact = await writeNativeScannerFailureEvidence({
+      root: input.root,
+      capabilityId: input.step.capability.id,
+      adapter: nativeAdapter,
+      result,
+      failureArtifact: nativeFailureArtifact,
+      error: bypassError,
+      source: {
+        artifact: nativePreflight?.declaredOutputPath ?? result.stdoutArtifact.artifactPath,
+      },
+    });
+    evidence.push(diagnosticArtifact);
     await removeArtifacts(input.root, [
       rawArtifact,
       nativeArtifact,
@@ -184,7 +210,7 @@ export async function runAnalyzeCapability(input: {
     ]);
     return {
       status: "FAILED",
-      reason: "Registered native scanner wrote reserved DOKION_OUTPUT; adapter bypass is forbidden",
+      reason: bypassError.message,
       findingIds: [],
       evidence,
       verificationResults
@@ -229,6 +255,8 @@ export async function runAnalyzeCapability(input: {
         ran_at: result.endedAt
       });
     } catch (error) {
+      const diagnosticArtifact = failureArtifactFrom(error);
+      if (diagnosticArtifact) evidence.push(diagnosticArtifact);
       return {
         status: "FAILED",
         reason: error instanceof Error ? error.message : String(error),
