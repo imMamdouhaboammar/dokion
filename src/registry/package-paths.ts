@@ -47,13 +47,19 @@ export function archivePathForPackageFile(path: string): string {
   return `${ARCHIVE_ROOT}${normalizePackagePath(path)}`;
 }
 
-export function assertUniquePackagePaths(paths: readonly string[]): void {
-  const exact = new Map<string, number>();
-  const caseFolded = new Map<string, { path: string; index: number }>();
+export class PackagePathRegistry {
+  readonly #exact = new Map<string, number>();
+  readonly #caseFolded = new Map<string, { path: string; index: number }>();
+  #size = 0;
 
-  paths.forEach((input, index) => {
+  get size(): number {
+    return this.#size;
+  }
+
+  add(input: string): string {
     const path = normalizePackagePath(input);
-    const previousExact = exact.get(path);
+    const index = this.#size;
+    const previousExact = this.#exact.get(path);
     if (previousExact !== undefined) {
       throw new DokionError("REGISTRY_PACKAGE_PATH_DUPLICATE", `Duplicate package path: ${path}`, {
         path,
@@ -61,10 +67,9 @@ export function assertUniquePackagePaths(paths: readonly string[]): void {
         duplicateIndex: index
       });
     }
-    exact.set(path, index);
 
-    const folded = path.toLocaleLowerCase("en-US");
-    const previousFolded = caseFolded.get(folded);
+    const folded = path.toLowerCase();
+    const previousFolded = this.#caseFolded.get(folded);
     if (previousFolded && previousFolded.path !== path) {
       throw new DokionError("REGISTRY_PACKAGE_CASE_COLLISION", `Case-colliding package paths: ${previousFolded.path} and ${path}`, {
         firstPath: previousFolded.path,
@@ -73,6 +78,15 @@ export function assertUniquePackagePaths(paths: readonly string[]): void {
         secondIndex: index
       });
     }
-    caseFolded.set(folded, { path, index });
-  });
+
+    this.#exact.set(path, index);
+    this.#caseFolded.set(folded, { path, index });
+    this.#size += 1;
+    return path;
+  }
+}
+
+export function assertUniquePackagePaths(paths: readonly string[]): void {
+  const registry = new PackagePathRegistry();
+  for (const path of paths) registry.add(path);
 }
