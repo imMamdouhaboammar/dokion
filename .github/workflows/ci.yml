@@ -1,28 +1,26 @@
-name: PR 50 verified repair
+name: CI
 
 on:
   push:
     branches:
-      - feat/registry-protocol-schemas
+      - main
+      - "feat/**"
+      - "fix/**"
+      - "codex/**"
+  pull_request:
+    branches:
+      - main
 
 permissions:
-  contents: write
-
-concurrency:
-  group: pr50-verified-repair
-  cancel-in-progress: false
+  contents: read
 
 jobs:
-  repair:
-    if: github.actor != 'github-actions[bot]'
-    runs-on: ubuntu-24.04
+  verify:
+    runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - name: Checkout branch
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: feat/registry-protocol-schemas
-          fetch-depth: 0
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
@@ -34,130 +32,111 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install dependencies
+      - name: Install Python contract dependency
+        run: python -m pip install --disable-pip-version-check jsonschema
+
+      - name: Install Bun dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Schema conformance
+        run: python3 schemas/conformance_test.py
+
+      - name: Runtime contract validation
+        run: bun run validate:contracts
+
+      - name: Tests
+        shell: bash
         run: |
-          python -m pip install --disable-pip-version-check jsonschema
-          bun install --frozen-lockfile
+          set -o pipefail
+          bun test 2>&1 | tee test.log
 
-      - name: Apply exact truth-boundary repair
-        shell: python
+      - name: Typecheck
+        shell: bash
         run: |
-          from pathlib import Path
-          import subprocess
+          set -o pipefail
+          bun run typecheck 2>&1 | tee typecheck.log
 
-          def replace_exact(path: str, old: str, new: str, expected: int = 1) -> None:
-              file = Path(path)
-              text = file.read_text()
-              count = text.count(old)
-              if count != expected:
-                  raise SystemExit(f"{path}: expected {expected} copies, found {count}: {old[:120]!r}")
-              file.write_text(text.replace(old, new))
+      - name: Build
+        run: bun run build
 
-          replace_exact("src/cli.ts", 'import { handleHubCommand } from "./cli/handlers/hub.ts";\n', "")
-          replace_exact(
-              "src/cli.ts",
-              '''    case "hub": {\n      const output = await handleHubCommand(root, {\n        ...(invocation.action !== undefined ? { action: invocation.action } : {}),\n        ...(invocation.query !== undefined ? { query: invocation.query } : {}),\n        ...(invocation.packageId !== undefined ? { packageId: invocation.packageId } : {}),\n        ...(invocation.category !== undefined ? { category: invocation.category } : {}),\n        format: invocation.format,\n        ...(invocation.author !== undefined ? { author: invocation.author } : {}),\n      });\n      console.log(output);\n      return;\n    }\n''',
-              ""
-          )
-          replace_exact(
-              "src/cli/types.ts",
-              '''  | {\n      command: "hub";\n      action?: "search" | "pull" | "publish" | "leaderboard" | "rate" | "fork" | "merge";\n      query?: string;\n      packageId?: string;\n      category?: string;\n      author?: string;\n    };\n''',
-              ";\n"
-          )
-          replace_exact(
-              "src/cli/parser.ts",
-              '''  if (rawCommand === "hub" || rawCommand === "community") {\n    const parsed = parseTokens(rawCommand, tokens, {\n      "--query": { kind: "value" },\n      "--package": { kind: "value" },\n      "--category": { kind: "value" },\n      "--author": { kind: "value" }\n    });\n    const sub = parsed.positionals[0] as "search" | "pull" | "publish" | "leaderboard" | "rate" | "fork" | "merge" | undefined;\n    const pkgFromPos = parsed.positionals[1];\n    const query = (parsed.options.get("--query") as string) || (sub === "search" ? pkgFromPos : undefined);\n    const packageId = (parsed.options.get("--package") as string) || (sub !== "search" ? pkgFromPos : undefined);\n    const category = parsed.options.get("--category") as string | undefined;\n    const author = parsed.options.get("--author") as string | undefined;\n\n    return {\n      command: "hub",\n      action: sub || "search",\n      ...(query ? { query } : {}),\n      ...(packageId ? { packageId } : {}),\n      ...(category ? { category } : {}),\n      ...(author ? { author } : {}),\n      format: outputFormat(rawCommand, parsed.options)\n    };\n  }\n\n''',
-              ""
-          )
-          replace_exact(
-              "tests/cli/command-registry-runtime.test.ts",
-              '  hub <search|pull|fork|leaderboard> [<package-id>]\n',
-              ""
-          )
-          replace_exact(
-              "tests/contracts/cli-parity.test.ts",
-              "    expect(implementedCliCommands()).toHaveLength(34);\n    expect(plannedCliCommands()).toHaveLength(0);",
-              "    expect(implementedCliCommands()).toHaveLength(33);\n    expect(plannedCliCommands()).toHaveLength(1);"
-          )
-          replace_exact(
-              "dokion.json",
-              '"usage": "dokion hub <search|pull|fork|leaderboard> [<package-id>]",\n        "purpose": "Interact with GitHub Native Decentralized Community Playbook Hub, Registry, and Leaderboard."',
-              '"usage": "dokion hub",\n        "purpose": "Federated Playbook Registry is unavailable while the replacement protocol is implemented under #47."'
-          )
-
-          readme = Path("README.md")
-          text = readme.read_text()
-          exact_replacements = {
-              "Playbooks-Core%20%7C%20Verified%20Community%20%7C%20Custom": "Playbooks-Core%20%7C%20Federated%20Registry%20Planned%20%7C%20Custom",
-              "<strong>🌟 Verified Community Playbooks</strong>": "<strong>Federated Registry Playbooks, planned</strong>",
-              "Peer-reviewed, benchmarked, and community-audited repository.": "Protocol-defined packages from independently configured sources. Registry retrieval and installation remain unavailable until Issue #47 passes end-to-end verification.",
-              "verified community playbooks": "federated Registry packages"
-          }
-          for old, new in exact_replacements.items():
-              if old not in text:
-                  raise SystemExit(f"README expected text not found: {old}")
-              text = text.replace(old, new)
-          for forbidden in (
-              "Verified Community",
-              "verified community playbooks",
-              "Peer-reviewed, benchmarked, and community-audited repository"
-          ):
-              if forbidden in text:
-                  raise SystemExit(f"README still contains unsupported claim: {forbidden}")
-          readme.write_text(text)
-
-          unavailable_skill = '''---
-          name: dokion-playbook-hub
-          description: Explain the unavailable Registry surface and direct contributors to Issue #47 without running simulated Hub actions.
-          ---
-
-          # Dokion Federated Registry Status
-
-          The public Registry command is unavailable while Issue #47 implements versioned sources, immutable package retrieval, digest verification, lockfiles, inert installation, and explicit activation.
-
-          Do not run or recommend `dokion hub search`, `pull`, `publish`, `fork`, `rate`, or `leaderboard`. Do not claim publisher identity, signatures, downloads, ratings, trust scores, or execution success metrics.
-
-          Use built-in or user-authored Playbooks until the protocol and CLI lifecycle pass end-to-end verification.
-          '''
-          for path in (
-              ".agents/skills/dokion-playbook-hub/SKILL.md",
-              ".claude/skills/dokion-playbook-hub/SKILL.md",
-              "skills/dokion-playbook-hub/SKILL.md"
-          ):
-              Path(path).write_text(unavailable_skill)
-
-          Path("commands/dokion/hub.toml").unlink()
-          Path(".github/workflows/pr50-truth-boundary-fix.yml").unlink(missing_ok=True)
-
-          original_ci = subprocess.check_output(
-              ["git", "show", "origin/main:.github/workflows/ci.yml"],
-              text=True
-          )
-          Path(".github/workflows/ci.yml").write_text(original_ci)
-
-      - name: Verify Registry contracts
+      - name: Build and smoke-test release binaries
+        shell: bash
         run: |
-          python3 schemas/registry/conformance_test.py
-          bun test tests/registry/protocol-schemas.test.ts tests/registry/python-conformance.test.ts
+          set -euo pipefail
+          bun run scripts/build-release.ts
+          test "$(find release -maxdepth 1 -type f -name 'dokion-*' | wc -l)" -eq 5
+          ./release/dokion-linux-x64 --help | grep -F "Dokion 0.3.0"
+          CLEAN_ROOT="$(mktemp -d)"
+          trap 'rm -rf "$CLEAN_ROOT" release' EXIT
+          (
+            cd "$CLEAN_ROOT"
+            "$GITHUB_WORKSPACE/release/dokion-linux-x64" validate --catalog-only | grep -F 'builtin:dokion.json'
+          )
 
-      - name: Verify truth boundary
-        run: >-
-          bun test
-          tests/cli/command-registry-runtime.test.ts
-          tests/contracts/registry-surface-quarantine.test.ts
-          tests/contracts/cli-parity.test.ts
-
-      - name: Verify complete repository
+      - name: Validate packed distribution
+        shell: bash
         run: |
-          bun test
-          bun run typecheck
-          bun run build
+          set -o pipefail
+          bun run validate:distribution 2>&1 | tee distribution.log
 
-      - name: Commit verified repair
+      - name: Smoke-test clean Bun installation
+        shell: bash
         run: |
-          git config user.name "dokion-ci"
-          git config user.email "actions@users.noreply.github.com"
-          git add -A
-          git diff --cached --check
-          git commit -m "fix(registry): remove stale simulated Hub surfaces"
-          git push origin HEAD:feat/registry-protocol-schemas
+          set -o pipefail
+          bun run smoke:package 2>&1 | tee package-smoke.log
+
+      - name: Validate Gemini CLI extension
+        shell: bash
+        run: |
+          set -euo pipefail
+          VALIDATOR_ROOT="$(mktemp -d)"
+          EXTENSION_ROOT="$VALIDATOR_ROOT/extension"
+          mkdir -p "$EXTENSION_ROOT"
+          trap 'rm -rf "$VALIDATOR_ROOT"' EXIT
+          git archive HEAD | tar -x -C "$EXTENSION_ROOT"
+          (
+            cd "$VALIDATOR_ROOT"
+            bunx @google/gemini-cli@0.51.0 extensions validate "$EXTENSION_ROOT"
+          ) 2>&1 | tee "$GITHUB_WORKSPACE/gemini-extension.log"
+
+      - name: Verify no tracked mutation or credential residue
+        shell: bash
+        run: |
+          set -uo pipefail
+          status=0
+          git diff --exit-code || status=1
+          git diff --cached --exit-code || status=1
+          for path in .npmrc bunfig.toml .env .dokion HARDENING.md; do
+            if [[ -e "$path" ]]; then
+              echo "::error::Unexpected repository artifact remains after verification: $path"
+              if [[ -d "$path" ]]; then
+                find "$path" -maxdepth 3 -print
+              else
+                ls -la "$path"
+              fi
+              status=1
+            fi
+          done
+          mapfile -t archives < <(find . -maxdepth 1 -type f -name '*.tgz' -print)
+          if (( ${#archives[@]} > 0 )); then
+            echo "::error::Unexpected package archives remain after verification"
+            printf '%s\n' "${archives[@]}"
+            status=1
+          fi
+          exit "$status"
+
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dokion-ci-diagnostics
+          path: |
+            test.log
+            typecheck.log
+            distribution.log
+            package-smoke.log
+            gemini-extension.log
+            bun.lock
+            schemas/dokion-playbook.schema.json
+            schemas/dokion-state.schema.json
+          if-no-files-found: ignore
