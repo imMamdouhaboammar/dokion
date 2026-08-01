@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { appendFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DokionTelemetryClient } from "../../src/telemetry/client.ts";
@@ -30,6 +30,28 @@ describe("Dokion Telemetry Client Tests", () => {
     expect(event?.packageId).toBe("dokion/web-fullstack");
 
     const events = telemetry.getSpooledEvents();
-    expect(events.length).toBeGreaterThan(0);
+    expect(events).toHaveLength(1);
+  });
+
+  test("returns valid events while rejecting malformed spool lines", () => {
+    const root = createTemporaryRoot();
+    const telemetry = new DokionTelemetryClient(root);
+    telemetry.trackEvent("RUN_COMPLETED", "dokion/test", "sha256:valid", { success: true });
+
+    const spoolPath = join(root, ".dokion", "telemetry", "events.ndjson");
+    appendFileSync(spoolPath, "not-json\n");
+    appendFileSync(spoolPath, `${JSON.stringify({ eventId: "missing-required-fields" })}\n`);
+    appendFileSync(spoolPath, `${JSON.stringify({
+      eventId: "bad-type",
+      eventType: "UNKNOWN",
+      packageId: "dokion/test",
+      digest: "sha256:bad",
+      timestamp: new Date().toISOString(),
+      anonymousSessionId: "session",
+    })}\n`);
+
+    const events = telemetry.getSpooledEvents();
+    expect(events).toHaveLength(1);
+    expect(events[0]?.eventType).toBe("RUN_COMPLETED");
   });
 });
