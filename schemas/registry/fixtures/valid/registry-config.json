@@ -1,0 +1,38 @@
+{
+  "schema": "dokion.registry-config.v1",
+  "scope": "project",
+  "revision": 1,
+  "sources": [
+    {
+      "name": "local-registry",
+      "id": "local.registry",
+      "priority": 0,
+      "enabled": true,
+      "cache_ttl_seconds": 0,
+      "transport": "local",
+      "path": ".dokion/registry"
+    },
+    {
+      "name": "example-registry",
+      "id": "example.registry",
+      "priority": 10,
+      "enabled": true,
+      "cache_ttl_seconds": 3600,
+      "transport": "https",
+      "url": "https://registry.example.test/root.json"
+    }
+  ],
+  "network_policy": {
+    "https_only": true,
+    "allow_private_networks": false,
+    "maximum_redirects": 3,
+    "maximum_response_bytes": 10485760
+  },
+  "authority": {
+    "selection_authority": false,
+    "substitution_authority": false,
+    "installation_authority": false,
+    "activation_authority": false,
+    "execution_authority": false
+  }
+}
