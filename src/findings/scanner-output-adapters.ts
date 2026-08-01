@@ -40,18 +40,26 @@ function unique(values: Array<string | undefined>): string[] {
   return [...new Set(values.filter((value): value is string => Boolean(value)))];
 }
 
-function severity(value: unknown, fallback: FindingSeverity = "INFO"): FindingSeverity {
+function qualitativeSeverity(value: unknown): FindingSeverity | undefined {
   const normalized = string(value)?.toUpperCase();
   if (normalized === "CRITICAL") return "CRITICAL";
   if (normalized === "HIGH" || normalized === "ERROR") return "HIGH";
   if (normalized === "MEDIUM" || normalized === "MODERATE" || normalized === "WARNING" || normalized === "WARN") return "MEDIUM";
   if (normalized === "LOW") return "LOW";
   if (normalized === "INFO" || normalized === "INFORMATIONAL" || normalized === "UNKNOWN") return "INFO";
-  return fallback;
+  return undefined;
 }
 
-function blocksRelease(value: FindingSeverity): boolean {
-  return value === "CRITICAL" || value === "HIGH";
+function severity(value: unknown, fallback: FindingSeverity = "INFO"): FindingSeverity {
+  return qualitativeSeverity(value) ?? fallback;
+}
+
+function severityFromCvssScore(score: number): FindingSeverity {
+  if (score >= 9) return "CRITICAL";
+  if (score >= 7) return "HIGH";
+  if (score >= 4) return "MEDIUM";
+  if (score > 0) return "LOW";
+  return "INFO";
 }
 
 function invalid(format: NativeScannerAdapter, reason: string, details: Record<string, unknown> = {}): never {
@@ -88,6 +96,49 @@ function optionalArray(
 ): unknown[] {
   if (owner[key] === undefined) return [];
   return requireArray(format, owner[key], `${key} must be an array`, details);
+}
+
+function osvSeverity(
+  vulnerability: JsonObject,
+  databaseSpecific: JsonObject | undefined,
+  details: Record<string, unknown>
+): FindingSeverity {
+  const databaseSeverity = qualitativeSeverity(databaseSpecific?.severity);
+  if (databaseSeverity) return databaseSeverity;
+  if (vulnerability.severity === undefined) return "INFO";
+
+  const entries = requireArray(
+    "OSV_SCANNER_JSON",
+    vulnerability.severity,
+    "severity must be an array",
+    details
+  );
+  let highestNumericScore: number | undefined;
+  let sawUnparsedScore = false;
+
+  for (const [severityIndex, entryValue] of entries.entries()) {
+    const entry = requireObject(
+      "OSV_SCANNER_JSON",
+      entryValue,
+      "severity entry must be an object",
+      { ...details, severityIndex }
+    );
+    const score = string(entry.score);
+    if (!score) {
+      invalid("OSV_SCANNER_JSON", "severity score is required", { ...details, severityIndex });
+    }
+    const numeric = /^\d+(?:\.\d+)?$/.test(score) ? Number(score) : undefined;
+    if (numeric !== undefined && Number.isFinite(numeric)) {
+      highestNumericScore = highestNumericScore === undefined
+        ? numeric
+        : Math.max(highestNumericScore, numeric);
+    } else {
+      sawUnparsedScore = true;
+    }
+  }
+
+  if (highestNumericScore !== undefined) return severityFromCvssScore(highestNumericScore);
+  return sawUnparsedScore ? "MEDIUM" : "INFO";
 }
 
 export function resolveNativeScannerAdapter(capabilityId: string): NativeScannerAdapter | null {
@@ -187,14 +238,18 @@ function adaptOsv(payload: unknown): RawFindingEnvelope {
               "database_specific must be an object",
               { resultIndex, packageIndex, vulnerabilityIndex }
             );
-        const findingSeverity = severity(databaseSpecific?.severity);
+        const findingSeverity = osvSeverity(vulnerability, databaseSpecific, {
+          resultIndex,
+          packageIndex,
+          vulnerabilityIndex,
+        });
         const summary = string(vulnerability.summary);
-        const details = string(vulnerability.details);
+        const vulnerabilityDetails = string(vulnerability.details);
         const packageLabel = packageVersion ? `${packageName}@${packageVersion}` : packageName;
         const aliases = strings(vulnerability.aliases);
         const descriptionParts = [
           `Affected dependency: ${packageLabel}${ecosystem ? ` (${ecosystem})` : ""}.`,
-          details,
+          vulnerabilityDetails,
           aliases.length > 0 ? `Aliases: ${aliases.join(", ")}.` : undefined,
         ].filter((part): part is string => Boolean(part));
 
@@ -204,7 +259,6 @@ function adaptOsv(payload: unknown): RawFindingEnvelope {
           description: descriptionParts.join(" "),
           rule_id: id,
           ...(sourcePath ? { location: { file: sourcePath } } : {}),
-          blocks_release: blocksRelease(findingSeverity),
           tags: unique(["dependency", ecosystem, packageName, ...aliases]),
         });
       }
@@ -248,7 +302,6 @@ function adaptGitleaks(payload: unknown): RawFindingEnvelope {
       ...(file || line !== undefined
         ? { location: { ...(file ? { file } : {}), ...(line !== undefined ? { line } : {}), ...(endLine !== undefined ? { end_line: endLine } : {}) } }
         : {}),
-      blocks_release: true,
       tags: unique(["secret", ruleId, ...strings(entry.Tags)]),
     });
   }
@@ -312,7 +365,6 @@ function adaptSemgrep(payload: unknown): RawFindingEnvelope {
         ...(line !== undefined ? { line } : {}),
         ...(endLine !== undefined ? { end_line: endLine } : {}),
       },
-      blocks_release: blocksRelease(findingSeverity),
       tags: unique(["sast", ...metadataTags(extra.metadata)]),
     });
   }
@@ -379,7 +431,6 @@ function adaptTrivy(payload: unknown): RawFindingEnvelope {
         rule_id: ruleId,
         ...(target ? { location: { file: target, ...(string(item.PrimaryURL) ? { url: string(item.PrimaryURL)! } : {}) } } : {}),
         ...(fixed ? { proposed_fix: { summary: `Upgrade to ${fixed}`, risk: "LOW" as const, effort: "SMALL" as const } } : {}),
-        blocks_release: blocksRelease(findingSeverity),
         tags: unique(["dependency", packageName]),
       });
     }
@@ -411,7 +462,6 @@ function adaptTrivy(payload: unknown): RawFindingEnvelope {
         rule_id: ruleId,
         ...(trivyLocation(target, item) ? { location: trivyLocation(target, item)! } : {}),
         ...(string(item.Resolution) ? { proposed_fix: { summary: string(item.Resolution)! } } : {}),
-        blocks_release: blocksRelease(findingSeverity),
         tags: ["misconfiguration"],
       });
     }
@@ -433,7 +483,6 @@ function adaptTrivy(payload: unknown): RawFindingEnvelope {
         title: string(item.Title) ?? "Potential secret detected",
         rule_id: ruleId,
         ...(trivyLocation(target, item) ? { location: trivyLocation(target, item)! } : {}),
-        blocks_release: true,
         tags: ["secret", ruleId],
       });
     }
