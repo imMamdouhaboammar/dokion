@@ -25,10 +25,13 @@ describe("Registry command and documentation quarantine", () => {
     );
   });
 
-  test("removes executable-looking Hub guidance from shipped adapters and manifest", async () => {
+  test("removes executable-looking Hub commands from shipped adapters", async () => {
+    expect(await Bun.file(`${root}/commands/dokion/hub.toml`).exists()).toBe(false);
+
     const surfaces = await Promise.all([
-      read("commands/dokion/hub.toml"),
+      read(".agents/skills/dokion-playbook-hub/SKILL.md"),
       read(".claude/skills/dokion-playbook-hub/SKILL.md"),
+      read("skills/dokion-playbook-hub/SKILL.md"),
       read("dokion.json")
     ]);
 
@@ -41,7 +44,7 @@ describe("Registry command and documentation quarantine", () => {
     }
   });
 
-  test("README describes the Registry as planned instead of verified community infrastructure", async () => {
+  test("README describes the Registry as protocol work in progress", async () => {
     const readme = await read("README.md");
 
     for (const claim of [
@@ -52,8 +55,8 @@ describe("Registry command and documentation quarantine", () => {
       expect(readme).not.toContain(claim);
     }
 
-    expect(readme).toContain("Registry rebuild");
+    expect(readme).toContain("Federated Playbook Registry: protocol work in progress");
     expect(readme).toContain("issues/47");
-    expect(readme).toContain("Local custom Playbooks");
+    expect(readme).toContain("built-in runtime and user-authored Playbooks");
   });
 });
