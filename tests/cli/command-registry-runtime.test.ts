@@ -32,6 +32,18 @@ async function registryApi(): Promise<RegistryRuntimeApi> {
   return (await import(registryPath)) as unknown as RegistryRuntimeApi;
 }
 
+async function staticManifestCommands(): Promise<ManifestCliCommand[]> {
+  const manifest = JSON.parse(await Bun.file(join(root, "dokion.json")).text()) as {
+    dokion_cli: { commands: ManifestCliCommand[] };
+  };
+  const registryManifest = JSON.parse(
+    await Bun.file(join(root, "schemas/registry/dokion.registry-cli.v1.json")).text()
+  ) as { schema: "dokion.registry-cli.v1"; commands: ManifestCliCommand[] };
+
+  expect(registryManifest.schema).toBe("dokion.registry-cli.v1");
+  return [...manifest.dokion_cli.commands, ...registryManifest.commands];
+}
+
 async function runCli(...args: string[]): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   const child = Bun.spawn([process.execPath, "run", "src/cli.ts", ...args], {
     cwd: root,
@@ -77,6 +89,7 @@ Configure:
   configure
   validate [--catalog-only]
   create [--from-memory <source>] [--transcript <path>] [--topic <topic>]
+  registry <pack|verify-package> ...
   reset --state-only
   playbooks <import|validate|sync|list>
 
@@ -115,6 +128,13 @@ Dokion never installs, selects, substitutes, reorders, or enables capabilities.`
       executionMode: "CONFIGURE",
       approvalClass: "ALWAYS"
     });
+    expect(registry.resolveCliCommand("registry")).toMatchObject({
+      id: "registry",
+      status: "IMPLEMENTED",
+      executionMode: "CONFIGURE",
+      writeScope: ["<user-selected-output>"],
+      approvalClass: "BEFORE_WRITE"
+    });
     expect(registry.resolveCliCommand("not-a-command")).toBeUndefined();
   });
 
@@ -144,13 +164,11 @@ Dokion never installs, selects, substitutes, reorders, or enables capabilities.`
 
   test("generates the built-in manifest command catalog", async () => {
     const registry = await registryApi();
-    const manifest = JSON.parse(await Bun.file(join(root, "dokion.json")).text()) as {
-      dokion_cli: { commands: ManifestCliCommand[] };
-    };
+    const expected = await staticManifestCommands();
 
     expect(typeof registry.manifestCliCommands).toBe("function");
-    expect(registry.manifestCliCommands()).toEqual(manifest.dokion_cli.commands);
-    expect(builtinCatalog.dokion_cli.commands).toEqual(registry.manifestCliCommands());
+    expect(registry.manifestCliCommands()).toEqual(expected);
+    expect(builtinCatalog.dokion_cli.commands).toEqual(expected);
   });
 
   test("generates ordered Gemini command bindings", async () => {
