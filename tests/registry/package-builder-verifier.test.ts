@@ -9,7 +9,7 @@ import { buildRegistryPackage } from "../../src/registry/package-builder.ts";
 import { normalizePackagePath } from "../../src/registry/package-paths.ts";
 import { verifyRegistryPackage } from "../../src/registry/package-verifier.ts";
 
-const temporaryRoots: string[] = [];
+const roots: string[] = [];
 const AUTHORITY_NONE = {
   selection_authority: false,
   substitution_authority: false,
@@ -33,7 +33,7 @@ interface ManifestFileInput {
 
 async function temporaryRoot(): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), "dokion-package-test-"));
-  temporaryRoots.push(root);
+  roots.push(root);
   return root;
 }
 
@@ -92,8 +92,7 @@ function writeString(block: Uint8Array, offset: number, length: number, value: s
 }
 
 function writeOctal(block: Uint8Array, offset: number, length: number, value: number): void {
-  const encoded = value.toString(8).padStart(length - 1, "0") + "\0";
-  writeString(block, offset, length, encoded);
+  writeString(block, offset, length, `${value.toString(8).padStart(length - 1, "0")}\0`);
 }
 
 function tarHeader(entry: TarEntryInput): Uint8Array {
@@ -102,40 +101,41 @@ function tarHeader(entry: TarEntryInput): Uint8Array {
   writeOctal(block, 100, 8, 0o644);
   writeOctal(block, 108, 8, 0);
   writeOctal(block, 116, 8, 0);
-  writeOctal(block, 124, 12, entry.type === "file" || entry.type === undefined ? entry.bytes.length : 0);
+  writeOctal(block, 124, 12, entry.type === undefined || entry.type === "file" ? entry.bytes.length : 0);
   writeOctal(block, 136, 12, 0);
   block.fill(0x20, 148, 156);
-  const typeFlag = entry.type === "symlink" ? "2" : entry.type === "hardlink" ? "1" : "0";
-  writeString(block, 156, 1, typeFlag);
+  writeString(block, 156, 1, entry.type === "symlink" ? "2" : entry.type === "hardlink" ? "1" : "0");
   if (entry.linkName) writeString(block, 157, 100, entry.linkName);
   writeString(block, 257, 6, "ustar\0");
   writeString(block, 263, 2, "00");
+  writeOctal(block, 329, 8, 0);
+  writeOctal(block, 337, 8, 0);
   const checksum = block.reduce((sum, byte) => sum + byte, 0);
-  const checksumText = checksum.toString(8).padStart(6, "0") + "\0 ";
-  writeString(block, 148, 8, checksumText);
+  writeString(block, 148, 8, `${checksum.toString(8).padStart(6, "0")}\0 `);
   return block;
 }
 
 function tarArchive(entries: readonly TarEntryInput[]): Uint8Array {
+  const ordered = [...entries].sort((left, right) =>
+    Buffer.compare(Buffer.from(left.path, "utf8"), Buffer.from(right.path, "utf8"))
+  );
   const chunks: Uint8Array[] = [];
-  let length = 0;
-  for (const entry of entries) {
+  let length = 1024;
+  for (const entry of ordered) {
     const header = tarHeader(entry);
     chunks.push(header);
     length += header.length;
-    if (entry.type === "file" || entry.type === undefined) {
+    if (entry.type === undefined || entry.type === "file") {
       chunks.push(entry.bytes);
       length += entry.bytes.length;
       const paddingLength = (512 - (entry.bytes.length % 512)) % 512;
       if (paddingLength > 0) {
-        const padding = new Uint8Array(paddingLength);
-        chunks.push(padding);
-        length += padding.length;
+        chunks.push(new Uint8Array(paddingLength));
+        length += paddingLength;
       }
     }
   }
   chunks.push(new Uint8Array(1024));
-  length += 1024;
   const output = new Uint8Array(length);
   let offset = 0;
   for (const chunk of chunks) {
@@ -148,11 +148,7 @@ function tarArchive(entries: readonly TarEntryInput[]): Uint8Array {
 function manifest(files: readonly ManifestFileInput[], overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     schema: "dokion.package-manifest.v1",
-    package: {
-      namespace: "acme-security",
-      name: "secure-web-app",
-      version: "1.2.3"
-    },
+    package: { namespace: "acme-security", name: "secure-web-app", version: "1.2.3" },
     package_format: "dokion-package-tar-v1",
     playbook_path: "playbook.json",
     readme_path: "README.md",
@@ -190,8 +186,7 @@ async function expectDokionError(action: Promise<unknown>, code: DokionErrorCode
 async function snapshotTree(root: string): Promise<Record<string, string>> {
   const result: Record<string, string> = {};
   async function visit(directory: string, prefix = ""): Promise<void> {
-    const names = (await readdir(directory)).sort();
-    for (const name of names) {
+    for (const name of (await readdir(directory)).sort()) {
       const absolute = join(directory, name);
       const relative = prefix ? `${prefix}/${name}` : name;
       const stat = await lstat(absolute);
@@ -204,8 +199,8 @@ async function snapshotTree(root: string): Promise<Record<string, string>> {
 }
 
 afterEach(async () => {
-  while (temporaryRoots.length > 0) {
-    const root = temporaryRoots.pop();
+  while (roots.length > 0) {
+    const root = roots.pop();
     if (root) await rm(root, { recursive: true, force: true });
   }
 });
@@ -237,12 +232,10 @@ describe("Registry package builder", () => {
     const source = await createSource(root);
     const firstPath = join(root, "first.dokion.tar");
     const secondPath = join(root, "second.dokion.tar");
-
     const first = await buildRegistryPackage({ sourceDirectory: source, outputPath: firstPath });
     await utimes(join(source, "README.md"), new Date("2030-01-01T00:00:00Z"), new Date("2030-01-01T00:00:00Z"));
     await chmod(join(source, "README.md"), 0o600);
     const second = await buildRegistryPackage({ sourceDirectory: source, outputPath: secondPath });
-
     expect(await readFile(firstPath)).toEqual(await readFile(secondPath));
     expect(first.artifactDigest).toBe(second.artifactDigest);
     expect(first.packageId).toBe("acme-security/secure-web-app");
@@ -265,10 +258,7 @@ describe("Registry package builder", () => {
     const source = await createSource(root);
     const outputPath = join(root, "package.tar");
     await writeFile(outputPath, "existing", "utf8");
-    await expectDokionError(
-      buildRegistryPackage({ sourceDirectory: source, outputPath }),
-      "REGISTRY_PACKAGE_OUTPUT_EXISTS"
-    );
+    await expectDokionError(buildRegistryPackage({ sourceDirectory: source, outputPath }), "REGISTRY_PACKAGE_OUTPUT_EXISTS");
     expect(await readFile(outputPath, "utf8")).toBe("existing");
   });
 
@@ -307,39 +297,29 @@ describe("Registry package verifier", () => {
     await writeFile(join(root, ".dokion/state.json"), "{\"sentinel\":true}\n", "utf8");
     await buildRegistryPackage({ sourceDirectory: source, outputPath: archivePath });
     const before = await snapshotTree(root);
-
     const evidence = await verifyRegistryPackage({
       archivePath,
       expectedPackageId: "acme-security/secure-web-app",
       expectedVersion: "1.2.3"
     });
-
     expect(evidence.valid).toBe(true);
     expect(evidence.packageId).toBe("acme-security/secure-web-app");
     expect(evidence.version).toBe("1.2.3");
     expect(evidence.installed).toBe(false);
     expect(evidence.activated).toBe(false);
     expect(evidence.extracted).toBe(false);
-    expect(evidence.files.map((file) => file.path)).toEqual([
-      "LICENSE",
-      "README.md",
-      "guides/usage.md",
-      "playbook.json"
-    ]);
+    expect(evidence.files.map((file) => file.path)).toEqual(["LICENSE", "README.md", "guides/usage.md", "playbook.json"]);
     expect(await snapshotTree(root)).toEqual(before);
   });
 
   test("rejects duplicate normalized archive paths", async () => {
     const root = await temporaryRoot();
-    const bytes = Buffer.from("same", "utf8");
+    const bytes = Buffer.from("same");
     const archivePath = await writeArchive(root, [
       { path: "dokion-package/README.md", bytes },
       { path: "dokion-package/README.md", bytes }
     ]);
-    await expectDokionError(
-      verifyRegistryPackage({ archivePath }),
-      "REGISTRY_PACKAGE_PATH_DUPLICATE"
-    );
+    await expectDokionError(verifyRegistryPackage({ archivePath }), "REGISTRY_PACKAGE_PATH_DUPLICATE");
   });
 
   test("rejects case-collision archive paths", async () => {
@@ -348,10 +328,7 @@ describe("Registry package verifier", () => {
       { path: "dokion-package/README.md", bytes: Buffer.from("upper") },
       { path: "dokion-package/readme.md", bytes: Buffer.from("lower") }
     ]);
-    await expectDokionError(
-      verifyRegistryPackage({ archivePath }),
-      "REGISTRY_PACKAGE_CASE_COLLISION"
-    );
+    await expectDokionError(verifyRegistryPackage({ archivePath }), "REGISTRY_PACKAGE_CASE_COLLISION");
   });
 
   test("rejects traversal before reading package contents", async () => {
@@ -359,10 +336,7 @@ describe("Registry package verifier", () => {
     const archivePath = await writeArchive(root, [
       { path: "dokion-package/../outside.txt", bytes: Buffer.from("escape") }
     ]);
-    await expectDokionError(
-      verifyRegistryPackage({ archivePath }),
-      "REGISTRY_PACKAGE_PATH_INVALID"
-    );
+    await expectDokionError(verifyRegistryPackage({ archivePath }), "REGISTRY_PACKAGE_PATH_INVALID");
   });
 
   test("rejects symlinks and hardlinks before manifest processing", async () => {
@@ -371,22 +345,16 @@ describe("Registry package verifier", () => {
       const archivePath = await writeArchive(root, [
         { path: `dokion-package/${type}`, bytes: new Uint8Array(), type, linkName: "../../outside" }
       ], `${type}.tar`);
-      await expectDokionError(
-        verifyRegistryPackage({ archivePath }),
-        "REGISTRY_PACKAGE_ENTRY_TYPE_UNSUPPORTED"
-      );
+      await expectDokionError(verifyRegistryPackage({ archivePath }), "REGISTRY_PACKAGE_ENTRY_TYPE_UNSUPPORTED");
     }
   });
 
   test("rejects undeclared files", async () => {
     const root = await temporaryRoot();
-    const playbook = Buffer.from("{}\n");
-    const readme = Buffer.from("readme\n");
-    const license = Buffer.from("license\n");
     const declared = [
-      { path: "playbook.json", bytes: playbook },
-      { path: "README.md", bytes: readme },
-      { path: "LICENSE", bytes: license }
+      { path: "playbook.json", bytes: Buffer.from("{}\n") },
+      { path: "README.md", bytes: Buffer.from("readme\n") },
+      { path: "LICENSE", bytes: Buffer.from("license\n") }
     ];
     const manifestBytes = Buffer.from(`${JSON.stringify(manifest(declared))}\n`);
     const archivePath = await writeArchive(root, [
@@ -394,10 +362,7 @@ describe("Registry package verifier", () => {
       ...declared.map((file) => ({ path: `dokion-package/${file.path}`, bytes: file.bytes })),
       { path: "dokion-package/undeclared.txt", bytes: Buffer.from("not declared") }
     ]);
-    await expectDokionError(
-      verifyRegistryPackage({ archivePath }),
-      "REGISTRY_PACKAGE_UNDECLARED_FILE"
-    );
+    await expectDokionError(verifyRegistryPackage({ archivePath }), "REGISTRY_PACKAGE_UNDECLARED_FILE");
   });
 
   test("rejects missing declared files", async () => {
@@ -413,10 +378,7 @@ describe("Registry package verifier", () => {
       { path: "dokion-package/playbook.json", bytes: declared[0]!.bytes },
       { path: "dokion-package/LICENSE", bytes: declared[2]!.bytes }
     ]);
-    await expectDokionError(
-      verifyRegistryPackage({ archivePath }),
-      "REGISTRY_PACKAGE_DECLARED_FILE_MISSING"
-    );
+    await expectDokionError(verifyRegistryPackage({ archivePath }), "REGISTRY_PACKAGE_DECLARED_FILE_MISSING");
   });
 
   test("rejects changed payload bytes with an exact digest mismatch", async () => {
@@ -433,10 +395,7 @@ describe("Registry package verifier", () => {
       { path: "dokion-package/README.md", bytes: Buffer.from("modified\n") },
       { path: "dokion-package/LICENSE", bytes: declared[2]!.bytes }
     ]);
-    await expectDokionError(
-      verifyRegistryPackage({ archivePath }),
-      "REGISTRY_PACKAGE_DIGEST_MISMATCH"
-    );
+    await expectDokionError(verifyRegistryPackage({ archivePath }), "REGISTRY_PACKAGE_DIGEST_MISMATCH");
   });
 
   test("rejects malformed manifests and unknown authority claims", async () => {
@@ -444,27 +403,19 @@ describe("Registry package verifier", () => {
     const malformed = await writeArchive(root, [
       { path: "dokion-package/manifest.json", bytes: Buffer.from("{broken") }
     ], "malformed.tar");
-    await expectDokionError(
-      verifyRegistryPackage({ archivePath: malformed }),
-      "REGISTRY_PACKAGE_MANIFEST_INVALID"
-    );
+    await expectDokionError(verifyRegistryPackage({ archivePath: malformed }), "REGISTRY_PACKAGE_MANIFEST_INVALID");
 
     const files = [
       { path: "playbook.json", bytes: Buffer.from("{}\n") },
       { path: "README.md", bytes: Buffer.from("readme\n") },
       { path: "LICENSE", bytes: Buffer.from("license\n") }
     ];
-    const unsafeManifest = manifest(files, {
-      authority: { ...AUTHORITY_NONE, execution_authority: true }
-    });
+    const unsafeManifest = manifest(files, { authority: { ...AUTHORITY_NONE, execution_authority: true } });
     const unsafe = await writeArchive(root, [
       { path: "dokion-package/manifest.json", bytes: Buffer.from(`${JSON.stringify(unsafeManifest)}\n`) },
       ...files.map((file) => ({ path: `dokion-package/${file.path}`, bytes: file.bytes }))
     ], "authority.tar");
-    await expectDokionError(
-      verifyRegistryPackage({ archivePath: unsafe }),
-      "REGISTRY_PACKAGE_AUTHORITY_CLAIM"
-    );
+    await expectDokionError(verifyRegistryPackage({ archivePath: unsafe }), "REGISTRY_PACKAGE_AUTHORITY_CLAIM");
   });
 
   test("rejects package identity and version mismatches", async () => {
@@ -486,9 +437,6 @@ describe("Registry package verifier", () => {
     const root = await temporaryRoot();
     const archivePath = join(root, "compressed.tar.gz");
     await writeFile(archivePath, Uint8Array.from([0x1f, 0x8b, 0x08, 0x00]));
-    await expectDokionError(
-      verifyRegistryPackage({ archivePath }),
-      "REGISTRY_PACKAGE_COMPRESSION_UNSUPPORTED"
-    );
+    await expectDokionError(verifyRegistryPackage({ archivePath }), "REGISTRY_PACKAGE_COMPRESSION_UNSUPPORTED");
   });
 });
