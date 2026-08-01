@@ -32,13 +32,17 @@ The index intentionally excludes ratings, downloads, active installs, execution 
 
 ### `dokion.package-manifest.v1`
 
-Describes one deterministic package artifact before installation. It binds package identity and version to:
+Describes the payload of one deterministic package before installation. It binds package identity and version to:
 
-- archive digest, size, and format
+- the exact `dokion-package-tar-v1` format
 - Playbook, README, and license paths
 - compatibility metadata
 - informational declared capabilities
-- every included file path, media type, size, and digest
+- every payload file path, media type, size, and digest
+
+The manifest does not contain the artifact digest or artifact size. Those values belong to the Registry index, publication receipt, provenance record, and lockfile after the final package bytes exist.
+
+`manifest.json` is also excluded from its own file inventory. Including the artifact digest inside the artifact, or the manifest digest inside the manifest, creates an unsatisfiable circular hash dependency. The Registry index binds the final manifest bytes and final artifact bytes independently.
 
 Declared capabilities do not grant runtime permission. The active Playbook and Dokion approval model remain authoritative.
 
@@ -80,6 +84,20 @@ Reports evidence without collapsing it into a generic verification badge. It rec
 
 `MATCH` integrity and `UNPROVEN` publisher identity can coexist. The Store must render both facts rather than infer identity from digest equality.
 
+## Package integrity flow
+
+A publisher creates and verifies package evidence in this order:
+
+1. Inventory and hash every payload file except `manifest.json`.
+2. Serialize the manifest canonically from that payload inventory.
+3. Hash the final manifest bytes.
+4. Build the deterministic tar containing `manifest.json` and the payload files.
+5. Hash the final artifact bytes and record their size.
+6. Publish a Registry index entry that binds both the manifest digest and artifact digest.
+7. Verify remote bytes after publication before issuing a publication receipt.
+
+This order has no self-referential digest.
+
 ## Example lifecycle
 
 The schema layer supports this later runtime sequence:
@@ -106,6 +124,7 @@ Positive fixtures demonstrate the minimum complete v1 documents. Negative fixtur
 - Registry activation authority
 - mutable Git revisions
 - package path traversal
+- package manifest self-digests
 - credentials embedded in source URLs
 - floating lockfile versions
 - ambiguous generic verification claims
@@ -114,4 +133,4 @@ Bun/AJV and Python `jsonschema` must agree on all fixtures in CI.
 
 ## Next implementation boundary
 
-The next phase may build a deterministic package builder and verifier only after these contracts are green and reviewed. That phase must establish canonical JSON serialization, deterministic archive bytes, duplicate-path rejection, symlink and hardlink rejection, archive expansion bounds, digest calculation, and an inspection report before any network source or public Store is added.
+The next phase may build a deterministic package builder and verifier only after these contracts are green and reviewed. That phase must establish canonical JSON serialization, deterministic archive bytes, duplicate-path rejection, symlink and hardlink rejection, archive expansion bounds, digest calculation, core-file inventory checks, and an inspection report before any network source or public Store is added.
