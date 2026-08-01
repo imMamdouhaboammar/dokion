@@ -255,7 +255,7 @@ function adaptTrivy(payload: unknown): RawFindingEnvelope {
         ...(description ? { description } : {}),
         rule_id: ruleId,
         ...(target ? { location: { file: target, ...(string(item.PrimaryURL) ? { url: string(item.PrimaryURL)! } : {}) } } : {}),
-        proposed_fix: fixed ? { summary: `Upgrade to ${fixed}`, risk: "LOW", effort: "SMALL" } : undefined,
+        ...(fixed ? { proposed_fix: { summary: `Upgrade to ${fixed}`, risk: "LOW" as const, effort: "SMALL" as const } } : {}),
         blocks_release: blocksRelease(findingSeverity),
         tags: unique(["dependency", packageName]),
       });
