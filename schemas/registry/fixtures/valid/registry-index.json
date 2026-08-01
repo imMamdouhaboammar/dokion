@@ -1,0 +1,46 @@
+{
+  "schema": "dokion.registry-index.v1",
+  "source_id": "example.registry",
+  "generated_at": "2026-08-01T07:00:00Z",
+  "expires_at": "2026-08-02T07:00:00Z",
+  "packages": [
+    {
+      "namespace": "dokion-labs",
+      "name": "secure-web-app",
+      "version": "1.2.3",
+      "description": "A bounded web application hardening Playbook.",
+      "tags": ["security", "web"],
+      "source": {
+        "transport": "git",
+        "location": "https://github.com/example/registry.git",
+        "immutable_revision": "1111111111111111111111111111111111111111"
+      },
+      "manifest": {
+        "location": "packages/dokion-labs/secure-web-app/1.2.3/manifest.json",
+        "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "size": 2048
+      },
+      "artifact": {
+        "location": "packages/dokion-labs/secure-web-app/1.2.3/package.tar",
+        "digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "size": 8192
+      },
+      "published_at": "2026-08-01T06:30:00Z",
+      "minimum_dokion_version": "0.3.0",
+      "deprecation": {
+        "state": "CURRENT"
+      },
+      "revocation": {
+        "state": "CLEAR"
+      },
+      "provenance_location": "packages/dokion-labs/secure-web-app/1.2.3/provenance.json"
+    }
+  ],
+  "authority": {
+    "selection_authority": false,
+    "substitution_authority": false,
+    "installation_authority": false,
+    "activation_authority": false,
+    "execution_authority": false
+  }
+}
