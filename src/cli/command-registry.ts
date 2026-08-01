@@ -10,19 +10,41 @@ export * from "./command-registry-base.ts";
 const HUB_PURPOSE =
   "Federated Playbook Registry is unavailable while the replacement protocol is implemented under #47.";
 
-export const CLI_COMMAND_REGISTRY: readonly CliCommandDescriptor[] = LEGACY_CLI_COMMAND_REGISTRY.map((command) => {
-  if (command.id !== "hub") return command;
+const REGISTRY_PACKAGE_COMMAND: CliCommandDescriptor = {
+  id: "registry",
+  manifestCommand: "dokion registry",
+  manifestUsage: "dokion registry <pack|verify-package> ...",
+  purpose: "Build deterministic Playbook packages and verify them without extraction, installation, or activation.",
+  manifestWrites: ["<user-selected-output>"],
+  manifestApproval: "BEFORE_WRITE",
+  specMarker: "`dokion registry`",
+  runtimeCase: "registry",
+  helpLine: "  registry <pack|verify-package> ...",
+  helpGroup: "Configure",
+  helpOrder: 7,
+  status: "IMPLEMENTED",
+  executionMode: "CONFIGURE",
+  writeScope: ["<user-selected-output>"],
+  approvalClass: "BEFORE_WRITE",
+  geminiFiles: []
+};
 
-  return {
-    ...command,
-    manifestUsage: "dokion hub",
-    purpose: HUB_PURPOSE,
-    helpLine: "  hub",
-    status: "PLANNED",
-    writeScope: [],
-    geminiFiles: []
-  } satisfies CliCommandDescriptor;
-});
+export const CLI_COMMAND_REGISTRY: readonly CliCommandDescriptor[] = [
+  ...LEGACY_CLI_COMMAND_REGISTRY.map((command) => {
+    if (command.id !== "hub") return command;
+
+    return {
+      ...command,
+      manifestUsage: "dokion hub",
+      purpose: HUB_PURPOSE,
+      helpLine: "  hub",
+      status: "PLANNED",
+      writeScope: [],
+      geminiFiles: []
+    } satisfies CliCommandDescriptor;
+  }),
+  REGISTRY_PACKAGE_COMMAND
+];
 
 export function implementedCliCommands(): readonly CliCommandDescriptor[] {
   return CLI_COMMAND_REGISTRY.filter((command) => command.status === "IMPLEMENTED");
