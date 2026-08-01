@@ -101,7 +101,7 @@ describe("native scanner output materialization", () => {
     ).rejects.toThrow("repository path policy");
   });
 
-  test("sanitizes and preserves a file-backed Gitleaks report while deleting raw spool artifacts", async () => {
+  test("moves a sanitized file-backed Gitleaks report into immutable run-scoped evidence", async () => {
     const root = await temporaryRoot();
     const reportPath = ".dokion/evidence/gitleaks.json";
     const stdoutPath = ".dokion/evidence/spool/stdout.bin";
@@ -138,19 +138,19 @@ describe("native scanner output materialization", () => {
       convertedArtifact,
     });
 
-    expect(result.nativeArtifact).toBe(reportPath);
+    expect(result.nativeArtifact).toBe(nativeArtifact);
     expect(result.envelope.findings).toHaveLength(1);
     expect(result.envelope.findings[0]).toMatchObject({
       severity: "HIGH",
       rule_id: "generic-api-key",
       location: { file: "src/config.ts", line: 3, end_line: 3 },
     });
-    expect(await exists(join(root, reportPath))).toBe(true);
-    expect(await exists(join(root, nativeArtifact))).toBe(false);
+    expect(await exists(join(root, reportPath))).toBe(false);
+    expect(await exists(join(root, nativeArtifact))).toBe(true);
     expect(await exists(join(root, stdoutPath))).toBe(false);
     expect(await exists(join(root, stderrPath))).toBe(false);
 
-    const native = await readFile(join(root, reportPath), "utf8");
+    const native = await readFile(join(root, nativeArtifact), "utf8");
     const converted = await readFile(join(root, convertedArtifact), "utf8");
     expect(native).not.toContain(secret);
     expect(converted).not.toContain(secret);
