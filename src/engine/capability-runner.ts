@@ -6,6 +6,14 @@ import { DokionError } from "../core/errors.ts";
 import { readJson, writeJsonAtomic } from "../core/json.ts";
 import { writeCommandEvidence } from "../evidence/evidence-store.ts";
 import { listFindings, normalizeFindingEnvelope, updateFinding } from "../findings/finding-store.ts";
+import {
+  materializeNativeScannerOutput,
+  nativeScannerStderrSummary,
+  validateNativeScannerCommand,
+  writeNativeScannerFailureEvidence,
+  type NativeScannerCommandPreflight
+} from "../findings/native-scanner-output.ts";
+import { resolveNativeScannerAdapter } from "../findings/scanner-output-adapters.ts";
 import type { NormalizedFinding, RawFindingEnvelope } from "../findings/types.ts";
 import type { LoadedPlaybook, PlaybookStage, PlaybookStep } from "../playbook/types.ts";
 import type { DokionState, VerificationResult } from "../state/types.ts";
@@ -104,6 +112,17 @@ function approvalSubject(step: PlaybookStep, finding: NormalizedFinding): string
   return `step:${step.id}`;
 }
 
+async function removeArtifacts(root: string, artifacts: Array<string | undefined>): Promise<void> {
+  const uniqueArtifacts = [...new Set(artifacts.filter((path): path is string => Boolean(path)))];
+  await Promise.all(uniqueArtifacts.map((path) => rm(join(root, path), { force: true })));
+}
+
+function failureArtifactFrom(error: unknown): string | undefined {
+  if (!(error instanceof DokionError)) return undefined;
+  const artifact = error.details.failureArtifact;
+  return typeof artifact === "string" ? artifact : undefined;
+}
+
 export async function runAnalyzeCapability(input: {
   root: string;
   loaded: LoadedPlaybook;
@@ -113,9 +132,26 @@ export async function runAnalyzeCapability(input: {
 }): Promise<CapabilityRunResult> {
   const command = requireSingleInvocation(input.step);
   assertAllowed(input.step, command);
-  const rawArtifact = `.dokion/evidence/${input.state.run.id}/steps/${input.stage.id}/${input.step.id}/raw-findings.json`;
+  const stepEvidenceRoot = `.dokion/evidence/${input.state.run.id}/steps/${input.stage.id}/${input.step.id}`;
+  const rawArtifact = `${stepEvidenceRoot}/raw-findings.json`;
+  const nativeArtifact = `${stepEvidenceRoot}/native-output.json`;
+  const nativeFailureArtifact = `${stepEvidenceRoot}/native-failure.json`;
+  const nativeAdapter = resolveNativeScannerAdapter(input.step.capability.id);
+  let nativePreflight: NativeScannerCommandPreflight | undefined;
+  if (nativeAdapter) {
+    nativePreflight = await validateNativeScannerCommand(
+      input.root,
+      input.step.capability.id,
+      command,
+      [nativeArtifact, rawArtifact, nativeFailureArtifact]
+    );
+  }
   await mkdir(dirname(join(input.root, rawArtifact)), { recursive: true });
-  await rm(join(input.root, rawArtifact), { force: true });
+  await Promise.all([
+    rm(join(input.root, rawArtifact), { force: true }),
+    rm(join(input.root, nativeArtifact), { force: true }),
+    rm(join(input.root, nativeFailureArtifact), { force: true })
+  ]);
 
   const result = await runCommand(input.root, command, {
     timeoutSeconds: input.step.timeout_seconds ?? 300,
@@ -133,8 +169,8 @@ export async function runAnalyzeCapability(input: {
     step_id: input.step.id,
     command_index: 1,
     command,
-    stdout: result.stdout,
-    stderr: result.stderr,
+    stdout: nativeAdapter ? "Native scanner output captured into sanitized evidence" : result.stdout,
+    stderr: nativeAdapter ? nativeScannerStderrSummary(result) : result.stderr,
     exit_code: result.exitCode,
     started_at: result.startedAt,
     ended_at: result.endedAt,
@@ -142,32 +178,130 @@ export async function runAnalyzeCapability(input: {
     ...(input.state.baseline?.commit ? { commit_sha: input.state.baseline.commit } : {})
   });
 
-  if (result.exitCode !== 0) {
-    return { status: "FAILED", reason: `Capability command exited ${result.exitCode}`, findingIds: [], evidence: [commandArtifact], verificationResults: [] };
-  }
-  if (!(await Bun.file(join(input.root, rawArtifact)).exists())) {
-    return { status: "FAILED", reason: "Capability did not create DOKION_OUTPUT", findingIds: [], evidence: [commandArtifact], verificationResults: [] };
+  let envelope: RawFindingEnvelope;
+  let findingRawArtifact = rawArtifact;
+  const evidence = [commandArtifact];
+  const verificationResults: VerificationResult[] = [];
+  const wroteDokionProtocol = await Bun.file(join(input.root, rawArtifact)).exists();
+
+  if (nativeAdapter && wroteDokionProtocol) {
+    const bypassError = new DokionError(
+      "INVALID_STATE",
+      "Registered native scanner wrote reserved DOKION_OUTPUT; adapter bypass is forbidden"
+    );
+    const diagnosticArtifact = await writeNativeScannerFailureEvidence({
+      root: input.root,
+      capabilityId: input.step.capability.id,
+      adapter: nativeAdapter,
+      result,
+      failureArtifact: nativeFailureArtifact,
+      error: bypassError,
+      source: {
+        artifact: nativePreflight?.declaredOutputPath ?? result.stdoutArtifact.artifactPath,
+      },
+    });
+    evidence.push(diagnosticArtifact);
+    await removeArtifacts(input.root, [
+      rawArtifact,
+      nativeArtifact,
+      nativePreflight?.declaredOutputPath,
+      result.stdoutArtifact.artifactPath,
+      result.stderrArtifact.artifactPath
+    ]);
+    return {
+      status: "FAILED",
+      reason: bypassError.message,
+      findingIds: [],
+      evidence,
+      verificationResults
+    };
   }
 
-  const envelope = await readJson<RawFindingEnvelope>(join(input.root, rawArtifact));
-  const findings = await normalizeFindingEnvelope({
-    root: input.root,
-    envelope,
-    stageId: input.stage.id,
-    stepId: input.step.id,
-    capabilityId: input.step.capability.id,
-    ...(input.step.capability.version ? { capabilityVersion: input.step.capability.version } : {}),
-    rawArtifact,
-    runId: input.state.run.id
-  });
+  if (wroteDokionProtocol) {
+    if (result.exitCode !== 0) {
+      return {
+        status: "FAILED",
+        reason: `Capability command exited ${result.exitCode}`,
+        findingIds: [],
+        evidence,
+        verificationResults
+      };
+    }
+    envelope = await readJson<RawFindingEnvelope>(join(input.root, rawArtifact));
+    evidence.push(rawArtifact);
+    verificationResults.push({
+      command,
+      exit_code: result.exitCode,
+      artifact: commandArtifact,
+      ran_at: result.endedAt
+    });
+  } else if (nativeAdapter) {
+    try {
+      const native = await materializeNativeScannerOutput({
+        root: input.root,
+        capabilityId: input.step.capability.id,
+        command,
+        result,
+        nativeArtifact,
+        convertedArtifact: rawArtifact
+      });
+      envelope = native.envelope;
+      findingRawArtifact = native.nativeArtifact;
+      evidence.push(native.nativeArtifact, native.convertedArtifact);
+      verificationResults.push({
+        command: `dokion-adapter:${native.adapter}`,
+        exit_code: 0,
+        artifact: native.convertedArtifact,
+        ran_at: result.endedAt
+      });
+    } catch (error) {
+      const diagnosticArtifact = failureArtifactFrom(error);
+      if (diagnosticArtifact) evidence.push(diagnosticArtifact);
+      return {
+        status: "FAILED",
+        reason: error instanceof Error ? error.message : String(error),
+        findingIds: [],
+        evidence,
+        verificationResults
+      };
+    }
+  } else {
+    return {
+      status: "FAILED",
+      reason: result.exitCode !== 0
+        ? `Capability command exited ${result.exitCode}`
+        : "Capability did not create DOKION_OUTPUT and no native scanner adapter is declared",
+      findingIds: [],
+      evidence,
+      verificationResults
+    };
+  }
+
+  let findings: NormalizedFinding[];
+  try {
+    findings = await normalizeFindingEnvelope({
+      root: input.root,
+      envelope,
+      stageId: input.stage.id,
+      stepId: input.step.id,
+      capabilityId: input.step.capability.id,
+      ...(input.step.capability.version ? { capabilityVersion: input.step.capability.version } : {}),
+      rawArtifact: findingRawArtifact,
+      runId: input.state.run.id
+    });
+  } catch (error) {
+    return {
+      status: "FAILED",
+      reason: error instanceof Error ? error.message : String(error),
+      findingIds: [],
+      evidence,
+      verificationResults
+    };
+  }
+
   const findingIds = findings.map((finding) => finding.id);
-  const evidence = [commandArtifact, rawArtifact];
-  const verificationResults: VerificationResult[] = [
-    { command, exit_code: result.exitCode, artifact: commandArtifact, ran_at: result.endedAt }
-  ];
   const verificationCommands = input.step.verification ?? [];
-
-  if (verificationCommands.length === 0) {
+  if (!nativeAdapter && verificationCommands.length === 0) {
     return {
       status: "FAILED",
       reason: "No verification command is declared for analysis capability",
@@ -191,7 +325,7 @@ export async function runAnalyzeCapability(input: {
     const verification = await runCommand(input.root, verificationCommand, {
       timeoutSeconds: input.step.timeout_seconds ?? 300
     });
-    const artifact = `.dokion/evidence/${input.state.run.id}/steps/${input.stage.id}/${input.step.id}/verification-${index + 1}.json`;
+    const artifact = `${stepEvidenceRoot}/verification-${index + 1}.json`;
     evidence.push(await writeNamedCommandEvidence(input.root, artifact, verification, {
       phase: "VERIFICATION",
       command_index: index + 1

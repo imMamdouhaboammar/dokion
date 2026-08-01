@@ -20,10 +20,14 @@ async function createFixtureRoot(): Promise<string> {
   return root;
 }
 
-async function writeAnalyzePlaybook(root: string, verificationCommand = "true"): Promise<void> {
+async function loadPlaybookTemplate(): Promise<{ playbook: any; template: any }> {
   const raw = await readFile(join(process.cwd(), "playbooks/example.playbook.json"), "utf8");
   const playbook = JSON.parse(raw.replaceAll("sha256:PLACEHOLDER", `sha256:${"a".repeat(64)}`));
-  const template = playbook.stages[0].steps[0];
+  return { playbook, template: playbook.stages[0].steps[0] };
+}
+
+async function writeAnalyzePlaybook(root: string, verificationCommand = "true"): Promise<void> {
+  const { playbook, template } = await loadPlaybookTemplate();
   const capabilityCommand = [
     "bun -e \"",
     "const fs=require('node:fs');",
@@ -64,6 +68,59 @@ async function writeAnalyzePlaybook(root: string, verificationCommand = "true"):
       ],
     },
   ];
+  playbook.release_gates = [];
+
+  await writeFile(join(root, ".dokion/playbook.json"), `${JSON.stringify(playbook, null, 2)}\n`);
+}
+
+async function writeNativeOsvPlaybook(root: string, malformed = false): Promise<void> {
+  const { playbook, template } = await loadPlaybookTemplate();
+  const payload = malformed
+    ? { results: "invalid" }
+    : {
+        results: [{
+          source: { path: "bun.lock", type: "lockfile" },
+          packages: [{
+            package: { name: "fixture-package", version: "1.0.0", ecosystem: "npm" },
+            vulnerabilities: [{
+              id: "GHSA-native-0001",
+              summary: "Native scanner finding",
+              database_specific: { severity: "HIGH" },
+            }],
+          }],
+        }],
+      };
+  const script = `console.log(${JSON.stringify(JSON.stringify(payload))}); process.exit(1);`;
+  const capabilityCommand = `bun -e ${JSON.stringify(script)} -- --format json`;
+
+  playbook.project.name = "native-scanner-adapter";
+  playbook.project.target = "READY_FOR_STAGING";
+  playbook.stages = [{
+    id: "supply-chain",
+    name: "Supply Chain",
+    execution: "SEQUENTIAL",
+    steps: [{
+      ...structuredClone(template),
+      id: "dependency-vulnerabilities",
+      responsibility: "Run OSV Scanner and normalize its native JSON output",
+      mode: "ANALYZE",
+      approval: "NEVER",
+      capability: {
+        ...structuredClone(template.capability),
+        id: "osv-scanner",
+        immutable_reference: `sha256:${"c".repeat(64)}`,
+      },
+      permissions: {
+        read: ["**/*"],
+        write: [".dokion/**", "HARDENING.md"],
+        network: false,
+        shell: [capabilityCommand],
+      },
+      verification: [],
+      success_conditions: ["native_output_adapted", "findings_normalized"],
+      failure_policy: "STOP_PIPELINE",
+    }],
+  }];
   playbook.release_gates = [];
 
   await writeFile(join(root, ".dokion/playbook.json"), `${JSON.stringify(playbook, null, 2)}\n`);
@@ -122,5 +179,54 @@ describe("auto-runner CLI production execution", () => {
     expect(state.run.status).toBe("FAILED");
     expect(step?.status).toBe("FAILED");
     expect(step?.verification_results?.some((result) => result.command === "false" && result.exit_code !== 0)).toBe(true);
+  });
+
+  test("adapts native OSV output and treats exit code 1 as findings, not execution failure", async () => {
+    const root = await createFixtureRoot();
+    await writeNativeOsvPlaybook(root);
+
+    const report = await handleAutoRunnerCommand(root, {
+      options: new Map([["--format", "json"]]),
+      flags: new Set(),
+      format: "json",
+    });
+
+    expect(report.completed).toBe(true);
+    expect(report.runStatus).toBe("COMPLETED");
+
+    const state = await new StateStore(root).load();
+    const step = state.stages[0]?.steps[0];
+    expect(step?.status).toBe("SUCCEEDED");
+    expect(step?.evidence?.some((path) => path.endsWith("native-output.json"))).toBe(true);
+    expect(step?.evidence?.some((path) => path.endsWith("raw-findings.json"))).toBe(true);
+    expect(step?.verification_results?.some((result) => result.command === "dokion-adapter:OSV_SCANNER_JSON" && result.exit_code === 0)).toBe(true);
+
+    const findings = await listFindings(root);
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      severity: "HIGH",
+      title: "GHSA-native-0001: Native scanner finding",
+      source: { capability_id: "osv-scanner", rule_id: "GHSA-native-0001" },
+      location: { file: "bun.lock" },
+    });
+  });
+
+  test("fails closed when a native scanner exits with findings code but emits malformed JSON", async () => {
+    const root = await createFixtureRoot();
+    await writeNativeOsvPlaybook(root, true);
+
+    const report = await handleAutoRunnerCommand(root, {
+      options: new Map([["--format", "json"]]),
+      flags: new Set(),
+      format: "json",
+    });
+
+    expect(report.completed).toBe(false);
+    expect(report.runStatus).toBe("FAILED");
+    expect((await listFindings(root))).toHaveLength(0);
+
+    const state = await new StateStore(root).load();
+    expect(state.stages[0]?.steps[0]?.status).toBe("FAILED");
+    expect(state.stages[0]?.steps[0]?.failure_reason).toContain("OSV SCANNER JSON");
   });
 });
