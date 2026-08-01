@@ -4,7 +4,8 @@ import {
   assertUniquePackagePaths,
   archivePathForPackageFile,
   PackagePathRegistry,
-  packagePathFromArchiveEntry
+  packagePathFromArchiveEntry,
+  splitUstarPath
 } from "./package-paths.ts";
 import { REGISTRY_PACKAGE_LIMITS } from "./package-limits.ts";
 
@@ -39,22 +40,6 @@ function writeOctal(block: Uint8Array, offset: number, length: number, value: nu
     throw new DokionError("REGISTRY_PACKAGE_TOO_LARGE", "USTAR numeric field overflow.", { value, fieldBytes: length });
   }
   writeField(block, offset, length, `${octal.padStart(length - 1, "0")}\0`);
-}
-
-function splitUstarPath(path: string): { name: string; prefix: string } {
-  if (Buffer.byteLength(path, "utf8") <= 100) return { name: path, prefix: "" };
-
-  for (let index = path.lastIndexOf("/"); index > 0; index = path.lastIndexOf("/", index - 1)) {
-    const prefix = path.slice(0, index);
-    const name = path.slice(index + 1);
-    if (Buffer.byteLength(prefix, "utf8") <= 155 && Buffer.byteLength(name, "utf8") <= 100) {
-      return { name, prefix };
-    }
-  }
-
-  throw new DokionError("REGISTRY_PACKAGE_PATH_INVALID", "Package path cannot be represented by deterministic USTAR.", {
-    path
-  });
 }
 
 function createHeader(path: string, size: number): Uint8Array {
@@ -136,46 +121,123 @@ function allZero(bytes: Uint8Array): boolean {
   return bytes.every((byte) => byte === 0);
 }
 
-function readText(block: Uint8Array, offset: number, length: number): string {
-  const field = block.slice(offset, offset + length);
-  const nul = field.indexOf(0);
-  const bounded = nul === -1 ? field : field.slice(0, nul);
+function invalidHeaderField(field: string, message: string, details: Record<string, unknown> = {}): never {
+  throw new DokionError("REGISTRY_PACKAGE_ARCHIVE_INVALID", message, { field, ...details });
+}
+
+function readCanonicalText(block: Uint8Array, offset: number, length: number, field: string): string {
+  const bytes = block.slice(offset, offset + length);
+  const nul = bytes.indexOf(0);
+  const bounded = nul === -1 ? bytes : bytes.slice(0, nul);
+  if (nul !== -1 && !allZero(bytes.slice(nul))) {
+    invalidHeaderField(field, `Archive ${field} contains non-zero bytes after its terminator.`);
+  }
   try {
     return textDecoder.decode(bounded);
   } catch {
-    throw new DokionError("REGISTRY_PACKAGE_ARCHIVE_INVALID", "Archive header contains invalid UTF-8.", { offset });
+    invalidHeaderField(field, `Archive ${field} contains invalid UTF-8.`);
   }
 }
 
-function readOctal(block: Uint8Array, offset: number, length: number, field: string): number {
-  const value = readText(block, offset, length).trim();
-  if (!/^[0-7]+$/.test(value)) {
-    throw new DokionError("REGISTRY_PACKAGE_ARCHIVE_INVALID", `Archive ${field} is not canonical octal.`, {
-      field,
-      value
+function readCanonicalOctal(block: Uint8Array, offset: number, length: number, field: string): number {
+  const bytes = block.slice(offset, offset + length);
+  if (bytes[length - 1] !== 0 || bytes.slice(0, -1).some((byte) => byte < 0x30 || byte > 0x37)) {
+    invalidHeaderField(field, `Archive ${field} does not use the canonical zero-padded octal encoding.`, {
+      encoding: Buffer.from(bytes).toString("hex")
     });
   }
+  const value = Buffer.from(bytes.slice(0, -1)).toString("ascii");
   const parsed = Number.parseInt(value, 8);
   if (!Number.isSafeInteger(parsed) || parsed < 0) {
-    throw new DokionError("REGISTRY_PACKAGE_ARCHIVE_INVALID", `Archive ${field} is outside the safe integer range.`, {
-      field,
-      value
-    });
+    invalidHeaderField(field, `Archive ${field} is outside the safe integer range.`, { value });
   }
   return parsed;
 }
 
+function readCanonicalChecksum(block: Uint8Array): number {
+  const bytes = block.slice(148, 156);
+  if (
+    bytes[6] !== 0 ||
+    bytes[7] !== 0x20 ||
+    bytes.slice(0, 6).some((byte) => byte < 0x30 || byte > 0x37)
+  ) {
+    invalidHeaderField("checksum", "Archive checksum does not use the canonical USTAR encoding.", {
+      encoding: Buffer.from(bytes).toString("hex")
+    });
+  }
+  return Number.parseInt(Buffer.from(bytes.slice(0, 6)).toString("ascii"), 8);
+}
+
+function assertExactBytes(
+  block: Uint8Array,
+  offset: number,
+  expected: Uint8Array,
+  field: string,
+  message: string
+): void {
+  const observed = block.slice(offset, offset + expected.length);
+  if (observed.length !== expected.length || observed.some((byte, index) => byte !== expected[index])) {
+    invalidHeaderField(field, message, {
+      expected: Buffer.from(expected).toString("hex"),
+      observed: Buffer.from(observed).toString("hex")
+    });
+  }
+}
+
+function assertZeroField(block: Uint8Array, offset: number, length: number, field: string): void {
+  const observed = block.slice(offset, offset + length);
+  if (!allZero(observed)) {
+    invalidHeaderField(field, `Archive ${field} must be empty in dokion-package-tar-v1.`, {
+      observed: Buffer.from(observed).toString("hex")
+    });
+  }
+}
+
 function verifyHeaderChecksum(block: Uint8Array): void {
-  const expected = readOctal(block, 148, 8, "checksum");
+  const expected = readCanonicalChecksum(block);
   const copy = Uint8Array.from(block);
   copy.fill(0x20, 148, 156);
   const observed = copy.reduce((total, byte) => total + byte, 0);
   if (expected !== observed) {
     throw new DokionError("REGISTRY_PACKAGE_ARCHIVE_INVALID", "Archive header checksum mismatch.", {
+      field: "checksum",
       expected,
       observed
     });
   }
+}
+
+function validateCanonicalHeader(block: Uint8Array): number {
+  const mode = readCanonicalOctal(block, 100, 8, "mode");
+  if (mode !== 0o644) invalidHeaderField("mode", "Archive file mode must be exactly 0644.", { expected: 0o644, observed: mode });
+
+  const uid = readCanonicalOctal(block, 108, 8, "uid");
+  if (uid !== 0) invalidHeaderField("uid", "Archive UID must be zero.", { expected: 0, observed: uid });
+
+  const gid = readCanonicalOctal(block, 116, 8, "gid");
+  if (gid !== 0) invalidHeaderField("gid", "Archive GID must be zero.", { expected: 0, observed: gid });
+
+  const size = readCanonicalOctal(block, 124, 12, "size");
+  const mtime = readCanonicalOctal(block, 136, 12, "mtime");
+  if (mtime !== 0) invalidHeaderField("mtime", "Archive modification time must be zero.", { expected: 0, observed: mtime });
+
+  assertExactBytes(block, 156, Buffer.from("0", "ascii"), "typeflag", "Archive typeflag must identify a regular file.");
+  assertZeroField(block, 157, 100, "linkname");
+  assertExactBytes(block, 257, Buffer.from("ustar\0", "ascii"), "magic", "Archive magic must be canonical USTAR.");
+  assertExactBytes(block, 263, Buffer.from("00", "ascii"), "version", "Archive USTAR version must be 00.");
+  assertZeroField(block, 265, 32, "uname");
+  assertZeroField(block, 297, 32, "gname");
+
+  const deviceMajor = readCanonicalOctal(block, 329, 8, "device_major");
+  if (deviceMajor !== 0) {
+    invalidHeaderField("device_major", "Archive device major must be zero.", { expected: 0, observed: deviceMajor });
+  }
+  const deviceMinor = readCanonicalOctal(block, 337, 8, "device_minor");
+  if (deviceMinor !== 0) {
+    invalidHeaderField("device_minor", "Archive device minor must be zero.", { expected: 0, observed: deviceMinor });
+  }
+  assertZeroField(block, 500, 12, "header_padding");
+  return size;
 }
 
 function rejectCompressedArchive(bytes: Uint8Array): void {
@@ -213,6 +275,7 @@ export function readRegistryPackageTar(bytes: Uint8Array): RegistryTarEntry[] {
   let totalPayloadBytes = 0;
   let offset = 0;
   let terminated = false;
+  let previousPath: string | undefined;
 
   while (offset + BLOCK_SIZE <= bytes.length) {
     const header = bytes.slice(offset, offset + BLOCK_SIZE);
@@ -230,21 +293,32 @@ export function readRegistryPackageTar(bytes: Uint8Array): RegistryTarEntry[] {
     }
 
     verifyHeaderChecksum(header);
-    const magic = readText(header, 257, 6);
-    if (magic !== "ustar") {
-      throw new DokionError("REGISTRY_PACKAGE_ARCHIVE_INVALID", "Only USTAR package archives are supported.", { magic });
-    }
-    const typeByte = header[156] ?? 0;
-    if (typeByte !== 0 && typeByte !== 0x30) {
-      throw new DokionError("REGISTRY_PACKAGE_ENTRY_TYPE_UNSUPPORTED", "Package archives may contain regular files only.", {
-        typeFlag: String.fromCharCode(typeByte)
+    const size = validateCanonicalHeader(header);
+    const name = readCanonicalText(header, 0, 100, "name");
+    const prefix = readCanonicalText(header, 345, 155, "prefix");
+    const archivePath = prefix ? `${prefix}/${name}` : name;
+    const canonicalSplit = splitUstarPath(archivePath);
+    if (canonicalSplit.name !== name || canonicalSplit.prefix !== prefix) {
+      invalidHeaderField("path_split", "Archive path does not use the canonical USTAR name and prefix split.", {
+        archivePath,
+        expectedName: canonicalSplit.name,
+        expectedPrefix: canonicalSplit.prefix
       });
     }
 
-    const name = readText(header, 0, 100);
-    const prefix = readText(header, 345, 155);
-    const archivePath = prefix ? `${prefix}/${name}` : name;
-    const path = paths.add(packagePathFromArchiveEntry(archivePath));
+    const packagePath = packagePathFromArchiveEntry(archivePath);
+    if (archivePathForPackageFile(packagePath) !== archivePath) {
+      invalidHeaderField("path", "Archive path is not in canonical normalized form.", { archivePath, packagePath });
+    }
+    const path = paths.add(packagePath);
+    if (previousPath !== undefined && compareUtf8Bytes(previousPath, path) > 0) {
+      throw new DokionError("REGISTRY_PACKAGE_ARCHIVE_INVALID", "Archive entries are not in canonical bytewise UTF-8 order.", {
+        field: "entry_order",
+        previousPath,
+        path
+      });
+    }
+    previousPath = path;
 
     if (paths.size > REGISTRY_PACKAGE_LIMITS.maximumFiles) {
       throw new DokionError("REGISTRY_PACKAGE_TOO_MANY_FILES", "Package archive exceeds the file-count bound.", {
@@ -253,7 +327,6 @@ export function readRegistryPackageTar(bytes: Uint8Array): RegistryTarEntry[] {
       });
     }
 
-    const size = readOctal(header, 124, 12, "size");
     if (size > REGISTRY_PACKAGE_LIMITS.maximumFileBytes) {
       throw new DokionError("REGISTRY_PACKAGE_FILE_TOO_LARGE", `Package file exceeds the individual size bound: ${path}`, {
         path,
