@@ -113,5 +113,5 @@ export function parseRegistryPackageManifest(bytes: Uint8Array): RegistryPackage
     });
   }
 
-  return value as RegistryPackageManifest;
+  return value as unknown as RegistryPackageManifest;
 }
