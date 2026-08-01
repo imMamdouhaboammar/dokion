@@ -1,12 +1,26 @@
-import { describe, expect, test } from "bun:test";
-import { existsSync, rmSync } from "node:fs";
+import { afterEach, describe, expect, test } from "bun:test";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DokionTelemetryClient } from "../../src/telemetry/client.ts";
 
-const root = process.cwd();
+const temporaryRoots: string[] = [];
+
+function createTemporaryRoot(): string {
+  const root = mkdtempSync(join(tmpdir(), "dokion-telemetry-"));
+  temporaryRoots.push(root);
+  return root;
+}
+
+afterEach(() => {
+  for (const root of temporaryRoots.splice(0)) {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
 describe("Dokion Telemetry Client Tests", () => {
   test("generates anonymous session ID and spools telemetry events locally", () => {
+    const root = createTemporaryRoot();
     const telemetry = new DokionTelemetryClient(root);
     expect(telemetry.isEnabled()).toBe(true);
 
