@@ -1,0 +1,142 @@
+name: PR 50 truth-boundary patch
+
+on:
+  push:
+    branches:
+      - feat/registry-protocol-schemas
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pr50-truth-boundary-patch
+  cancel-in-progress: false
+
+jobs:
+  patch-test-commit:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/registry-protocol-schemas
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Apply fail-closed Registry surface patch
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace_exact(path: str, old: str, new: str, expected: int = 1) -> None:
+              file = Path(path)
+              text = file.read_text()
+              count = text.count(old)
+              if count != expected:
+                  raise SystemExit(f"{path}: expected {expected} copies, found {count}: {old[:120]!r}")
+              file.write_text(text.replace(old, new))
+
+          replace_exact(
+              "src/cli.ts",
+              'import { handleHubCommand } from "./cli/handlers/hub.ts";\n',
+              ""
+          )
+          replace_exact(
+              "src/cli.ts",
+              '''    case "hub": {\n      const output = await handleHubCommand(root, {\n        ...(invocation.action !== undefined ? { action: invocation.action } : {}),\n        ...(invocation.query !== undefined ? { query: invocation.query } : {}),\n        ...(invocation.packageId !== undefined ? { packageId: invocation.packageId } : {}),\n        ...(invocation.category !== undefined ? { category: invocation.category } : {}),\n        format: invocation.format,\n        ...(invocation.author !== undefined ? { author: invocation.author } : {}),\n      });\n      console.log(output);\n      return;\n    }\n''',
+              ""
+          )
+          replace_exact(
+              "src/cli/types.ts",
+              '''  | {\n      command: "hub";\n      action?: "search" | "pull" | "publish" | "leaderboard" | "rate" | "fork" | "merge";\n      query?: string;\n      packageId?: string;\n      category?: string;\n      author?: string;\n    };\n''',
+              ";\n"
+          )
+          replace_exact(
+              "src/cli/parser.ts",
+              '''  if (rawCommand === "hub" || rawCommand === "community") {\n    const parsed = parseTokens(rawCommand, tokens, {\n      "--query": { kind: "value" },\n      "--package": { kind: "value" },\n      "--category": { kind: "value" },\n      "--author": { kind: "value" }\n    });\n    const sub = parsed.positionals[0] as "search" | "pull" | "publish" | "leaderboard" | "rate" | "fork" | "merge" | undefined;\n    const pkgFromPos = parsed.positionals[1];\n    const query = (parsed.options.get("--query") as string) || (sub === "search" ? pkgFromPos : undefined);\n    const packageId = (parsed.options.get("--package") as string) || (sub !== "search" ? pkgFromPos : undefined);\n    const category = parsed.options.get("--category") as string | undefined;\n    const author = parsed.options.get("--author") as string | undefined;\n\n    return {\n      command: "hub",\n      action: sub || "search",\n      ...(query ? { query } : {}),\n      ...(packageId ? { packageId } : {}),\n      ...(category ? { category } : {}),\n      ...(author ? { author } : {}),\n      format: outputFormat(rawCommand, parsed.options)\n    };\n  }\n\n''',
+              ""
+          )
+
+          replace_exact(
+              "tests/cli/command-registry-runtime.test.ts",
+              '  hub <search|pull|fork|leaderboard> [<package-id>]\n',
+              ""
+          )
+          replace_exact(
+              "tests/contracts/cli-parity.test.ts",
+              "    expect(implementedCliCommands()).toHaveLength(34);\n    expect(plannedCliCommands()).toHaveLength(0);",
+              "    expect(implementedCliCommands()).toHaveLength(33);\n    expect(plannedCliCommands()).toHaveLength(1);"
+          )
+
+          replace_exact(
+              "dokion.json",
+              '"usage": "dokion hub <search|pull|fork|leaderboard> [<package-id>]",\n        "purpose": "Interact with GitHub Native Decentralized Community Playbook Hub, Registry, and Leaderboard."',
+              '"usage": "dokion hub",\n        "purpose": "Federated Playbook Registry is unavailable while the replacement protocol is implemented under #47."'
+          )
+
+          readme = Path("README.md")
+          text = readme.read_text()
+          replacements = {
+              "Playbooks-Core%20%7C%20Verified%20Community%20%7C%20Custom": "Playbooks-Core%20%7C%20Federated%20Registry%20Planned%20%7C%20Custom",
+              "<strong>🌟 Verified Community Playbooks</strong>": "<strong>Federated Registry Playbooks (planned)</strong>",
+              "Peer-reviewed, benchmarked, and community-audited repository.": "Protocol-defined packages from independently configured sources. The Registry is unavailable until Issue #47 delivers verified pull and install flows.",
+              "verified community playbooks": "federated Registry packages"
+          }
+          for old, new in replacements.items():
+              text = text.replace(old, new)
+          for forbidden in (
+              "Verified Community",
+              "verified community playbooks",
+              "Peer-reviewed, benchmarked, and community-audited repository"
+          ):
+              if forbidden in text:
+                  raise SystemExit(f"README still contains unsupported claim: {forbidden}")
+          readme.write_text(text)
+
+          unavailable_skill = '''---
+          name: dokion-playbook-hub
+          description: Explain the unavailable Registry surface and direct contributors to Issue #47 without running simulated Hub actions.
+          ---
+
+          # Dokion Federated Registry Status
+
+          The public Registry command is unavailable while Issue #47 implements versioned sources, immutable package retrieval, digest verification, lockfiles, inert installation, and explicit activation.
+
+          Do not run or recommend `dokion hub search`, `pull`, `publish`, `fork`, `rate`, or `leaderboard`. Do not claim publisher identity, signatures, downloads, ratings, trust scores, or execution success metrics.
+
+          Use built-in or user-authored Playbooks until the protocol and CLI lifecycle pass end-to-end verification.
+          '''
+          Path(".claude/skills/dokion-playbook-hub/SKILL.md").write_text(unavailable_skill)
+          Path("skills/dokion-playbook-hub/SKILL.md").write_text(unavailable_skill)
+
+          Path("commands/dokion/hub.toml").unlink()
+          Path(".github/workflows/pr50-truth-boundary-fix.yml").unlink()
+
+      - name: Verify focused contracts
+        run: >-
+          bun test
+          tests/cli/command-registry-runtime.test.ts
+          tests/contracts/registry-surface-quarantine.test.ts
+          tests/contracts/cli-parity.test.ts
+          tests/registry/protocol-schemas.test.ts
+
+      - name: Verify complete test suite
+        run: bun test
+
+      - name: Verify type safety
+        run: bun run typecheck
+
+      - name: Commit verified patch
+        run: |
+          git config user.name "dokion-ci"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "fix(registry): remove stale simulated Hub surfaces"
+          git push origin HEAD:feat/registry-protocol-schemas
