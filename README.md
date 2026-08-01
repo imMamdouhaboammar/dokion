@@ -6,7 +6,11 @@ It validates the selected Playbook, preserves execution order, records evidence,
 
 > Current release line: `0.3.x`
 >
-> Runtime baseline: M0 to M6 implemented
+> Runtime baseline: M0-M6 implemented
+>
+> Production hardening backlog: in progress
+>
+> Compatibility matrix: [`docs/compatibility.md`](docs/compatibility.md)
 >
 > Federated Playbook Registry: protocol work in progress under [Issue #47](https://github.com/imMamdouhaboammar/dokion/issues/47)
 
