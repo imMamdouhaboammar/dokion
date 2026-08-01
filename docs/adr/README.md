@@ -18,6 +18,9 @@ An ADR explains why a constraint exists, not only what the current code does. So
 | --- | --- | --- | --- |
 | [0001](0001-authority-model.md) | The user-approved playbook is the sole execution authority | Accepted | 2026-07-25 |
 | [0002](0002-bun-only-runtime.md) | Dokion repository runtime and package operations are Bun-only | Accepted | 2026-07-25 |
+| [0003](0003-federated-playbook-registry.md) | Playbook distribution uses a federated content-addressed Registry | Accepted | 2026-08-01 |
+| [0004](0004-registry-trust-and-authority.md) | Registry integrity, identity, installation, and activation are separate decisions | Accepted | 2026-08-01 |
+| [0005](0005-public-site-is-not-authority.md) | The public documentation and Store are not package authority | Accepted | 2026-08-01 |
 
 ## When an ADR is required
 
