@@ -1,0 +1,14 @@
+{
+  "schema": "dokion.registry-cli.v1",
+  "commands": [
+    {
+      "command": "dokion registry",
+      "usage": "dokion registry <pack|verify-package> ...",
+      "purpose": "Build deterministic Playbook packages and verify them without extraction, installation, or activation.",
+      "writes": [
+        "<user-selected-output>"
+      ],
+      "approval": "BEFORE_WRITE"
+    }
+  ]
+}
