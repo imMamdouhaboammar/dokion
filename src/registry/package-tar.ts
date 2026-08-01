@@ -1,4 +1,5 @@
 import { DokionError } from "../core/errors.ts";
+import { compareUtf8Bytes } from "./digests.ts";
 import { assertUniquePackagePaths, archivePathForPackageFile, packagePathFromArchiveEntry } from "./package-paths.ts";
 import { REGISTRY_PACKAGE_LIMITS } from "./package-limits.ts";
 
@@ -85,7 +86,7 @@ export function createDeterministicPackageTar(entries: readonly RegistryTarEntry
 
   const normalized = entries
     .map((entry) => ({ path: entry.path, bytes: Uint8Array.from(entry.bytes) }))
-    .sort((left, right) => left.path.localeCompare(right.path));
+    .sort((left, right) => compareUtf8Bytes(left.path, right.path));
   assertUniquePackagePaths(normalized.map((entry) => entry.path));
 
   let totalPayloadBytes = 0;
