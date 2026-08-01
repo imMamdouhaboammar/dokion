@@ -8,8 +8,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from jsonschema import Draft202012Validator, FormatChecker, RefResolver
+from jsonschema import Draft202012Validator, FormatChecker
 from jsonschema.exceptions import SchemaError
+from referencing import Registry, Resource
 
 ROOT = Path(__file__).resolve().parent
 VALID_FIXTURES = ROOT / "fixtures" / "valid"
@@ -48,7 +49,7 @@ def main() -> int:
         return 1
 
     schemas = {path.name: load_json(path) for path in schema_paths}
-    store: dict[str, dict[str, Any]] = {}
+    resources: list[tuple[str, Resource[dict[str, Any]]]] = []
 
     for path in schema_paths:
         schema = schemas[path.name]
@@ -61,17 +62,17 @@ def main() -> int:
         if not isinstance(schema_id, str) or not schema_id:
             print(f"MISSING $id: {path}", file=sys.stderr)
             return 1
-        if schema_id in store:
+        if any(existing_id == schema_id for existing_id, _ in resources):
             print(f"DUPLICATE $id: {schema_id}", file=sys.stderr)
             return 1
-        store[schema_id] = schema
+        resources.append((schema_id, Resource.from_contents(schema)))
 
+    registry = Registry().with_resources(resources)
     failures: list[str] = []
 
     for fixture_path in sorted(VALID_FIXTURES.glob("*.json")):
         schema = schemas[fixture_contract(fixture_path)]
-        resolver = RefResolver.from_schema(schema, store=store)
-        validator = Draft202012Validator(schema, resolver=resolver, format_checker=FormatChecker())
+        validator = Draft202012Validator(schema, registry=registry, format_checker=FormatChecker())
         errors = sorted(validator.iter_errors(load_json(fixture_path)), key=lambda error: list(error.absolute_path))
         if errors:
             rendered = "; ".join(error.message for error in errors)
@@ -79,8 +80,7 @@ def main() -> int:
 
     for fixture_path in sorted(INVALID_FIXTURES.glob("*.json")):
         schema = schemas[fixture_contract(fixture_path)]
-        resolver = RefResolver.from_schema(schema, store=store)
-        validator = Draft202012Validator(schema, resolver=resolver, format_checker=FormatChecker())
+        validator = Draft202012Validator(schema, registry=registry, format_checker=FormatChecker())
         errors = list(validator.iter_errors(load_json(fixture_path)))
         if not errors:
             failures.append(f"INVALID fixture accepted: {fixture_path.name}")
