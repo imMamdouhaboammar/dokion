@@ -1,6 +1,0 @@
-description = "Interact with GitHub Native Decentralized Community Playbook Hub, Registry, and Leaderboard"
-prompt = """
-Read skills/dokion-playbook-hub/SKILL.md and follow it exactly.
-
-Run `dokion hub` to search community playbooks, pull verified playbooks, fork custom playbooks, or view the Community Leaderboard.
-"""
