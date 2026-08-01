@@ -9,6 +9,16 @@ import type { DokionState } from "../../src/state/types.ts";
 
 const roots: string[] = [];
 
+function executionInput(root: string, step: PlaybookStep) {
+  return {
+    root,
+    loaded: { data: { defaults: {} } } as LoadedPlaybook,
+    state: { run: { id: "run-preflight" } } as DokionState,
+    stage: { id: "security", execution: "SEQUENTIAL", steps: [step] } satisfies PlaybookStage,
+    step,
+  };
+}
+
 afterEach(async () => {
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
@@ -21,7 +31,7 @@ describe("native scanner engine preflight", () => {
     const command = [
       "bun -e",
       JSON.stringify("require('node:fs').writeFileSync('executed.marker','yes')"),
-      "-- --report-path ../outside.json",
+      "-- --report-format json --report-path ../outside.json",
     ].join(" ");
     const step = {
       id: "secret-scan",
@@ -41,16 +51,54 @@ describe("native scanner engine preflight", () => {
       verification: [],
     } satisfies PlaybookStep;
 
-    await expect(runAnalyzeCapability({
-      root,
-      loaded: { data: { defaults: {} } } as LoadedPlaybook,
-      state: {
-        run: { id: "run-preflight" },
-      } as DokionState,
-      stage: { id: "security", execution: "SEQUENTIAL", steps: [step] } satisfies PlaybookStage,
-      step,
-    })).rejects.toThrow("repository path policy");
-
+    await expect(runAnalyzeCapability(executionInput(root, step))).rejects.toThrow("repository path policy");
     expect(await Bun.file(marker).exists()).toBe(false);
+  });
+
+  test("does not let a registered native scanner bypass its adapter through DOKION_OUTPUT", async () => {
+    const root = await mkdtemp(join(tmpdir(), "dokion-scanner-protocol-bypass-"));
+    roots.push(root);
+    const nativePayload = {
+      results: [{
+        source: { path: "bun.lock" },
+        packages: [{
+          package: { name: "real-package", version: "1.0.0", ecosystem: "npm" },
+          vulnerabilities: [{
+            id: "GHSA-real-0001",
+            summary: "Real native finding",
+            database_specific: { severity: "HIGH" },
+          }],
+        }],
+      }],
+    };
+    const script = [
+      "const fs=require('node:fs');",
+      "fs.writeFileSync(process.env.DOKION_OUTPUT,JSON.stringify({version:1,findings:[{severity:'INFO',title:'fabricated protocol finding'}]}));",
+      `console.log(${JSON.stringify(JSON.stringify(nativePayload))});`,
+    ].join("");
+    const command = `bun -e ${JSON.stringify(script)} -- --format json`;
+    const step = {
+      id: "dependency-scan",
+      capability: {
+        type: "tool",
+        id: "osv-scanner",
+        immutable_reference: `sha256:${"b".repeat(64)}`,
+      },
+      responsibility: "Scan dependencies",
+      mode: "ANALYZE",
+      permissions: {
+        read: ["**/*"],
+        write: [".dokion/**"],
+        network: false,
+        shell: [command],
+      },
+      verification: [],
+    } satisfies PlaybookStep;
+
+    const result = await runAnalyzeCapability(executionInput(root, step));
+    expect(result.status).toBe("FAILED");
+    if (result.status === "FAILED") {
+      expect(result.reason).toContain("reserved DOKION_OUTPUT");
+    }
   });
 });
