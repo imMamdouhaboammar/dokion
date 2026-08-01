@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.dokion.dev/common.schema.json",
+  "title": "Dokion Registry Protocol Common Types",
+  "$defs": {
+    "sha256Digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "sourceId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "sourceName": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,62}[a-z0-9]$"
+    },
+    "packageNamespace": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+    },
+    "packageName": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+    },
+    "packageId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,63}/[a-z0-9][a-z0-9._-]{0,127}$"
+    },
+    "exactSemver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "gitCommit": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "relativePackagePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$))(?!.*//)[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$"
+    },
+    "safeHttpsUri": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://(?![^/@]+@)[^\\s]+$"
+    },
+    "nonNegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "positiveInteger": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "authorityNone": {
+      "type": "object",
+      "required": [
+        "selection_authority",
+        "substitution_authority",
+        "installation_authority",
+        "activation_authority",
+        "execution_authority"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "selection_authority": { "const": false },
+        "substitution_authority": { "const": false },
+        "installation_authority": { "const": false },
+        "activation_authority": { "const": false },
+        "execution_authority": { "const": false }
+      }
+    },
+    "integrityState": {
+      "type": "string",
+      "enum": ["MATCH", "MISMATCH", "NOT_CHECKED", "UNAVAILABLE"]
+    },
+    "immutableSourceState": {
+      "type": "string",
+      "enum": ["PINNED", "MUTABLE", "NOT_APPLICABLE", "UNAVAILABLE"]
+    },
+    "identityState": {
+      "type": "string",
+      "enum": ["PROVEN", "UNPROVEN", "NOT_CLAIMED", "UNAVAILABLE"]
+    },
+    "signatureState": {
+      "type": "string",
+      "enum": ["VALID", "INVALID", "ABSENT", "UNSUPPORTED", "UNAVAILABLE"]
+    },
+    "compatibilityState": {
+      "type": "string",
+      "enum": ["COMPATIBLE", "INCOMPATIBLE", "UNKNOWN"]
+    },
+    "freshnessState": {
+      "type": "string",
+      "enum": ["CURRENT", "STALE", "EXPIRED", "UNAVAILABLE"]
+    },
+    "deprecationState": {
+      "type": "string",
+      "enum": ["CURRENT", "DEPRECATED"]
+    },
+    "revocationState": {
+      "type": "string",
+      "enum": ["CLEAR", "REVOKED", "UNKNOWN"]
+    }
+  }
+}
