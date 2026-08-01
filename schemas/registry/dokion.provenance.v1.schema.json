@@ -24,26 +24,8 @@
     "schema": { "const": "dokion.provenance.v1" },
     "package_id": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/packageId" },
     "version": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/exactSemver" },
-    "manifest": {
-      "type": "object",
-      "required": ["expected_digest", "observed_digest", "integrity_state"],
-      "additionalProperties": false,
-      "properties": {
-        "expected_digest": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sha256Digest" },
-        "observed_digest": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sha256Digest" },
-        "integrity_state": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/integrityState" }
-      }
-    },
-    "artifact": {
-      "type": "object",
-      "required": ["expected_digest", "observed_digest", "integrity_state"],
-      "additionalProperties": false,
-      "properties": {
-        "expected_digest": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sha256Digest" },
-        "observed_digest": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sha256Digest" },
-        "integrity_state": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/integrityState" }
-      }
-    },
+    "manifest": { "$ref": "#/$defs/integrityObservation" },
+    "artifact": { "$ref": "#/$defs/integrityObservation" },
     "registry_source": {
       "type": "object",
       "required": ["source_id", "transport", "immutable_source_state", "registry_index_digest"],
@@ -122,5 +104,31 @@
     },
     "observed_at": { "type": "string", "format": "date-time" },
     "authority": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/authorityNone" }
+  },
+  "$defs": {
+    "integrityObservation": {
+      "type": "object",
+      "required": ["expected_digest", "integrity_state"],
+      "additionalProperties": false,
+      "properties": {
+        "expected_digest": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sha256Digest" },
+        "observed_digest": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sha256Digest" },
+        "integrity_state": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/integrityState" }
+      },
+      "if": {
+        "properties": {
+          "integrity_state": { "enum": ["MATCH", "MISMATCH"] }
+        },
+        "required": ["integrity_state"]
+      },
+      "then": {
+        "required": ["observed_digest"]
+      },
+      "else": {
+        "not": {
+          "required": ["observed_digest"]
+        }
+      }
+    }
   }
 }
