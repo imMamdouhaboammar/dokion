@@ -1,6 +1,6 @@
+import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { createHash, randomUUID } from "node:crypto";
 import type { TelemetryConfig, TelemetryEvent, TelemetryEventType } from "./types.ts";
 
 export class DokionTelemetryClient {
@@ -24,18 +24,16 @@ export class DokionTelemetryClient {
     const sessionPath = join(spoolDir, "session.json");
     if (existsSync(sessionPath)) {
       try {
-        const parsed = JSON.parse(readFileSync(sessionPath, "utf-8"));
-        if (parsed?.sessionId) return parsed.sessionId;
-      } catch {
-        // Fallback to generating new ID
-      }
+        const parsed = JSON.parse(readFileSync(sessionPath, "utf-8")) as { sessionId?: unknown };
+        if (typeof parsed.sessionId === "string" && parsed.sessionId.length > 0) {
+          return parsed.sessionId;
+        }
+      } catch {}
     }
     const newId = createHash("sha256").update(randomUUID() + Date.now()).digest("hex").substring(0, 32);
     try {
       writeFileSync(sessionPath, JSON.stringify({ sessionId: newId, createdAt: new Date().toISOString() }, null, 2));
-    } catch {
-      // Ignore write errors
-    }
+    } catch {}
     return newId;
   }
 
@@ -58,9 +56,9 @@ export class DokionTelemetryClient {
       digest,
       timestamp: new Date().toISOString(),
       anonymousSessionId: this.config.anonymousSessionId,
-      durationMs: metadata?.durationMs,
-      success: metadata?.success,
-      metadata: metadata?.extra,
+      ...(metadata?.durationMs !== undefined ? { durationMs: metadata.durationMs } : {}),
+      ...(metadata?.success !== undefined ? { success: metadata.success } : {}),
+      ...(metadata?.extra !== undefined ? { metadata: metadata.extra } : {}),
     };
 
     this.spoolEvent(event);
@@ -74,9 +72,7 @@ export class DokionTelemetryClient {
       }
       const eventsPath = join(this.config.spoolDirectory, "events.ndjson");
       writeFileSync(eventsPath, JSON.stringify(event) + "\n", { flag: "a" });
-    } catch {
-      // Ignore spooling write failures silently
-    }
+    } catch {}
   }
 
   public getSpooledEvents(): TelemetryEvent[] {
@@ -84,7 +80,7 @@ export class DokionTelemetryClient {
     if (!existsSync(eventsPath)) return [];
     try {
       const lines = readFileSync(eventsPath, "utf-8").trim().split("\n");
-      return lines.filter(Boolean).map((line) => JSON.parse(line));
+      return lines.filter(Boolean).map((line) => JSON.parse(line) as TelemetryEvent);
     } catch {
       return [];
     }
