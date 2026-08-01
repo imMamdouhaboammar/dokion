@@ -4,7 +4,7 @@ import { chmod, lstat, mkdtemp, mkdir, readFile, readdir, rm, symlink, utimes, w
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
-import { DokionError } from "../../src/core/errors.ts";
+import { DokionError, type DokionErrorCode } from "../../src/core/errors.ts";
 import { buildRegistryPackage } from "../../src/registry/package-builder.ts";
 import { normalizePackagePath } from "../../src/registry/package-paths.ts";
 import { verifyRegistryPackage } from "../../src/registry/package-verifier.ts";
@@ -176,7 +176,7 @@ async function writeArchive(root: string, entries: readonly TarEntryInput[], nam
   return path;
 }
 
-async function expectDokionError(action: Promise<unknown>, code: string): Promise<DokionError> {
+async function expectDokionError(action: Promise<unknown>, code: DokionErrorCode): Promise<DokionError> {
   try {
     await action;
     throw new Error(`Expected ${code}`);
