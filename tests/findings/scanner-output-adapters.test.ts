@@ -141,6 +141,6 @@ describe("native scanner output adapters", () => {
   test("rejects unsupported capabilities and malformed native payloads", () => {
     expect(resolveNativeScannerAdapter("unknown-scanner")).toBeNull();
     expect(() => adaptNativeScannerOutput("unknown-scanner", {})).toThrow("No native scanner adapter");
-    expect(() => adaptNativeScannerOutput("osv-scanner", { results: "not-an-array" })).toThrow("OSV Scanner JSON");
+    expect(() => adaptNativeScannerOutput("osv-scanner", { results: "not-an-array" })).toThrow("OSV SCANNER JSON");
   });
 });
