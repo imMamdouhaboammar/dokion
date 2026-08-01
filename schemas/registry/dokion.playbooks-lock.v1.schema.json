@@ -46,11 +46,20 @@
             "allOf": [
               {
                 "if": { "properties": { "transport": { "const": "git" } }, "required": ["transport"] },
-                "then": { "required": ["immutable_revision"] }
+                "then": {
+                  "required": ["immutable_revision"],
+                  "properties": {
+                    "location": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" }
+                  }
+                }
               },
               {
                 "if": { "properties": { "transport": { "const": "https" } }, "required": ["transport"] },
-                "then": { "properties": { "location": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" } } }
+                "then": {
+                  "properties": {
+                    "location": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" }
+                  }
+                }
               }
             ]
           },
