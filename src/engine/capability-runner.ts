@@ -8,7 +8,8 @@ import { writeCommandEvidence } from "../evidence/evidence-store.ts";
 import { listFindings, normalizeFindingEnvelope, updateFinding } from "../findings/finding-store.ts";
 import {
   materializeNativeScannerOutput,
-  validateNativeScannerCommand
+  validateNativeScannerCommand,
+  type NativeScannerCommandPreflight
 } from "../findings/native-scanner-output.ts";
 import { resolveNativeScannerAdapter } from "../findings/scanner-output-adapters.ts";
 import type { NormalizedFinding, RawFindingEnvelope } from "../findings/types.ts";
@@ -109,6 +110,11 @@ function approvalSubject(step: PlaybookStep, finding: NormalizedFinding): string
   return `step:${step.id}`;
 }
 
+async function removeArtifacts(root: string, artifacts: Array<string | undefined>): Promise<void> {
+  const uniqueArtifacts = [...new Set(artifacts.filter((path): path is string => Boolean(path)))];
+  await Promise.all(uniqueArtifacts.map((path) => rm(join(root, path), { force: true })));
+}
+
 export async function runAnalyzeCapability(input: {
   root: string;
   loaded: LoadedPlaybook;
@@ -122,8 +128,9 @@ export async function runAnalyzeCapability(input: {
   const rawArtifact = `${stepEvidenceRoot}/raw-findings.json`;
   const nativeArtifact = `${stepEvidenceRoot}/native-output.json`;
   const nativeAdapter = resolveNativeScannerAdapter(input.step.capability.id);
+  let nativePreflight: NativeScannerCommandPreflight | undefined;
   if (nativeAdapter) {
-    await validateNativeScannerCommand(
+    nativePreflight = await validateNativeScannerCommand(
       input.root,
       input.step.capability.id,
       command,
@@ -166,6 +173,23 @@ export async function runAnalyzeCapability(input: {
   const evidence = [commandArtifact];
   const verificationResults: VerificationResult[] = [];
   const wroteDokionProtocol = await Bun.file(join(input.root, rawArtifact)).exists();
+
+  if (nativeAdapter && wroteDokionProtocol) {
+    await removeArtifacts(input.root, [
+      rawArtifact,
+      nativeArtifact,
+      nativePreflight?.declaredOutputPath,
+      result.stdoutArtifact.artifactPath,
+      result.stderrArtifact.artifactPath
+    ]);
+    return {
+      status: "FAILED",
+      reason: "Registered native scanner wrote reserved DOKION_OUTPUT; adapter bypass is forbidden",
+      findingIds: [],
+      evidence,
+      verificationResults
+    };
+  }
 
   if (wroteDokionProtocol) {
     if (result.exitCode !== 0) {
