@@ -11,67 +11,94 @@ export interface IterationLoopOptions {
   onGitRollback?: (() => Promise<boolean>) | undefined;
 }
 
+function failureResult(
+  currentIteration: number,
+  startTime: number,
+  changeDescription: string
+): AutoresearchIterationStepResult {
+  return {
+    iteration: currentIteration,
+    changeDescription,
+    verifyPassed: false,
+    guardPassed: false,
+    action: "ROLLBACK",
+    durationMs: Date.now() - startTime,
+  };
+}
+
 export async function executeAutoresearchStepLoop(
   options: IterationLoopOptions,
   currentIteration: number
 ): Promise<AutoresearchIterationStepResult> {
   const startTime = Date.now();
-  let changeDescription = `Targeted modification pass for step ${options.stepId}`;
 
-  // 1. Modify: Apply modification
-  if (options.onModifyStep) {
-    try {
-      changeDescription = await options.onModifyStep();
-    } catch (err: any) {
-      return {
-        iteration: currentIteration,
-        changeDescription: `Failed modification: ${err.message}`,
-        verifyPassed: false,
-        guardPassed: false,
-        action: "ROLLBACK",
-        durationMs: Date.now() - startTime,
-      };
-    }
+  if (!options.onModifyStep) {
+    return failureResult(
+      currentIteration,
+      startTime,
+      `Failed modification: modify callback is required for step ${options.stepId}`
+    );
   }
 
-  // 2. Verify: Run verification command / predicate
-  let verifyPassed = true;
-  const verifyCmd = options.verifyCommand ?? options.predicate?.command ?? "bun test";
-
-  if (options.onRunShell) {
-    const vResult = await options.onRunShell(verifyCmd);
-    verifyPassed = vResult.exitCode === 0;
+  let changeDescription: string;
+  try {
+    changeDescription = await options.onModifyStep();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return failureResult(currentIteration, startTime, `Failed modification: ${message}`);
   }
 
-  // 3. Guard: Run safety guard command
+  if (!options.onRunShell) {
+    await options.onGitRollback?.();
+    return failureResult(
+      currentIteration,
+      startTime,
+      `Failed verification: command runner is required for step ${options.stepId}`
+    );
+  }
+
+  const verifyCommand = options.verifyCommand ?? options.predicate?.command ?? "bun test";
+  const verification = await options.onRunShell(verifyCommand);
+  const verifyPassed = verification.exitCode === 0;
+
   let guardPassed = true;
-  if (options.guardCommand && options.onRunShell) {
-    const gResult = await options.onRunShell(options.guardCommand);
-    guardPassed = gResult.exitCode === 0;
+  if (options.guardCommand) {
+    const guard = await options.onRunShell(options.guardCommand);
+    guardPassed = guard.exitCode === 0;
   }
 
-  // 4. Keep or Rollback
-  const keep = verifyPassed && guardPassed;
-  let action: "KEEP" | "ROLLBACK" = "ROLLBACK";
+  if (!verifyPassed || !guardPassed) {
+    await options.onGitRollback?.();
+    return {
+      iteration: currentIteration,
+      changeDescription,
+      verifyPassed,
+      guardPassed,
+      action: "ROLLBACK",
+      durationMs: Date.now() - startTime,
+    };
+  }
 
-  if (keep) {
-    action = "KEEP";
-    if (options.onGitCommit) {
-      await options.onGitCommit(`autoresearch(${options.stepId}): ${changeDescription}`);
-    }
-  } else {
-    action = "ROLLBACK";
-    if (options.onGitRollback) {
-      await options.onGitRollback();
+  if (options.onGitCommit) {
+    const committed = await options.onGitCommit(
+      `autoresearch(${options.stepId}): ${changeDescription}`
+    );
+    if (!committed) {
+      await options.onGitRollback?.();
+      return failureResult(
+        currentIteration,
+        startTime,
+        `Failed commit: commit callback did not confirm persistence for step ${options.stepId}`
+      );
     }
   }
 
   return {
     iteration: currentIteration,
     changeDescription,
-    verifyPassed,
-    guardPassed,
-    action,
+    verifyPassed: true,
+    guardPassed: true,
+    action: "KEEP",
     durationMs: Date.now() - startTime,
   };
 }
