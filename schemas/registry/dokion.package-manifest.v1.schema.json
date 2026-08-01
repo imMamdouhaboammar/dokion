@@ -6,7 +6,7 @@
   "required": [
     "schema",
     "package",
-    "artifact",
+    "package_format",
     "playbook_path",
     "readme_path",
     "license_path",
@@ -28,16 +28,7 @@
         "description": { "type": "string", "maxLength": 1000 }
       }
     },
-    "artifact": {
-      "type": "object",
-      "required": ["digest", "size", "format"],
-      "additionalProperties": false,
-      "properties": {
-        "digest": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sha256Digest" },
-        "size": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/positiveInteger" },
-        "format": { "const": "tar" }
-      }
-    },
+    "package_format": { "const": "dokion-package-tar-v1" },
     "playbook_path": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/relativePackagePath" },
     "readme_path": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/relativePackagePath" },
     "license_path": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/relativePackagePath" },
@@ -62,14 +53,19 @@
     },
     "files": {
       "type": "array",
-      "minItems": 4,
-      "maxItems": 10000,
+      "minItems": 3,
+      "maxItems": 9999,
       "items": {
         "type": "object",
         "required": ["path", "kind", "media_type", "size", "digest"],
         "additionalProperties": false,
         "properties": {
-          "path": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/relativePackagePath" },
+          "path": {
+            "allOf": [
+              { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/relativePackagePath" },
+              { "not": { "const": "manifest.json" } }
+            ]
+          },
           "kind": { "const": "file" },
           "media_type": { "type": "string", "pattern": "^[a-z0-9!#$&^_.+-]+/[a-z0-9!#$&^_.+-]+$" },
           "size": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/nonNegativeInteger" },
