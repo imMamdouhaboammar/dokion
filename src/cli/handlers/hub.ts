@@ -34,7 +34,7 @@ export async function handleHubCommand(
     }
 
     let output = "🏆 Dokion Community Playbook Leaderboard (GitHub Native)\n";
-    output += "================================──────────────────────────────\n\n";
+    output += "========================================================\n\n";
     ranked.forEach((entry) => {
       const verifiedTag = entry.package.publisher.verified ? " [Verified ✅]" : "";
       output += `#${entry.rank} ${entry.package.id}${verifiedTag} | Score: ${entry.compositeScore}\n`;
@@ -90,7 +90,7 @@ export async function handleHubCommand(
   }
 
   let output = `🌐 Dokion Community Playbooks Registry (${results.length} found)\n`;
-  output += "================================──────────────────────────────\n\n";
+  output += "========================================================\n\n";
   results.forEach((pkg) => {
     const verified = pkg.publisher.verified ? " [Verified ✅]" : "";
     output += `📦 ${pkg.id}${verified} (v${pkg.version})\n`;
