@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdtemp, rm } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -17,6 +17,15 @@ function executionInput(root: string, step: PlaybookStep) {
     stage: { id: "security", execution: "SEQUENTIAL", steps: [step] } satisfies PlaybookStage,
     step,
   };
+}
+
+async function fixtureRoot(prefix: string): Promise<string> {
+  const root = await mkdtemp(join(tmpdir(), prefix));
+  roots.push(root);
+  await mkdir(join(root, ".dokion"), { recursive: true });
+  await cp(join(process.cwd(), "schemas"), join(root, "schemas"), { recursive: true });
+  await cp(join(process.cwd(), "dokion.json"), join(root, "dokion.json"));
+  return root;
 }
 
 afterEach(async () => {
@@ -53,6 +62,40 @@ describe("native scanner engine preflight", () => {
 
     await expect(runAnalyzeCapability(executionInput(root, step))).rejects.toThrow("repository path policy");
     expect(await Bun.file(marker).exists()).toBe(false);
+  });
+
+  test("runs an allowed native scanner command with the repository as its working directory", async () => {
+    const root = await fixtureRoot("dokion-scanner-positive-control-");
+    const reportPath = ".dokion/evidence/gitleaks.json";
+    const script = [
+      "const fs=require('node:fs');",
+      "fs.writeFileSync('executed.marker','yes');",
+      `fs.writeFileSync(${JSON.stringify(reportPath)},JSON.stringify([{Description:'Fixture secret',RuleID:'fixture-secret',File:'src/config.ts',StartLine:1,EndLine:1}]));`,
+      "process.exit(1);",
+    ].join("");
+    const command = `bun -e ${JSON.stringify(script)} -- --report-format json --report-path ${reportPath}`;
+    const step = {
+      id: "secret-scan",
+      capability: {
+        type: "tool",
+        id: "gitleaks",
+        immutable_reference: `sha256:${"c".repeat(64)}`,
+      },
+      responsibility: "Scan for secrets",
+      mode: "ANALYZE",
+      permissions: {
+        read: ["**/*"],
+        write: [".dokion/**"],
+        network: false,
+        shell: [command],
+      },
+      verification: [],
+    } satisfies PlaybookStep;
+
+    const result = await runAnalyzeCapability(executionInput(root, step));
+    expect(result.status).toBe("SUCCEEDED");
+    expect(await Bun.file(join(root, "executed.marker")).text()).toBe("yes");
+    expect(await Bun.file(join(root, ".dokion/evidence/run-preflight/steps/security/secret-scan/native-output.json")).exists()).toBe(true);
   });
 
   test("does not let a registered native scanner bypass its adapter through DOKION_OUTPUT", async () => {
@@ -99,6 +142,7 @@ describe("native scanner engine preflight", () => {
     expect(result.status).toBe("FAILED");
     if (result.status === "FAILED") {
       expect(result.reason).toContain("reserved DOKION_OUTPUT");
+      expect(result.evidence.some((path) => path.endsWith("native-failure.json"))).toBe(true);
     }
   });
 });
