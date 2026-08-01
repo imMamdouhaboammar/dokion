@@ -9,7 +9,6 @@ import { StateStore } from "../../src/state/state-store.ts";
 import { initializeGitFixture } from "../helpers/git-fixture.ts";
 
 const temporaryRoots: string[] = [];
-const originalExitCode = process.exitCode;
 
 async function createFixtureRoot(): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), "dokion-auto-runner-"));
@@ -71,7 +70,6 @@ async function writeAnalyzePlaybook(root: string, verificationCommand = "true"):
 }
 
 afterEach(async () => {
-  process.exitCode = originalExitCode;
   await Promise.all(temporaryRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
@@ -80,12 +78,14 @@ describe("auto-runner CLI production execution", () => {
     const root = await createFixtureRoot();
     await writeAnalyzePlaybook(root);
 
-    await handleAutoRunnerCommand(root, {
+    const report = await handleAutoRunnerCommand(root, {
       options: new Map([["--format", "json"]]),
       flags: new Set(),
       format: "json",
     });
 
+    expect(report.completed).toBe(true);
+    expect(report.runStatus).toBe("COMPLETED");
     expect(await readFile(join(root, ".dokion/capability-ran"), "utf8")).toBe("yes");
 
     const state = await new StateStore(root).load();
@@ -102,16 +102,19 @@ describe("auto-runner CLI production execution", () => {
     await access(join(root, ".dokion/evidence", state.run.id, "steps", "analysis", "analyze-project", "raw-findings.json"));
   });
 
-  test("fails an analysis step when its declared verification fails", async () => {
+  test("returns a failed report when declared analysis verification fails", async () => {
     const root = await createFixtureRoot();
     await writeAnalyzePlaybook(root, "false");
 
-    await handleAutoRunnerCommand(root, {
+    const report = await handleAutoRunnerCommand(root, {
       options: new Map([["--format", "json"]]),
       flags: new Set(),
       format: "json",
     });
 
+    expect(report.completed).toBe(false);
+    expect(report.runStatus).toBe("FAILED");
+    expect(report.stepsFailed).toBe(1);
     expect(await readFile(join(root, ".dokion/capability-ran"), "utf8")).toBe("yes");
 
     const state = await new StateStore(root).load();
@@ -119,6 +122,5 @@ describe("auto-runner CLI production execution", () => {
     expect(state.run.status).toBe("FAILED");
     expect(step?.status).toBe("FAILED");
     expect(step?.verification_results?.some((result) => result.command === "false" && result.exit_code !== 0)).toBe(true);
-    expect(process.exitCode).toBe(1);
   });
 });
