@@ -1,11 +1,15 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import Ajv2020 from "ajv/dist/2020.js";
+import Ajv2020, { type ErrorObject } from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
+
+import { validateRegistryDocumentSemantics } from "../../src/registry/protocol-semantics.ts";
 
 const repositoryRoot = join(import.meta.dir, "../..");
 const registrySchemaRoot = join(repositoryRoot, "schemas/registry");
+const validFixtureRoot = join(registrySchemaRoot, "fixtures/valid");
+const invalidFixtureRoot = join(registrySchemaRoot, "fixtures/invalid");
 
 const contracts = [
   ["dokion.registry-root.v1", "dokion.registry-root.v1.schema.json", "registry-root.json"],
@@ -15,6 +19,25 @@ const contracts = [
   ["dokion.playbooks-lock.v1", "dokion.playbooks-lock.v1.schema.json", "playbooks-lock.json"],
   ["dokion.provenance.v1", "dokion.provenance.v1.schema.json", "provenance.json"]
 ] as const;
+
+const authorityFields = [
+  "selection_authority",
+  "substitution_authority",
+  "installation_authority",
+  "activation_authority",
+  "execution_authority"
+] as const;
+
+interface InvalidFixtureExpectation {
+  schema: string;
+  path: string;
+  keyword: string;
+}
+
+interface ObservedProtocolError {
+  path: string;
+  keyword: string;
+}
 
 function loadJson(path: string): Record<string, unknown> {
   return JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
@@ -37,6 +60,10 @@ function buildValidator(): Ajv2020 {
   return ajv;
 }
 
+function schemaErrors(errors: ErrorObject[] | null | undefined): ObservedProtocolError[] {
+  return (errors ?? []).map((error) => ({ path: error.instancePath, keyword: error.keyword }));
+}
+
 describe("Registry protocol schema inventory", () => {
   test("ships six exact v1 contracts with fail-closed top-level objects", () => {
     for (const [schemaName, schemaFile] of contracts) {
@@ -54,17 +81,20 @@ describe("Registry protocol schema inventory", () => {
     }
   });
 
-  test("validates the canonical positive fixture for every contract", () => {
+  test("validates every positive fixture with schema and semantic checks", () => {
     const ajv = buildValidator();
+    const fixtureFiles = readdirSync(validFixtureRoot).filter((file) => file.endsWith(".json")).sort();
 
-    for (const [schemaName, , fixtureFile] of contracts) {
-      const fixturePath = join(registrySchemaRoot, "fixtures/valid", fixtureFile);
-      expect(existsSync(fixturePath)).toBe(true);
-      const validate = ajv.getSchema(`https://schemas.dokion.dev/${schemaName}.schema.json`);
+    for (const fixtureFile of fixtureFiles) {
+      const fixture = loadJson(join(validFixtureRoot, fixtureFile));
+      const schemaName = fixture.schema;
+      expect(typeof schemaName).toBe("string");
+      const validate = ajv.getSchema(`https://schemas.dokion.dev/${String(schemaName)}.schema.json`);
       expect(validate).toBeDefined();
 
-      const valid = validate?.(loadJson(fixturePath));
-      expect(valid, JSON.stringify(validate?.errors ?? [], null, 2)).toBe(true);
+      const valid = validate?.(fixture);
+      expect(valid, `${fixtureFile}: ${JSON.stringify(validate?.errors ?? [], null, 2)}`).toBe(true);
+      expect(validateRegistryDocumentSemantics(String(schemaName), fixture), fixtureFile).toEqual([]);
     }
   });
 
@@ -72,7 +102,7 @@ describe("Registry protocol schema inventory", () => {
     const schema = loadJson(join(registrySchemaRoot, "dokion.package-manifest.v1.schema.json"));
     const properties = schema.properties as Record<string, unknown>;
     const required = schema.required as string[];
-    const fixture = loadJson(join(registrySchemaRoot, "fixtures/valid/package-manifest.json"));
+    const fixture = loadJson(join(validFixtureRoot, "package-manifest.json"));
     const files = fixture.files as Array<{ path: string }>;
 
     expect(properties.artifact).toBeUndefined();
@@ -81,33 +111,78 @@ describe("Registry protocol schema inventory", () => {
     expect(files.map((file) => file.path)).not.toContain("manifest.json");
   });
 
-  test("rejects every shipped negative fixture", () => {
+  test("rejects every negative fixture for its intended path and keyword", () => {
     const ajv = buildValidator();
-    const invalidFixtures = [
-      ["dokion.registry-root.v1", "registry-root-authority.json"],
-      ["dokion.registry-index.v1", "registry-index-mutable-git.json"],
-      ["dokion.package-manifest.v1", "package-manifest-path-traversal.json"],
-      ["dokion.package-manifest.v1", "package-manifest-self-reference.json"],
-      ["dokion.registry-config.v1", "registry-config-credentials.json"],
-      ["dokion.playbooks-lock.v1", "playbooks-lock-floating-version.json"],
-      ["dokion.provenance.v1", "provenance-ambiguous-verified.json"]
-    ] as const;
+    const expectations = loadJson(join(registrySchemaRoot, "invalid-fixture-expectations.json")) as Record<
+      string,
+      InvalidFixtureExpectation
+    >;
+    const invalidFiles = readdirSync(invalidFixtureRoot).filter((file) => file.endsWith(".json")).sort();
 
-    for (const [schemaName, fixtureFile] of invalidFixtures) {
-      const fixturePath = join(registrySchemaRoot, "fixtures/invalid", fixtureFile);
-      expect(existsSync(fixturePath)).toBe(true);
-      const validate = ajv.getSchema(`https://schemas.dokion.dev/${schemaName}.schema.json`);
+    expect(Object.keys(expectations).sort()).toEqual(invalidFiles);
+
+    for (const fixtureFile of invalidFiles) {
+      const expectation = expectations[fixtureFile];
+      expect(expectation).toBeDefined();
+      const fixture = loadJson(join(invalidFixtureRoot, fixtureFile));
+      const validate = ajv.getSchema(`https://schemas.dokion.dev/${expectation!.schema}.schema.json`);
       expect(validate).toBeDefined();
-      expect(validate?.(loadJson(fixturePath))).toBe(false);
+      validate?.(fixture);
+
+      const observed: ObservedProtocolError[] = [
+        ...schemaErrors(validate?.errors),
+        ...validateRegistryDocumentSemantics(expectation!.schema, fixture).map((error) => ({
+          path: error.path,
+          keyword: error.keyword
+        }))
+      ];
+
+      expect(observed, fixtureFile).toContainEqual({
+        path: expectation!.path,
+        keyword: expectation!.keyword
+      });
     }
   });
 
-  test("forbids ambiguous trust and execution authority fields in protocol schemas", () => {
+  test("rejects every authority field when mutated to true across all contracts", () => {
+    const ajv = buildValidator();
+    const common = loadJson(join(registrySchemaRoot, "common.schema.json"));
+    const authorityDefinition = ((common.$defs as Record<string, unknown>).authorityNone as Record<string, unknown>);
+    const authorityProperties = authorityDefinition.properties as Record<string, { const: boolean }>;
+
+    for (const field of authorityFields) {
+      expect(authorityProperties[field]).toEqual({ const: false });
+    }
+
+    for (const [schemaName, , fixtureFile] of contracts) {
+      const fixture = loadJson(join(validFixtureRoot, fixtureFile));
+      const validate = ajv.getSchema(`https://schemas.dokion.dev/${schemaName}.schema.json`);
+      expect(validate).toBeDefined();
+
+      for (const field of authorityFields) {
+        const mutated = structuredClone(fixture);
+        (mutated.authority as Record<string, boolean>)[field] = true;
+        expect(validate?.(mutated), `${schemaName}: ${field}`).toBe(false);
+      }
+    }
+  });
+
+  test("enforces SemVer numeric prerelease rules", () => {
+    const ajv = buildValidator();
+    const validate = ajv.compile({ $ref: "https://schemas.dokion.dev/common.schema.json#/$defs/exactSemver" });
+
+    expect(validate("1.2.3")).toBe(true);
+    expect(validate("1.2.3-0")).toBe(true);
+    expect(validate("1.2.3-alpha.1")).toBe(true);
+    expect(validate("1.2.3+build.01")).toBe(true);
+    expect(validate("1.2.3-01")).toBe(false);
+    expect(validate("1.2.3-alpha.01")).toBe(false);
+  });
+
+  test("forbids ambiguous trust fields and synthetic marketplace metrics", () => {
     for (const [, schemaFile] of contracts) {
       const source = readFileSync(join(registrySchemaRoot, schemaFile), "utf8");
       expect(source).not.toMatch(/"verified"\s*:/);
-      expect(source).not.toMatch(/"execution_authority"\s*:\s*\{(?![^}]*"const"\s*:\s*false)/s);
-      expect(source).not.toMatch(/"activation_authority"\s*:\s*\{(?![^}]*"const"\s*:\s*false)/s);
       expect(source).not.toContain("download_count");
       expect(source).not.toContain("rating");
       expect(source).not.toContain("success_rate");
