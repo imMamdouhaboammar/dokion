@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.dokion.dev/dokion.package-manifest.v1.schema.json",
+  "title": "Dokion Package Manifest v1",
+  "type": "object",
+  "required": [
+    "schema",
+    "package",
+    "artifact",
+    "playbook_path",
+    "readme_path",
+    "license_path",
+    "compatibility",
+    "files",
+    "authority"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "dokion.package-manifest.v1" },
+    "package": {
+      "type": "object",
+      "required": ["namespace", "name", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "namespace": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/packageNamespace" },
+        "name": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/packageName" },
+        "version": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/exactSemver" },
+        "description": { "type": "string", "maxLength": 1000 }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "required": ["digest", "size", "format"],
+      "additionalProperties": false,
+      "properties": {
+        "digest": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sha256Digest" },
+        "size": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/positiveInteger" },
+        "format": { "const": "tar" }
+      }
+    },
+    "playbook_path": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/relativePackagePath" },
+    "readme_path": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/relativePackagePath" },
+    "license_path": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/relativePackagePath" },
+    "compatibility": {
+      "type": "object",
+      "required": ["minimum_dokion_version"],
+      "additionalProperties": false,
+      "properties": {
+        "minimum_dokion_version": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/exactSemver" },
+        "maximum_dokion_version": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/exactSemver" },
+        "platforms": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["darwin-arm64", "darwin-x64", "linux-arm64", "linux-x64", "windows-x64"] }
+        }
+      }
+    },
+    "declared_capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 200 }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "required": ["path", "kind", "media_type", "size", "digest"],
+        "additionalProperties": false,
+        "properties": {
+          "path": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/relativePackagePath" },
+          "kind": { "const": "file" },
+          "media_type": { "type": "string", "pattern": "^[a-z0-9!#$&^_.+-]+/[a-z0-9!#$&^_.+-]+$" },
+          "size": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/nonNegativeInteger" },
+          "digest": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sha256Digest" }
+        }
+      }
+    },
+    "authority": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/authorityNone" }
+  }
+}
