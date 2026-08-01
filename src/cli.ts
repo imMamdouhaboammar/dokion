@@ -272,7 +272,8 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
     }
     case "auto-runner": {
       if (invocation.command === "auto-runner") {
-        await handleAutoRunnerCommand(root, invocation);
+        const runnerReport = await handleAutoRunnerCommand(root, invocation);
+        if (!runnerReport.completed) process.exitCode = 1;
       }
       return;
     }
