@@ -4,6 +4,29 @@ import { REGISTRY_PACKAGE_LIMITS } from "./package-limits.ts";
 const ARCHIVE_ROOT = "dokion-package/";
 const ENCODED_SEPARATOR_OR_TRAVERSAL = /%(?:00|2e|2f|5c)/i;
 const WINDOWS_ABSOLUTE = /^[A-Za-z]:/;
+const USTAR_NAME_BYTES = 100;
+const USTAR_PREFIX_BYTES = 155;
+
+export function splitUstarPath(path: string): { name: string; prefix: string } {
+  if (Buffer.byteLength(path, "utf8") <= USTAR_NAME_BYTES) return { name: path, prefix: "" };
+
+  for (let index = path.lastIndexOf("/"); index > 0; index = path.lastIndexOf("/", index - 1)) {
+    const prefix = path.slice(0, index);
+    const name = path.slice(index + 1);
+    if (
+      Buffer.byteLength(prefix, "utf8") <= USTAR_PREFIX_BYTES &&
+      Buffer.byteLength(name, "utf8") <= USTAR_NAME_BYTES
+    ) {
+      return { name, prefix };
+    }
+  }
+
+  throw new DokionError("REGISTRY_PACKAGE_PATH_INVALID", "Package path cannot be represented by deterministic USTAR.", {
+    path,
+    maximumNameBytes: USTAR_NAME_BYTES,
+    maximumPrefixBytes: USTAR_PREFIX_BYTES
+  });
+}
 
 export function normalizePackagePath(input: string): string {
   if (typeof input !== "string" || input.length === 0) {
@@ -46,12 +69,15 @@ export function normalizePackagePath(input: string): string {
       { path: input, bytes: packagePathBytes }
     );
   }
-  if (REGISTRY_PACKAGE_LIMITS.archiveRootBytes + packagePathBytes > REGISTRY_PACKAGE_LIMITS.maximumArchivePathBytes) {
+
+  const archivePath = `${ARCHIVE_ROOT}${normalized}`;
+  if (Buffer.byteLength(archivePath, "utf8") > REGISTRY_PACKAGE_LIMITS.maximumArchivePathBytes) {
     throw new DokionError("REGISTRY_PACKAGE_PATH_INVALID", "Package path cannot fit below the canonical archive root.", {
       path: input,
-      archiveBytes: REGISTRY_PACKAGE_LIMITS.archiveRootBytes + packagePathBytes
+      archiveBytes: Buffer.byteLength(archivePath, "utf8")
     });
   }
+  splitUstarPath(archivePath);
   return normalized;
 }
 
