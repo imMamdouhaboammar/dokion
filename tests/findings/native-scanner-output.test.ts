@@ -163,6 +163,7 @@ describe("native scanner output materialization", () => {
     const reportPath = ".dokion/evidence/gitleaks-large.json";
     const stdoutPath = ".dokion/evidence/spool/stdout.bin";
     const stderrPath = ".dokion/evidence/spool/stderr.bin";
+    await writeFile(join(root, reportPath), "");
     await truncate(join(root, reportPath), 64 * 1024 * 1024 + 1);
     await writeFile(join(root, stdoutPath), "");
     await writeFile(join(root, stderrPath), "");
