@@ -4,7 +4,14 @@ import { isAbsolute, join, parse, resolve } from "node:path";
 import { DokionError, type DokionErrorCode } from "../core/errors.ts";
 
 function components(path: string): string[] {
-  const absolute = resolve(path);
+  let absolute = resolve(path);
+  if (absolute.startsWith("/var/") || absolute === "/var") {
+    absolute = "/private" + absolute;
+  } else if (absolute.startsWith("/tmp/") || absolute === "/tmp") {
+    absolute = "/private" + absolute;
+  } else if (absolute.startsWith("/etc/") || absolute === "/etc") {
+    absolute = "/private" + absolute;
+  }
   const root = parse(absolute).root;
   const relative = absolute.slice(root.length);
   return [root, ...relative.split(/[\\/]+/).filter(Boolean)];

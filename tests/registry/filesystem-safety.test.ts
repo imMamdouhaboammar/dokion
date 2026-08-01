@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { DokionError } from "../../src/core/errors.ts";
+import { DokionError, type DokionErrorCode } from "../../src/core/errors.ts";
 import {
   assertSafeRegularFilePath,
   ensureSafeDirectoryPath
@@ -17,7 +17,7 @@ async function temporaryRoot(): Promise<string> {
   return root;
 }
 
-function expectCode(action: Promise<unknown>, code: string): Promise<void> {
+function expectCode(action: Promise<unknown>, code: DokionErrorCode): Promise<void> {
   return action.then(
     () => { throw new Error(`Expected ${code}`); },
     (error) => {
