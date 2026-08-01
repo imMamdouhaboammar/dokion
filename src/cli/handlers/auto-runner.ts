@@ -13,6 +13,7 @@ export interface AutoRunnerCliOptions {
 
 interface ProductionAutoRunnerReport {
   execution_engine: "production";
+  runStatus: DokionState["run"]["status"];
   completed: boolean;
   completionPercentage: number;
   turnsExecuted: number;
@@ -20,8 +21,8 @@ interface ProductionAutoRunnerReport {
   stepsFailed: number;
   keptChangesCount: number;
   rolledBackChangesCount: number;
-  circuitBreakerStatus: "HEALTHY" | "TRIPPED";
-  estimatedCostDollars: 0;
+  circuitBreakerStatus: "NOT_APPLICABLE";
+  estimatedCostDollars: null;
   finalState: DokionState;
   message: string;
 }
@@ -58,6 +59,7 @@ function summarizeProductionRun(state: DokionState): ProductionAutoRunnerReport 
 
   return {
     execution_engine: "production",
+    runStatus: state.run.status,
     completed,
     completionPercentage,
     turnsExecuted: steps.filter((step) => step.status !== "PENDING").length,
@@ -65,8 +67,8 @@ function summarizeProductionRun(state: DokionState): ProductionAutoRunnerReport 
     stepsFailed: failed.length,
     keptChangesCount: keptChanges,
     rolledBackChangesCount: rejectedRepairs,
-    circuitBreakerStatus: completed ? "HEALTHY" : "TRIPPED",
-    estimatedCostDollars: 0,
+    circuitBreakerStatus: "NOT_APPLICABLE",
+    estimatedCostDollars: null,
     finalState: state,
     message: completed
       ? `Production playbook execution completed with evidence for ${succeeded.length} succeeded steps`
