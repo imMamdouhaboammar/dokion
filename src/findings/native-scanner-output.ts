@@ -1,9 +1,10 @@
 import { readFile, rm } from "node:fs/promises";
-import { isAbsolute, relative, resolve } from "node:path";
+import { resolve } from "node:path";
 
 import { DokionError } from "../core/errors.ts";
 import { writeJsonAtomic } from "../core/json.ts";
 import type { CommandResult } from "../engine/command-runner.ts";
+import { evaluateRepositoryPath } from "../security/path-policy.ts";
 import {
   adaptNativeScannerOutput,
   nativeScannerAcceptsExitCode,
@@ -17,6 +18,11 @@ export interface NativeScannerOutput {
   envelope: RawFindingEnvelope;
   nativeArtifact: string;
   convertedArtifact: string;
+}
+
+export interface NativeScannerCommandPreflight {
+  adapter: NativeScannerAdapter;
+  declaredOutputPath?: string;
 }
 
 interface MaterializeNativeScannerInput {
@@ -49,9 +55,7 @@ function declaredOutputPath(capabilityId: string, command: string): string | und
   const normalized = capabilityId.trim().toLowerCase();
   const flags = normalized === "gitleaks"
     ? ["--report-path"]
-    : normalized === "semgrep" || normalized === "trivy"
-      ? ["--output", "--output-file", "-o"]
-      : ["--output", "--output-file", "-o"];
+    : ["--output", "--output-file", "-o"];
   const values = captureFlagValues(command, flags);
   if (values.length > 1) {
     fail("Native scanner command declares multiple output paths", { capabilityId, values });
@@ -59,24 +63,37 @@ function declaredOutputPath(capabilityId: string, command: string): string | und
   return values[0];
 }
 
-function resolveEvidencePath(rootValue: string, pathValue: string): string {
-  const root = resolve(rootValue);
-  if (!pathValue || isAbsolute(pathValue) || pathValue.includes("\\")) {
-    fail("Native scanner output path must be a repository-relative POSIX path", { path: pathValue });
+export async function validateNativeScannerCommand(
+  root: string,
+  capabilityId: string,
+  command: string,
+  reservedArtifacts: readonly string[] = []
+): Promise<NativeScannerCommandPreflight> {
+  const adapter = resolveNativeScannerAdapter(capabilityId);
+  if (!adapter) {
+    throw new DokionError("UNSUPPORTED_EXECUTION", `No native scanner adapter is registered for ${capabilityId}`);
   }
-  const segments = pathValue.split("/");
-  if (segments.some((segment) => segment === "" || segment === "." || segment === "..")) {
-    fail("Native scanner output path contains an unsafe segment", { path: pathValue });
+
+  const outputPath = declaredOutputPath(capabilityId, command);
+  if (!outputPath) return { adapter };
+  if (reservedArtifacts.includes(outputPath)) {
+    fail("Native scanner output path collides with an internal Dokion artifact", {
+      capabilityId,
+      outputPath,
+    });
   }
-  if (!pathValue.startsWith(".dokion/evidence/")) {
-    fail("Native scanner file output must be inside .dokion/evidence", { path: pathValue });
+
+  const decision = await evaluateRepositoryPath(root, outputPath, [".dokion/evidence/"]);
+  if (!decision.allowed) {
+    fail("Native scanner output path failed repository path policy", {
+      capabilityId,
+      outputPath,
+      reason: decision.reason,
+      detail: decision.detail,
+    });
   }
-  const absolutePath = resolve(root, pathValue);
-  const fromRoot = relative(root, absolutePath);
-  if (fromRoot.startsWith("..") || isAbsolute(fromRoot)) {
-    fail("Native scanner output path escapes the repository root", { path: pathValue });
-  }
-  return absolutePath;
+
+  return { adapter, declaredOutputPath: decision.canonicalPath ?? outputPath };
 }
 
 function scrubSensitiveFields(value: unknown, capabilityId: string): unknown {
@@ -106,25 +123,41 @@ function parseJson(bytes: Uint8Array, capabilityId: string): unknown {
   }
 }
 
+async function readNativeArtifact(sourcePath: string, capabilityId: string): Promise<Uint8Array> {
+  try {
+    const bytes = await readFile(sourcePath);
+    if (bytes.byteLength === 0) {
+      fail("Native scanner emitted an empty JSON artifact", { capabilityId });
+    }
+    return bytes;
+  } catch (error) {
+    if (error instanceof DokionError) throw error;
+    throw new DokionError("INVALID_STATE", `Native scanner ${capabilityId} did not create a readable JSON artifact`, {
+      cause: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
 export async function materializeNativeScannerOutput(
   input: MaterializeNativeScannerInput
 ): Promise<NativeScannerOutput> {
-  const adapter = resolveNativeScannerAdapter(input.capabilityId);
-  if (!adapter) {
-    throw new DokionError("UNSUPPORTED_EXECUTION", `No native scanner adapter is registered for ${input.capabilityId}`);
-  }
+  const preflight = await validateNativeScannerCommand(
+    input.root,
+    input.capabilityId,
+    input.command,
+    [input.nativeArtifact, input.convertedArtifact]
+  );
   if (!nativeScannerAcceptsExitCode(input.capabilityId, input.result.exitCode)) {
     throw new DokionError("COMMAND_FAILED", `Native scanner command exited ${input.result.exitCode}`, {
       capabilityId: input.capabilityId,
-      adapter,
+      adapter: preflight.adapter,
     });
   }
 
-  const declaredPath = declaredOutputPath(input.capabilityId, input.command);
-  const sourcePath = declaredPath
-    ? resolveEvidencePath(input.root, declaredPath)
+  const sourcePath = preflight.declaredOutputPath
+    ? resolve(input.root, preflight.declaredOutputPath)
     : resolve(input.root, input.result.stdoutArtifact.artifactPath);
-  if (!declaredPath && input.result.stdoutArtifact.truncated) {
+  if (!preflight.declaredOutputPath && input.result.stdoutArtifact.truncated) {
     fail("Native scanner stdout exceeded the evidence bound and cannot be parsed completely", {
       capabilityId: input.capabilityId,
       bytesObserved: input.result.stdoutArtifact.bytesObserved,
@@ -132,26 +165,35 @@ export async function materializeNativeScannerOutput(
     });
   }
 
-  let bytes: Uint8Array;
+  const nativePath = resolve(input.root, input.nativeArtifact);
+  const convertedPath = resolve(input.root, input.convertedArtifact);
   try {
-    bytes = await readFile(sourcePath);
-    if (bytes.byteLength === 0) fail("Native scanner emitted an empty JSON artifact", { capabilityId: input.capabilityId });
+    const bytes = await readNativeArtifact(sourcePath, input.capabilityId);
     const payload = parseJson(bytes, input.capabilityId);
     const sanitizedPayload = scrubSensitiveFields(payload, input.capabilityId);
     const envelope = adaptNativeScannerOutput(input.capabilityId, sanitizedPayload);
-    await writeJsonAtomic(resolve(input.root, input.nativeArtifact), sanitizedPayload);
-    await writeJsonAtomic(resolve(input.root, input.convertedArtifact), envelope);
+    if (input.result.exitCode === 1 && envelope.findings.length === 0) {
+      fail("Native scanner used its findings exit code but the adapter produced no findings", {
+        capabilityId: input.capabilityId,
+        adapter: preflight.adapter,
+      });
+    }
+    await writeJsonAtomic(nativePath, sanitizedPayload);
+    await writeJsonAtomic(convertedPath, envelope);
     return {
-      adapter,
+      adapter: preflight.adapter,
       envelope,
       nativeArtifact: input.nativeArtifact,
       convertedArtifact: input.convertedArtifact,
     };
   } finally {
-    await Promise.all([
-      rm(sourcePath, { force: true }),
-      rm(resolve(input.root, input.result.stdoutArtifact.artifactPath), { force: true }),
-      rm(resolve(input.root, input.result.stderrArtifact.artifactPath), { force: true }),
+    const cleanup = new Set([
+      sourcePath,
+      resolve(input.root, input.result.stdoutArtifact.artifactPath),
+      resolve(input.root, input.result.stderrArtifact.artifactPath),
     ]);
+    cleanup.delete(nativePath);
+    cleanup.delete(convertedPath);
+    await Promise.all([...cleanup].map((path) => rm(path, { force: true })));
   }
 }
