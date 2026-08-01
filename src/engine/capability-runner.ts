@@ -154,11 +154,67 @@ export async function runAnalyzeCapability(input: {
     rawArtifact,
     runId: input.state.run.id
   });
+  const findingIds = findings.map((finding) => finding.id);
+  const evidence = [commandArtifact, rawArtifact];
+  const verificationResults: VerificationResult[] = [
+    { command, exit_code: result.exitCode, artifact: commandArtifact, ran_at: result.endedAt }
+  ];
+  const verificationCommands = input.step.verification ?? [];
+
+  if (verificationCommands.length === 0) {
+    return {
+      status: "FAILED",
+      reason: "No verification command is declared for analysis capability",
+      findingIds,
+      evidence,
+      verificationResults
+    };
+  }
+
+  for (const [index, verificationCommand] of verificationCommands.entries()) {
+    if (!(input.step.permissions?.shell ?? []).includes(verificationCommand)) {
+      return {
+        status: "FAILED",
+        reason: "Verification command is outside permissions.shell",
+        findingIds,
+        evidence,
+        verificationResults
+      };
+    }
+
+    const verification = await runCommand(
+      input.root,
+      verificationCommand,
+      input.step.timeout_seconds ?? 300
+    );
+    const artifact = `.dokion/evidence/${input.state.run.id}/steps/${input.stage.id}/${input.step.id}/verification-${index + 1}.json`;
+    evidence.push(await writeNamedCommandEvidence(input.root, artifact, verification, {
+      phase: "VERIFICATION",
+      command_index: index + 1
+    }));
+    verificationResults.push({
+      command: verificationCommand,
+      exit_code: verification.exitCode,
+      artifact,
+      ran_at: verification.endedAt
+    });
+
+    if (verification.exitCode !== 0) {
+      return {
+        status: "FAILED",
+        reason: `Verification command exited ${verification.exitCode}`,
+        findingIds,
+        evidence,
+        verificationResults
+      };
+    }
+  }
+
   return {
     status: "SUCCEEDED",
-    findingIds: findings.map((finding) => finding.id),
-    evidence: [commandArtifact, rawArtifact],
-    verificationResults: [{ command, exit_code: result.exitCode, artifact: commandArtifact, ran_at: result.endedAt }]
+    findingIds,
+    evidence,
+    verificationResults
   };
 }
 
