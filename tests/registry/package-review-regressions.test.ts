@@ -234,7 +234,7 @@ describe("Registry package review regressions", () => {
         "REGISTRY_PACKAGE_ARCHIVE_INVALID"
       );
       expect(error.message).toContain("filesystem permissions");
-      expect(["EACCES", "EPERM"]).toContain(error.details.errorCode);
+      expect(["EACCES", "EPERM"]).toContain(String(error.details.errorCode));
     });
   }
 
