@@ -1,9 +1,10 @@
+import { randomUUID } from "node:crypto";
 import { constants } from "node:fs";
 import { link, lstat, mkdir, open, rename, unlink } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 
 import { DokionError } from "../core/errors.ts";
-import { canonicalJsonBytes, sha256Digest } from "./digests.ts";
+import { canonicalJsonBytes, compareUtf8Bytes, sha256Digest } from "./digests.ts";
 import type {
   RegistryPackageCompatibility,
   RegistryPackageIdentity,
@@ -75,7 +76,7 @@ function assertKeys(value: Record<string, unknown>, allowed: readonly string[], 
   const unknown = Object.keys(value).filter((key) => !allowed.includes(key));
   if (unknown.length > 0) {
     throw new DokionError("REGISTRY_PACKAGE_CONFIG_INVALID", `${label} contains unsupported fields.`, {
-      fields: unknown.sort()
+      fields: unknown.sort(compareUtf8Bytes)
     });
   }
 }
@@ -206,17 +207,17 @@ async function readRegularFile(path: string, packagePath: string): Promise<Uint8
 }
 
 function mediaType(path: string): string {
-  const lower = path.toLocaleLowerCase("en-US");
+  const lower = path.toLowerCase();
   if (lower.endsWith(".json")) return "application/json";
   if (lower.endsWith(".md")) return "text/markdown";
   if (lower.endsWith(".yaml") || lower.endsWith(".yml")) return "application/yaml";
   if (lower.endsWith(".toml")) return "application/toml";
-  if (lower.endsWith(".txt") || basename(path).toLocaleUpperCase("en-US") === "LICENSE") return "text/plain";
+  if (lower.endsWith(".txt") || basename(path).toUpperCase() === "LICENSE") return "text/plain";
   return "application/octet-stream";
 }
 
 function rejectLifecycleScripts(path: string, bytes: Uint8Array): void {
-  if (basename(path).toLocaleLowerCase("en-US") !== "package.json") return;
+  if (basename(path).toLowerCase() !== "package.json") return;
   let value: unknown;
   try {
     value = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
@@ -232,7 +233,7 @@ function rejectLifecycleScripts(path: string, bytes: Uint8Array): void {
   if (lifecycle.length > 0) {
     throw new DokionError("REGISTRY_PACKAGE_LIFECYCLE_SCRIPT", `Lifecycle scripts are forbidden in Registry packages: ${path}`, {
       path,
-      scripts: lifecycle.sort()
+      scripts: lifecycle.sort(compareUtf8Bytes)
     });
   }
 }
@@ -254,7 +255,7 @@ async function publishArtifact(bytes: Uint8Array, outputPath: string, overwrite:
   await mkdir(outputDirectory, { recursive: true });
   const temporaryPath = join(
     outputDirectory,
-    `.${basename(outputPath)}.dokion-tmp-${process.pid}-${crypto.randomUUID()}`
+    `.${basename(outputPath)}.dokion-tmp-${process.pid}-${randomUUID()}`
   );
 
   let handle;
@@ -310,7 +311,7 @@ export async function buildRegistryPackage(options: BuildRegistryPackageOptions)
     throw new DokionError("REGISTRY_PACKAGE_CONFIG_INVALID", "manifest.json and dokion-package.json are generated or build-only and may not be declared as payload files.");
   }
   assertUniquePackagePaths(paths);
-  const sortedPaths = [...paths].sort((left, right) => left.localeCompare(right));
+  const sortedPaths = [...paths].sort(compareUtf8Bytes);
 
   const tarEntries: RegistryTarEntry[] = [];
   const manifestFiles: RegistryPackageManifestFile[] = [];
@@ -350,7 +351,7 @@ export async function buildRegistryPackage(options: BuildRegistryPackageOptions)
     license_path: "LICENSE",
     compatibility: config.compatibility,
     ...(config.declared_capabilities
-      ? { declared_capabilities: [...new Set(config.declared_capabilities)].sort() }
+      ? { declared_capabilities: [...new Set(config.declared_capabilities)].sort(compareUtf8Bytes) }
       : {}),
     files: manifestFiles,
     authority: {
