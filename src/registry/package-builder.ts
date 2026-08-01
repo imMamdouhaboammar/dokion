@@ -1,7 +1,6 @@
-import { randomUUID } from "node:crypto";
 import { constants } from "node:fs";
-import { link, lstat, mkdir, open, rename, unlink } from "node:fs/promises";
-import { basename, dirname, join, resolve } from "node:path";
+import { lstat, open } from "node:fs/promises";
+import { basename, join, resolve } from "node:path";
 
 import { DokionError } from "../core/errors.ts";
 import { canonicalJsonBytes, compareUtf8Bytes, sha256Digest } from "./digests.ts";
@@ -13,6 +12,8 @@ import type {
 } from "./package-manifest.ts";
 import { parseRegistryPackageManifest } from "./package-manifest.ts";
 import { assertUniquePackagePaths, normalizePackagePath } from "./package-paths.ts";
+import { rejectPackageLifecycleScripts } from "./package-policy.ts";
+import { publishRegistryPackageArtifact } from "./package-publisher.ts";
 import { REGISTRY_PACKAGE_LIMITS } from "./package-limits.ts";
 import { createDeterministicPackageTar, type RegistryTarEntry } from "./package-tar.ts";
 
@@ -27,16 +28,6 @@ const AUTHORITY_KEYS = new Set([
   "execution_authority",
   "verified",
   "trust_state"
-]);
-const LIFECYCLE_SCRIPTS = new Set([
-  "preinstall",
-  "install",
-  "postinstall",
-  "prepare",
-  "prepublish",
-  "prepublishOnly",
-  "publish",
-  "postpublish"
 ]);
 
 interface RegistryPackageBuildConfig {
@@ -249,80 +240,6 @@ function mediaType(path: string): string {
   return "application/octet-stream";
 }
 
-function rejectLifecycleScripts(path: string, bytes: Uint8Array): void {
-  if (basename(path).toLowerCase() !== "package.json") return;
-  let value: unknown;
-  try {
-    value = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
-  } catch {
-    throw new DokionError("REGISTRY_PACKAGE_CONFIG_INVALID", `Declared package.json is not valid JSON: ${path}`, {
-      path
-    });
-  }
-  if (!value || typeof value !== "object" || Array.isArray(value)) return;
-  const scripts = (value as Record<string, unknown>).scripts;
-  if (!scripts || typeof scripts !== "object" || Array.isArray(scripts)) return;
-  const lifecycle = Object.keys(scripts as Record<string, unknown>).filter((name) => LIFECYCLE_SCRIPTS.has(name));
-  if (lifecycle.length > 0) {
-    throw new DokionError("REGISTRY_PACKAGE_LIFECYCLE_SCRIPT", `Lifecycle scripts are forbidden in Registry packages: ${path}`, {
-      path,
-      scripts: lifecycle.sort(compareUtf8Bytes)
-    });
-  }
-}
-
-async function syncDirectory(path: string): Promise<void> {
-  let handle;
-  try {
-    handle = await open(path, "r");
-    await handle.sync();
-  } catch {
-    // Directory fsync is not supported on every platform. The file itself is always fsynced.
-  } finally {
-    await handle?.close().catch(() => undefined);
-  }
-}
-
-async function publishArtifact(bytes: Uint8Array, outputPath: string, overwrite: boolean): Promise<void> {
-  const outputDirectory = dirname(outputPath);
-  await mkdir(outputDirectory, { recursive: true });
-  const temporaryPath = join(
-    outputDirectory,
-    `.${basename(outputPath)}.dokion-tmp-${process.pid}-${randomUUID()}`
-  );
-
-  let handle;
-  try {
-    handle = await open(temporaryPath, "wx", 0o600);
-    await handle.writeFile(bytes);
-    await handle.sync();
-  } finally {
-    await handle?.close().catch(() => undefined);
-  }
-
-  try {
-    if (overwrite) {
-      await rename(temporaryPath, outputPath);
-    } else {
-      try {
-        await link(temporaryPath, outputPath);
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === "EEXIST") {
-          throw new DokionError("REGISTRY_PACKAGE_OUTPUT_EXISTS", `Package output already exists: ${outputPath}`, {
-            outputPath
-          });
-        }
-        throw error;
-      }
-      await unlink(temporaryPath);
-    }
-    await syncDirectory(outputDirectory);
-  } catch (error) {
-    await unlink(temporaryPath).catch(() => undefined);
-    throw error;
-  }
-}
-
 export async function buildRegistryPackage(options: BuildRegistryPackageOptions): Promise<RegistryPackageBuildEvidence> {
   const sourceDirectory = resolve(options.sourceDirectory);
   const outputPath = resolve(options.outputPath);
@@ -349,7 +266,7 @@ export async function buildRegistryPackage(options: BuildRegistryPackageOptions)
   for (const path of sortedPaths) {
     await assertSafeSourcePath(sourceDirectory, path);
     const bytes = await readRegularFile(join(sourceDirectory, ...path.split("/")), path);
-    rejectLifecycleScripts(path, bytes);
+    rejectPackageLifecycleScripts(path, bytes);
     totalPayloadBytes += bytes.length;
     if (totalPayloadBytes > REGISTRY_PACKAGE_LIMITS.maximumTotalPayloadBytes) {
       throw new DokionError("REGISTRY_PACKAGE_TOO_LARGE", "Package payload exceeds the total unpacked size bound.", {
@@ -390,7 +307,7 @@ export async function buildRegistryPackage(options: BuildRegistryPackageOptions)
   const manifestBytes = canonicalJsonBytes(manifestValue);
   const manifest = parseRegistryPackageManifest(manifestBytes);
   const archiveBytes = createDeterministicPackageTar([...tarEntries, { path: "manifest.json", bytes: manifestBytes }]);
-  await publishArtifact(archiveBytes, outputPath, options.overwrite === true);
+  await publishRegistryPackageArtifact(archiveBytes, outputPath, options.overwrite === true);
 
   return {
     archivePath: outputPath,
