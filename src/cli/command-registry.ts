@@ -29,6 +29,14 @@ const REGISTRY_PACKAGE_COMMAND: CliCommandDescriptor = {
   geminiFiles: []
 };
 
+export const CLI_COMMAND_MANIFEST_FILES: Readonly<Record<string, string>> = Object.freeze({
+  registry: "schemas/registry/dokion.registry-cli.v1.json"
+});
+
+export const CLI_COMMAND_SPEC_FILES: Readonly<Record<string, string>> = Object.freeze({
+  registry: "docs/registry-packages.md"
+});
+
 export const CLI_COMMAND_REGISTRY: readonly CliCommandDescriptor[] = [
   ...LEGACY_CLI_COMMAND_REGISTRY.map((command) => {
     if (command.id !== "hub") return command;
@@ -45,6 +53,14 @@ export const CLI_COMMAND_REGISTRY: readonly CliCommandDescriptor[] = [
   }),
   REGISTRY_PACKAGE_COMMAND
 ];
+
+export function manifestFileForCommand(commandId: string): string {
+  return CLI_COMMAND_MANIFEST_FILES[commandId] ?? "dokion.json";
+}
+
+export function specificationFileForCommand(commandId: string): string {
+  return CLI_COMMAND_SPEC_FILES[commandId] ?? "SPECIFICATION.md";
+}
 
 export function implementedCliCommands(): readonly CliCommandDescriptor[] {
   return CLI_COMMAND_REGISTRY.filter((command) => command.status === "IMPLEMENTED");
