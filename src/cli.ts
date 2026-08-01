@@ -33,6 +33,8 @@ import { ExecutionEngine } from "./engine/execution-engine.ts";
 import { listFindings } from "./findings/finding-store.ts";
 import { inspectProject } from "./inspect/project-inspector.ts";
 import { loadActivePlaybook } from "./playbook/load-playbook.ts";
+import { buildRegistryPackage } from "./registry/package-builder.ts";
+import { verifyRegistryPackage } from "./registry/package-verifier.ts";
 import { writeHardeningReport } from "./report/render-hardening.ts";
 import { DOKION_VERSION } from "./runtime/package-metadata.ts";
 import { acquireRunLock, type RunLockOperation } from "./state/run-lock.ts";
@@ -209,6 +211,27 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
       return;
     case "validate":
       await validate(invocation.catalogOnly, invocation.format);
+      return;
+    case "registry":
+      if (invocation.subcommand === "pack") {
+        print(
+          await buildRegistryPackage({
+            sourceDirectory: invocation.directory,
+            outputPath: invocation.output,
+            overwrite: invocation.overwrite
+          }),
+          invocation.format
+        );
+        return;
+      }
+      print(
+        await verifyRegistryPackage({
+          archivePath: invocation.archive,
+          ...(invocation.expectedPackageId ? { expectedPackageId: invocation.expectedPackageId } : {}),
+          ...(invocation.expectedVersion ? { expectedVersion: invocation.expectedVersion } : {})
+        }),
+        invocation.format
+      );
       return;
     case "run":
       print(await new ExecutionEngine(root).run(), invocation.format);
