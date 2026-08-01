@@ -26,9 +26,30 @@ export function normalizePackagePath(input: string): string {
   }
 
   const normalized = input.normalize("NFC");
-  if (Buffer.byteLength(normalized, "utf8") > REGISTRY_PACKAGE_LIMITS.maximumPathBytes) {
-    throw new DokionError("REGISTRY_PACKAGE_PATH_INVALID", `Package path exceeds the ${REGISTRY_PACKAGE_LIMITS.maximumPathBytes}-byte limit.`, {
-      path: input
+  const normalizedSegments = normalized.split("/");
+  const oversizedSegment = normalizedSegments.find(
+    (segment) => Buffer.byteLength(segment, "utf8") > REGISTRY_PACKAGE_LIMITS.maximumPathSegmentBytes
+  );
+  if (oversizedSegment) {
+    throw new DokionError(
+      "REGISTRY_PACKAGE_PATH_INVALID",
+      `Package path segments may not exceed ${REGISTRY_PACKAGE_LIMITS.maximumPathSegmentBytes} UTF-8 bytes.`,
+      { path: input, segment: oversizedSegment }
+    );
+  }
+
+  const packagePathBytes = Buffer.byteLength(normalized, "utf8");
+  if (packagePathBytes > REGISTRY_PACKAGE_LIMITS.maximumPathBytes) {
+    throw new DokionError(
+      "REGISTRY_PACKAGE_PATH_INVALID",
+      `Package path exceeds the ${REGISTRY_PACKAGE_LIMITS.maximumPathBytes}-byte rooted USTAR limit.`,
+      { path: input, bytes: packagePathBytes }
+    );
+  }
+  if (REGISTRY_PACKAGE_LIMITS.archiveRootBytes + packagePathBytes > REGISTRY_PACKAGE_LIMITS.maximumArchivePathBytes) {
+    throw new DokionError("REGISTRY_PACKAGE_PATH_INVALID", "Package path cannot fit below the canonical archive root.", {
+      path: input,
+      archiveBytes: REGISTRY_PACKAGE_LIMITS.archiveRootBytes + packagePathBytes
     });
   }
   return normalized;
