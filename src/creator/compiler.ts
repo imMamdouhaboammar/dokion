@@ -40,7 +40,7 @@ export class PlaybookCompiler {
         responsibility: step.description,
         mode: "FIX_WITH_APPROVAL",
         required: true,
-        approval: "BEFORE_WRITE",
+        approval: "ALWAYS",
         failure_policy: "STOP_STAGE",
         verification,
         ...(previousStep !== undefined ? { depends_on: [previousStep.id] } : {}),
@@ -87,7 +87,7 @@ export class PlaybookCompiler {
         on_unverified: "STOP_STEP",
       },
       defaults: {
-        approval: "BEFORE_WRITE",
+        approval: "ALWAYS",
         failure_policy: "STOP_STAGE",
         retry_count: 1,
         maximum_iterations: 1,
