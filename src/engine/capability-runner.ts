@@ -6,7 +6,10 @@ import { DokionError } from "../core/errors.ts";
 import { readJson, writeJsonAtomic } from "../core/json.ts";
 import { writeCommandEvidence } from "../evidence/evidence-store.ts";
 import { listFindings, normalizeFindingEnvelope, updateFinding } from "../findings/finding-store.ts";
-import { materializeNativeScannerOutput } from "../findings/native-scanner-output.ts";
+import {
+  materializeNativeScannerOutput,
+  validateNativeScannerCommand
+} from "../findings/native-scanner-output.ts";
 import { resolveNativeScannerAdapter } from "../findings/scanner-output-adapters.ts";
 import type { NormalizedFinding, RawFindingEnvelope } from "../findings/types.ts";
 import type { LoadedPlaybook, PlaybookStage, PlaybookStep } from "../playbook/types.ts";
@@ -118,6 +121,15 @@ export async function runAnalyzeCapability(input: {
   const stepEvidenceRoot = `.dokion/evidence/${input.state.run.id}/steps/${input.stage.id}/${input.step.id}`;
   const rawArtifact = `${stepEvidenceRoot}/raw-findings.json`;
   const nativeArtifact = `${stepEvidenceRoot}/native-output.json`;
+  const nativeAdapter = resolveNativeScannerAdapter(input.step.capability.id);
+  if (nativeAdapter) {
+    await validateNativeScannerCommand(
+      input.root,
+      input.step.capability.id,
+      command,
+      [nativeArtifact, rawArtifact]
+    );
+  }
   await mkdir(dirname(join(input.root, rawArtifact)), { recursive: true });
   await Promise.all([
     rm(join(input.root, rawArtifact), { force: true }),
@@ -134,7 +146,6 @@ export async function runAnalyzeCapability(input: {
       DOKION_STEP_ID: input.step.id
     }
   });
-  const nativeAdapter = resolveNativeScannerAdapter(input.step.capability.id);
   const commandArtifact = await writeCommandEvidence(input.root, {
     run_id: input.state.run.id,
     stage_id: input.stage.id,
