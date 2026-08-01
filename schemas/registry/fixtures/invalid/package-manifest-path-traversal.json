@@ -5,11 +5,7 @@
     "name": "secure-web-app",
     "version": "1.2.3"
   },
-  "artifact": {
-    "digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-    "size": 8192,
-    "format": "tar"
-  },
+  "package_format": "dokion-package-tar-v1",
   "playbook_path": "playbook.json",
   "readme_path": "README.md",
   "license_path": "LICENSE",
@@ -17,13 +13,6 @@
     "minimum_dokion_version": "0.3.0"
   },
   "files": [
-    {
-      "path": "manifest.json",
-      "kind": "file",
-      "media_type": "application/json",
-      "size": 2048,
-      "digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
-    },
     {
       "path": "playbook.json",
       "kind": "file",
