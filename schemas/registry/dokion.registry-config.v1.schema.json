@@ -51,18 +51,13 @@
         {
           "type": "object",
           "required": ["transport", "path"],
-          "additionalProperties": false,
           "properties": {
-            "name": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sourceName" },
-            "id": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sourceId" },
-            "priority": { "type": "integer", "minimum": 0, "maximum": 1000000 },
-            "enabled": { "type": "boolean" },
-            "cache_ttl_seconds": { "type": "integer", "minimum": 0, "maximum": 2592000 },
             "transport": { "const": "local" },
             "path": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!.*\\u0000).+$" }
           }
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     },
     "httpsSource": {
       "allOf": [
@@ -70,18 +65,13 @@
         {
           "type": "object",
           "required": ["transport", "url"],
-          "additionalProperties": false,
           "properties": {
-            "name": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sourceName" },
-            "id": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sourceId" },
-            "priority": { "type": "integer", "minimum": 0, "maximum": 1000000 },
-            "enabled": { "type": "boolean" },
-            "cache_ttl_seconds": { "type": "integer", "minimum": 0, "maximum": 2592000 },
             "transport": { "const": "https" },
             "url": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" }
           }
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     },
     "gitSource": {
       "allOf": [
@@ -89,20 +79,15 @@
         {
           "type": "object",
           "required": ["transport", "url", "immutable_revision", "root_path"],
-          "additionalProperties": false,
           "properties": {
-            "name": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sourceName" },
-            "id": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/sourceId" },
-            "priority": { "type": "integer", "minimum": 0, "maximum": 1000000 },
-            "enabled": { "type": "boolean" },
-            "cache_ttl_seconds": { "type": "integer", "minimum": 0, "maximum": 2592000 },
             "transport": { "const": "git" },
             "url": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/safeHttpsUri" },
             "immutable_revision": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/gitCommit" },
             "root_path": { "$ref": "https://schemas.dokion.dev/common.schema.json#/$defs/relativePackagePath" }
           }
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     }
   }
 }
