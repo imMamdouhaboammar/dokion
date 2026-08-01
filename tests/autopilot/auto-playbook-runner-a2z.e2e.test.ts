@@ -4,7 +4,7 @@ import type { MinimalPlaybook } from "../../src/autopilot/next-action.ts";
 import type { DokionState } from "../../src/state/types.ts";
 
 describe("Auto Playbook Runner A-to-Z Execution", () => {
-  test("runs playbook completely from A to Z to 100% completion", async () => {
+  test("runs playbook completely from A to Z only after action and verification callbacks execute", async () => {
     const samplePlaybook: MinimalPlaybook = {
       id: "test-playbook-a2z",
       name: "Test A-to-Z Playbook",
@@ -43,6 +43,9 @@ describe("Auto Playbook Runner A-to-Z Execution", () => {
       stages: [],
     };
 
+    const executed: string[] = [];
+    const verified: string[] = [];
+    const shadowVerified: string[] = [];
     const runner = new AutoPlaybookRunner({
       playbook: samplePlaybook,
       state: initialState,
@@ -51,6 +54,22 @@ describe("Auto Playbook Runner A-to-Z Execution", () => {
       enableAutoresearch: true,
       enableShadowVerification: true,
       hasUserApproval: true,
+      onExecuteStep: async (action) => {
+        executed.push(action.stepId);
+        return { executed: true, changed: false, description: `Executed ${action.stepId}` };
+      },
+      onRunShellCommand: async (command) => {
+        verified.push(command);
+        return { exitCode: 0, stdout: "PASS", stderr: "" };
+      },
+      onShadowVerify: async (action) => {
+        shadowVerified.push(action.stepId);
+        return {
+          score: 100,
+          passed: true,
+          checks: [{ name: "independent evidence check", passed: true, durationMs: 1 }],
+        };
+      },
     });
 
     const report = await runner.runToAbsoluteSuccess();
@@ -60,5 +79,8 @@ describe("Auto Playbook Runner A-to-Z Execution", () => {
     expect(report.stepsSucceeded).toBe(4);
     expect(report.circuitBreakerStatus).toBe("HEALTHY");
     expect(report.message).toContain("100% playbook completion");
+    expect(executed).toEqual(samplePlaybook.steps.map((step) => step.id));
+    expect(verified).toEqual(samplePlaybook.steps.map((step) => step.command));
+    expect(shadowVerified).toEqual(samplePlaybook.steps.map((step) => step.id));
   });
 });
