@@ -147,28 +147,28 @@ export async function materializeNativeScannerOutput(
     input.command,
     [input.nativeArtifact, input.convertedArtifact]
   );
-  if (!nativeScannerAcceptsExitCode(input.capabilityId, input.result.exitCode)) {
-    throw new DokionError("COMMAND_FAILED", `Native scanner command exited ${input.result.exitCode}`, {
-      capabilityId: input.capabilityId,
-      adapter: preflight.adapter,
-    });
-  }
-
   const sourcePath = preflight.declaredOutputPath
     ? resolve(input.root, preflight.declaredOutputPath)
     : resolve(input.root, input.result.stdoutArtifact.artifactPath);
-  if (!preflight.declaredOutputPath && input.result.stdoutArtifact.truncated) {
-    fail("Native scanner stdout exceeded the evidence bound and cannot be parsed completely", {
-      capabilityId: input.capabilityId,
-      bytesObserved: input.result.stdoutArtifact.bytesObserved,
-      bytesStored: input.result.stdoutArtifact.bytesStored,
-    });
-  }
-
   const persistedNativeArtifact = preflight.declaredOutputPath ?? input.nativeArtifact;
   const nativePath = resolve(input.root, persistedNativeArtifact);
   const convertedPath = resolve(input.root, input.convertedArtifact);
+
   try {
+    if (!nativeScannerAcceptsExitCode(input.capabilityId, input.result.exitCode)) {
+      throw new DokionError("COMMAND_FAILED", `Native scanner command exited ${input.result.exitCode}`, {
+        capabilityId: input.capabilityId,
+        adapter: preflight.adapter,
+      });
+    }
+    if (!preflight.declaredOutputPath && input.result.stdoutArtifact.truncated) {
+      fail("Native scanner stdout exceeded the evidence bound and cannot be parsed completely", {
+        capabilityId: input.capabilityId,
+        bytesObserved: input.result.stdoutArtifact.bytesObserved,
+        bytesStored: input.result.stdoutArtifact.bytesStored,
+      });
+    }
+
     const bytes = await readNativeArtifact(sourcePath, input.capabilityId);
     const payload = parseJson(bytes, input.capabilityId);
     const sanitizedPayload = scrubSensitiveFields(payload, input.capabilityId);
