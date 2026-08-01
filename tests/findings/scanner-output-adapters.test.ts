@@ -30,8 +30,38 @@ describe("native scanner output adapters", () => {
       severity: "HIGH",
       rule_id: "GHSA-test-0001",
       location: { file: "bun.lock" },
-      blocks_release: true,
     });
+    expect(result.findings[0]).not.toHaveProperty("blocks_release");
+  });
+
+  test("uses standard OSV severity data when database-specific severity is absent", () => {
+    const numeric = adaptNativeScannerOutput("osv-scanner", {
+      results: [{
+        source: { path: "bun.lock" },
+        packages: [{
+          package: { name: "example", version: "1.0.0", ecosystem: "npm" },
+          vulnerabilities: [{
+            id: "OSV-CRITICAL",
+            severity: [{ type: "CVSS_V3", score: "9.8" }],
+          }],
+        }],
+      }],
+    });
+    const vector = adaptNativeScannerOutput("osv-scanner", {
+      results: [{
+        source: { path: "bun.lock" },
+        packages: [{
+          package: { name: "example", version: "1.0.0", ecosystem: "npm" },
+          vulnerabilities: [{
+            id: "OSV-VECTOR",
+            severity: [{ type: "CVSS_V3", score: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" }],
+          }],
+        }],
+      }],
+    });
+
+    expect(numeric.findings[0]?.severity).toBe("CRITICAL");
+    expect(vector.findings[0]?.severity).toBe("MEDIUM");
   });
 
   test("normalizes Gitleaks JSON without persisting secret material", () => {
@@ -57,8 +87,8 @@ describe("native scanner output adapters", () => {
       severity: "HIGH",
       rule_id: "generic-api-key",
       location: { file: "src/config.ts", line: 4, end_line: 4 },
-      blocks_release: true,
     });
+    expect(result.findings[0]).not.toHaveProperty("blocks_release");
     expect(serialized).not.toContain("super-secret-token");
   });
 
@@ -81,8 +111,8 @@ describe("native scanner output adapters", () => {
       severity: "HIGH",
       rule_id: "typescript.lang.security.audit.eval-detected",
       location: { file: "src/run.ts", line: 12, end_line: 12 },
-      blocks_release: true,
     });
+    expect(result.findings[0]).not.toHaveProperty("blocks_release");
     expect(result.findings[0]?.tags).toContain("CWE-95");
   });
 
@@ -125,6 +155,7 @@ describe("native scanner output adapters", () => {
       "DS001",
       "aws-access-key-id",
     ]);
+    expect(result.findings.every((finding) => !("blocks_release" in finding))).toBe(true);
     expect(JSON.stringify(result)).not.toContain("AKIA-DO-NOT-PERSIST");
   });
 
