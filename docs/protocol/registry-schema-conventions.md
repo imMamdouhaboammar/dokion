@@ -35,7 +35,17 @@ sha256:<64 lowercase hexadecimal characters>
 
 A digest proves byte equality only. It does not prove publisher identity, review quality, safety, compatibility, popularity, or execution success.
 
-Registry index, manifest, artifact, and included-file digests are separate evidence and must be checked independently.
+Registry index, manifest, artifact, and payload-file digests are separate evidence and must be checked independently.
+
+Digest ownership must remain acyclic:
+
+- `manifest.json` lists payload-file digests but not its own digest
+- `manifest.json` does not contain the artifact digest or artifact size
+- the Registry index binds the final manifest digest and final artifact digest
+- provenance records expected and observed digests after retrieval
+- the lockfile preserves verified digests after installation
+
+This ordering allows the publisher to hash payload files, serialize the manifest, hash the manifest, build the artifact, then hash the artifact without a self-reference.
 
 ## Package identity and versions
 
@@ -71,8 +81,9 @@ Package paths are normalized forward-slash relative paths. The schema rejects:
 - repeated separators
 - backslashes
 - empty paths
+- `manifest.json` inside the manifest's payload inventory
 
-The package verifier phase must add archive-level enforcement for symlinks, hardlinks, duplicate entries, special files, file-count bounds, individual size bounds, total expanded size, and archive bombs.
+The package verifier phase must add archive-level enforcement for symlinks, hardlinks, duplicate entries, special files, file-count bounds, individual size bounds, total expanded size, and archive bombs. It must also require exactly one root `manifest.json` archive entry and prove that every remaining archive file matches the manifest inventory.
 
 ## Trust state separation
 
@@ -95,6 +106,6 @@ A valid digest with `publisher_identity: UNPROVEN` means the downloaded bytes ma
 Two independent validators cover the contracts:
 
 - Bun and AJV validate the six v1 contracts and all canonical fixtures
-- Python `jsonschema` validates the same fixtures offline using a local schema store
+- Python `jsonschema` validates the same fixtures offline using a local schema Registry
 
 Every invalid fixture represents a refusal case, not merely malformed sample data. CI must fail if any invalid fixture becomes accepted.
