@@ -91,7 +91,7 @@ async function writeNativeOsvPlaybook(root: string, malformed = false): Promise<
         }],
       };
   const script = `console.log(${JSON.stringify(JSON.stringify(payload))}); process.exit(1);`;
-  const capabilityCommand = `bun -e ${JSON.stringify(script)}`;
+  const capabilityCommand = `bun -e ${JSON.stringify(script)} -- --format json`;
 
   playbook.project.name = "native-scanner-adapter";
   playbook.project.target = "READY_FOR_STAGING";
