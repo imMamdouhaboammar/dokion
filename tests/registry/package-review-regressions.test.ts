@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
@@ -162,6 +162,20 @@ describe("Registry package review regressions", () => {
     );
   });
 
+  test("verifier fails closed for a malformed externally produced package.json", async () => {
+    const root = await temporaryRoot();
+    const archivePath = join(root, "malformed-package-json.tar");
+    await writeFile(
+      archivePath,
+      validArchive([{ path: "package.json", bytes: Buffer.from("{not-json") }])
+    );
+
+    await expectCode(
+      verifyRegistryPackage({ archivePath }),
+      "REGISTRY_PACKAGE_MANIFEST_INVALID"
+    );
+  });
+
   test("verifier rejects noncanonical deterministic USTAR metadata", async () => {
     const root = await temporaryRoot();
     const archivePath = join(root, "mode.tar");
@@ -185,12 +199,16 @@ describe("Registry package review regressions", () => {
   });
 
   test("package paths are guaranteed representable by deterministic USTAR", () => {
-    const exactMaximum = `${"a".repeat(100)}/${"b".repeat(100)}/${"c".repeat(38)}`;
-    expect(Buffer.byteLength(exactMaximum, "utf8")).toBe(240);
-    expect(normalizePackagePath(exactMaximum)).toBe(exactMaximum);
+    const longRepresentable = `${"a".repeat(100)}/${"b".repeat(39)}/${"c".repeat(99)}`;
+    expect(Buffer.byteLength(longRepresentable, "utf8")).toBe(240);
+    expect(normalizePackagePath(longRepresentable)).toBe(longRepresentable);
 
-    expect(() => normalizePackagePath("x".repeat(101))).toThrow(DokionError);
-    expect(() => normalizePackagePath(`${"a".repeat(100)}/${"b".repeat(100)}/${"c".repeat(39)}`)).toThrow(DokionError);
+    expect(() => normalizePackagePath(`dir/${"x".repeat(101)}`)).toThrow(DokionError);
+    expect(() => normalizePackagePath(`${"x".repeat(101)}/file.txt`)).toThrow(DokionError);
+
+    const oldGenericBoundButUnrepresentable = `${"a".repeat(100)}/${"b".repeat(100)}/${"c".repeat(38)}`;
+    expect(Buffer.byteLength(oldGenericBoundButUnrepresentable, "utf8")).toBe(240);
+    expect(() => normalizePackagePath(oldGenericBoundButUnrepresentable)).toThrow(DokionError);
   });
 
   test("missing archives report the actual missing-path cause", async () => {
@@ -204,6 +222,22 @@ describe("Registry package review regressions", () => {
     expect(error.details.errorCode).toBe("ENOENT");
   });
 
+  if (process.platform !== "win32") {
+    test("inaccessible archives report the permission cause", async () => {
+      const root = await temporaryRoot();
+      const archivePath = join(root, "inaccessible.tar");
+      await writeFile(archivePath, validArchive());
+      await chmod(archivePath, 0o000);
+
+      const error = await expectCode(
+        verifyRegistryPackage({ archivePath }),
+        "REGISTRY_PACKAGE_ARCHIVE_INVALID"
+      );
+      expect(error.message).toContain("filesystem permissions");
+      expect(["EACCES", "EPERM"]).toContain(error.details.errorCode);
+    });
+  }
+
   test("symlink rejection cannot pass by validating invalid target contents", async () => {
     const root = await temporaryRoot();
     const source = await createSource(join(root, "source"));
@@ -216,7 +250,8 @@ describe("Registry package review regressions", () => {
       verifyRegistryPackage({ archivePath }),
       "REGISTRY_PACKAGE_ARCHIVE_INVALID"
     );
-    expect(error.details.cause).toBeString();
+    expect(error.message).toBe("Package archive must not be a symbolic link.");
+    expect(error.details.errorCode).toBe("ELOOP");
   });
 
   test("failed no-overwrite publication leaves no temporary artifact", async () => {
