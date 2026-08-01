@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 
 import { DokionError } from "../core/errors.ts";
 import { DOKION_VERSION } from "../runtime/package-metadata.ts";
-import { compareExactSemver, sha256Digest } from "./digests.ts";
+import { compareExactSemver, compareUtf8Bytes, sha256Digest } from "./digests.ts";
 import type { RegistryPackageManifest, RegistryPackageManifestFile } from "./package-manifest.ts";
 import { parseRegistryPackageManifest } from "./package-manifest.ts";
 import { assertUniquePackagePaths, normalizePackagePath } from "./package-paths.ts";
@@ -168,7 +168,7 @@ export async function verifyRegistryPackage(
   }
 
   const verifiedFiles: RegistryPackageVerificationFile[] = [];
-  for (const [path, declaration] of [...declared.entries()].sort(([left], [right]) => left.localeCompare(right))) {
+  for (const [path, declaration] of [...declared.entries()].sort(([left], [right]) => compareUtf8Bytes(left, right))) {
     const entry = observed.get(path)!;
     if (entry.bytes.length !== declaration.size) {
       throw new DokionError("REGISTRY_PACKAGE_SIZE_MISMATCH", `Package file size does not match its manifest declaration: ${path}`, {
