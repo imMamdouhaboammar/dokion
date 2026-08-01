@@ -1,0 +1,35 @@
+{
+  "schema": "dokion.provenance.v1",
+  "package_id": "dokion-labs/secure-web-app",
+  "version": "1.2.3",
+  "manifest": {
+    "expected_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "integrity_state": "MATCH"
+  },
+  "artifact": {
+    "expected_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "observed_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "integrity_state": "MATCH"
+  },
+  "registry_source": {
+    "source_id": "example.registry",
+    "transport": "git",
+    "immutable_source_state": "PINNED",
+    "immutable_revision": "1111111111111111111111111111111111111111",
+    "registry_index_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "publisher_identity": { "state": "UNPROVEN" },
+  "signature": { "state": "ABSENT" },
+  "compatibility": { "state": "COMPATIBLE", "dokion_version": "0.3.0" },
+  "freshness": { "state": "CURRENT" },
+  "deprecation": { "state": "CURRENT" },
+  "revocation": { "state": "CLEAR" },
+  "observed_at": "2026-08-01T07:20:00Z",
+  "authority": {
+    "selection_authority": false,
+    "substitution_authority": false,
+    "installation_authority": false,
+    "activation_authority": false,
+    "execution_authority": false
+  }
+}
