@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { executeAutoresearchStepLoop } from "../../src/autoresearch/iteration-loop.ts";
 
 describe("Autoresearch Iteration Loop", () => {
-  test("keeps changes when verify and guard pass", async () => {
+  test("keeps changes when modify, verify, and guard pass", async () => {
     let committed = false;
     let rolledBack = false;
 
@@ -55,5 +55,35 @@ describe("Autoresearch Iteration Loop", () => {
     expect(result.verifyPassed).toBe(false);
     expect(committed).toBe(false);
     expect(rolledBack).toBe(true);
+  });
+
+  test("fails closed when the modify callback is missing", async () => {
+    const result = await executeAutoresearchStepLoop(
+      {
+        stepId: "missing-modifier",
+        onRunShell: async () => ({ exitCode: 0, stdout: "PASS", stderr: "" }),
+      },
+      1
+    );
+
+    expect(result.action).toBe("ROLLBACK");
+    expect(result.verifyPassed).toBe(false);
+    expect(result.guardPassed).toBe(false);
+    expect(result.changeDescription).toContain("modify callback");
+  });
+
+  test("fails closed when the command runner is missing", async () => {
+    const result = await executeAutoresearchStepLoop(
+      {
+        stepId: "missing-runner",
+        onModifyStep: async () => "Applied a real change",
+      },
+      1
+    );
+
+    expect(result.action).toBe("ROLLBACK");
+    expect(result.verifyPassed).toBe(false);
+    expect(result.guardPassed).toBe(false);
+    expect(result.changeDescription).toContain("command runner");
   });
 });
