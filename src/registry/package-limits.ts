@@ -3,6 +3,9 @@ export const REGISTRY_PACKAGE_LIMITS = Object.freeze({
   maximumFiles: 9_999,
   maximumFileBytes: 64 * 1024 * 1024,
   maximumTotalPayloadBytes: 256 * 1024 * 1024,
-  maximumPathBytes: 255,
+  archiveRootBytes: Buffer.byteLength("dokion-package/", "utf8"),
+  maximumArchivePathBytes: 255,
+  maximumPathBytes: 240,
+  maximumPathSegmentBytes: 100,
   maximumManifestBytes: 4 * 1024 * 1024
 });
