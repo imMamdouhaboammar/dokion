@@ -165,7 +165,8 @@ export async function materializeNativeScannerOutput(
     });
   }
 
-  const nativePath = resolve(input.root, input.nativeArtifact);
+  const persistedNativeArtifact = preflight.declaredOutputPath ?? input.nativeArtifact;
+  const nativePath = resolve(input.root, persistedNativeArtifact);
   const convertedPath = resolve(input.root, input.convertedArtifact);
   try {
     const bytes = await readNativeArtifact(sourcePath, input.capabilityId);
@@ -183,7 +184,7 @@ export async function materializeNativeScannerOutput(
     return {
       adapter: preflight.adapter,
       envelope,
-      nativeArtifact: input.nativeArtifact,
+      nativeArtifact: persistedNativeArtifact,
       convertedArtifact: input.convertedArtifact,
     };
   } finally {
