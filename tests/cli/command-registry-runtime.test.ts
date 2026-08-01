@@ -78,7 +78,6 @@ Configure:
   validate [--catalog-only]
   create [--from-memory <source>] [--transcript <path>] [--topic <topic>]
   reset --state-only
-  hub <search|pull|fork|leaderboard> [<package-id>]
   playbooks <import|validate|sync|list>
 
 Execute:
@@ -99,7 +98,7 @@ Dokion never installs, selects, substitutes, reorders, or enables capabilities.`
     expect(registry.renderCliHelp("9.9.9")).toBe(expected);
   });
 
-  test("resolves implemented commands", async () => {
+  test("resolves implemented and planned commands", async () => {
     const registry = await registryApi();
 
     expect(typeof registry.resolveCliCommand).toBe("function");
@@ -115,6 +114,11 @@ Dokion never installs, selects, substitutes, reorders, or enables capabilities.`
       status: "IMPLEMENTED",
       executionMode: "CONFIGURE",
       approvalClass: "ALWAYS"
+    });
+    expect(registry.resolveCliCommand("hub")).toMatchObject({
+      id: "hub",
+      status: "PLANNED",
+      writeScope: []
     });
     expect(registry.resolveCliCommand("not-a-command")).toBeUndefined();
   });
