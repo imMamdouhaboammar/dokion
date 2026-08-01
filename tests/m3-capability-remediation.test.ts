@@ -103,9 +103,11 @@ async function fixture(remediation: "good" | "suppression", approval: "BEFORE_EA
             responsibility: "Find direct SQL interpolation.",
             mode: "ANALYZE",
             required: true,
-            permissions: { read: ["src/**"], write: [".dokion/**", "HARDENING.md"], network: false, shell: [analyzer] },
+            permissions: { read: ["src/**"], write: [".dokion/**", "HARDENING.md"], network: false, shell: [analyzer, "bun test"] },
             approval: "NEVER",
             validation: { require_evidence_artifact: true },
+            verification: ["bun test"],
+            success_conditions: ["capability_output_recorded", "verification_passed"],
             failure_policy: "STOP_PIPELINE"
           },
           {
