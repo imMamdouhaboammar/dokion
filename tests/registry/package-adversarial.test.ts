@@ -142,6 +142,8 @@ function rawTar(path: string, declaredSize: number, payload = new Uint8Array()):
   write(156, 1, "0");
   write(257, 6, "ustar\0");
   write(263, 2, "00");
+  octal(329, 8, 0);
+  octal(337, 8, 0);
   const checksum = block.reduce((sum, byte) => sum + byte, 0);
   write(148, 8, `${checksum.toString(8).padStart(6, "0")}\0 `);
 
