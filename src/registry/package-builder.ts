@@ -171,6 +171,12 @@ async function readRegularFile(path: string, packagePath: string): Promise<Uint8
   try {
     handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
   } catch (error) {
+    const errorCode = (error as NodeJS.ErrnoException).code;
+    if (errorCode === "ENOENT" || errorCode === "ENOTDIR") {
+      throw new DokionError("REGISTRY_PACKAGE_REQUIRED_FILE_MISSING", `Missing declared package file: ${packagePath}`, {
+        path: packagePath
+      });
+    }
     throw new DokionError("REGISTRY_PACKAGE_ENTRY_TYPE_UNSUPPORTED", `Package input must be a regular non-symlink file: ${packagePath}`, {
       path: packagePath,
       cause: error instanceof Error ? error.message : String(error)
@@ -300,10 +306,7 @@ export async function buildRegistryPackage(options: BuildRegistryPackageOptions)
     });
   }
 
-  const configBytes = await readRegularFile(join(sourceDirectory, BUILD_CONFIG), BUILD_CONFIG).catch((error) => {
-    if (error instanceof DokionError) throw error;
-    throw new DokionError("REGISTRY_PACKAGE_REQUIRED_FILE_MISSING", `Missing required package build metadata: ${BUILD_CONFIG}`);
-  });
+  const configBytes = await readRegularFile(join(sourceDirectory, BUILD_CONFIG), BUILD_CONFIG);
   const config = parseBuildConfig(configBytes);
 
   const paths = [...REQUIRED_FILES, ...(config.files ?? [])].map((path) => normalizePackagePath(path));
@@ -317,13 +320,7 @@ export async function buildRegistryPackage(options: BuildRegistryPackageOptions)
   const manifestFiles: RegistryPackageManifestFile[] = [];
   let totalPayloadBytes = 0;
   for (const path of sortedPaths) {
-    let bytes: Uint8Array;
-    try {
-      bytes = await readRegularFile(join(sourceDirectory, ...path.split("/")), path);
-    } catch (error) {
-      if (error instanceof DokionError) throw error;
-      throw new DokionError("REGISTRY_PACKAGE_REQUIRED_FILE_MISSING", `Missing declared package file: ${path}`, { path });
-    }
+    const bytes = await readRegularFile(join(sourceDirectory, ...path.split("/")), path);
     rejectLifecycleScripts(path, bytes);
     totalPayloadBytes += bytes.length;
     if (totalPayloadBytes > REGISTRY_PACKAGE_LIMITS.maximumTotalPayloadBytes) {
