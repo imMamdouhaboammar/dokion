@@ -2,7 +2,7 @@ import { DokionError } from "../../core/errors.ts";
 import { ExecutionEngine } from "../../engine/execution-engine.ts";
 import { loadActivePlaybook } from "../../playbook/load-playbook.ts";
 import type { DokionState, ExecutionStatus, StepState } from "../../state/types.ts";
-import { writeCliDiagnostic, writeCliResult } from "../output.ts";
+import { writeCliResult } from "../output.ts";
 import type { CliOutputFormat } from "../types.ts";
 
 export interface AutoRunnerCliOptions {
@@ -11,7 +11,7 @@ export interface AutoRunnerCliOptions {
   format: CliOutputFormat;
 }
 
-interface ProductionAutoRunnerReport {
+export interface ProductionAutoRunnerReport {
   execution_engine: "production";
   runStatus: DokionState["run"]["status"];
   completed: boolean;
@@ -93,43 +93,30 @@ function rejectLegacySimulationControls(invocation: AutoRunnerCliOptions): void 
 export async function handleAutoRunnerCommand(
   root: string,
   invocation: AutoRunnerCliOptions
-): Promise<void> {
-  try {
-    rejectLegacySimulationControls(invocation);
-    const loaded = await loadActivePlaybook(root);
-    const state = await new ExecutionEngine(root).run();
-    const report = summarizeProductionRun(state);
+): Promise<ProductionAutoRunnerReport> {
+  rejectLegacySimulationControls(invocation);
+  const loaded = await loadActivePlaybook(root);
+  const state = await new ExecutionEngine(root).run();
+  const report = summarizeProductionRun(state);
 
-    if (invocation.format === "human") {
-      const totalSteps = loaded.data.stages.reduce(
-        (total, stage) => total + stage.steps.length,
-        0
-      );
-      console.log("\nDokion Auto Runner: production execution\n");
-      console.log(`  Playbook Name:       ${loaded.data.project.name}`);
-      console.log(`  Total Steps Loaded:  ${totalSteps}`);
-      console.log(`  Completion Reached:  ${report.completionPercentage.toFixed(1)}%`);
-      console.log(`  Steps Succeeded:     ${report.stepsSucceeded}`);
-      console.log(`  Steps Failed:        ${report.stepsFailed}`);
-      console.log(`  Verified Fixes:      ${report.keptChangesCount}`);
-      console.log(`  Rejected Fixes:      ${report.rolledBackChangesCount}`);
-      console.log(`  Run Status:          ${state.run.status}`);
-      console.log(`  Status Message:      ${report.message}\n`);
-    } else {
-      writeCliResult(report, invocation.format);
-    }
-
-    if (!report.completed) process.exitCode = 1;
-  } catch (error) {
-    writeCliDiagnostic(
-      error instanceof DokionError
-        ? error
-        : new DokionError(
-            "COMMAND_FAILED",
-            error instanceof Error ? error.message : String(error)
-          ),
-      invocation.format
+  if (invocation.format === "human") {
+    const totalSteps = loaded.data.stages.reduce(
+      (total, stage) => total + stage.steps.length,
+      0
     );
-    process.exitCode = 1;
+    console.log("\nDokion Auto Runner: production execution\n");
+    console.log(`  Playbook Name:       ${loaded.data.project.name}`);
+    console.log(`  Total Steps Loaded:  ${totalSteps}`);
+    console.log(`  Completion Reached:  ${report.completionPercentage.toFixed(1)}%`);
+    console.log(`  Steps Succeeded:     ${report.stepsSucceeded}`);
+    console.log(`  Steps Failed:        ${report.stepsFailed}`);
+    console.log(`  Verified Fixes:      ${report.keptChangesCount}`);
+    console.log(`  Rejected Fixes:      ${report.rolledBackChangesCount}`);
+    console.log(`  Run Status:          ${state.run.status}`);
+    console.log(`  Status Message:      ${report.message}\n`);
+  } else {
+    writeCliResult(report, invocation.format);
   }
+
+  return report;
 }
