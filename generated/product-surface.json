@@ -87,7 +87,7 @@
       ]
     },
     {
-      "id": "goals",
+      "id": "goals-list",
       "status": "IMPLEMENTED",
       "evidence": [
         "src/cli/command-registry.ts"
@@ -129,7 +129,7 @@
       ]
     },
     {
-      "id": "loops",
+      "id": "loops-list",
       "status": "IMPLEMENTED",
       "evidence": [
         "src/cli/command-registry.ts"
@@ -157,7 +157,7 @@
       ]
     },
     {
-      "id": "plugins",
+      "id": "plugins-list",
       "status": "IMPLEMENTED",
       "evidence": [
         "src/cli/command-registry.ts"
@@ -185,7 +185,7 @@
       ]
     },
     {
-      "id": "reset",
+      "id": "reset-state",
       "status": "IMPLEMENTED",
       "evidence": [
         "src/cli/command-registry.ts"
@@ -206,7 +206,7 @@
       ]
     },
     {
-      "id": "skills",
+      "id": "skills-list",
       "status": "IMPLEMENTED",
       "evidence": [
         "src/cli/command-registry.ts"
@@ -234,7 +234,7 @@
       ]
     },
     {
-      "id": "tools",
+      "id": "tools-list",
       "status": "IMPLEMENTED",
       "evidence": [
         "src/cli/command-registry.ts"
