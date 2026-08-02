@@ -22,9 +22,11 @@ describe("repository test boundaries", () => {
     expect(rootPackage.scripts?.prepack).toContain("bun run test");
     const runtimeRunner = await Bun.file("scripts/run-runtime-tests.ts").text();
     expect(runtimeRunner).toContain('new Bun.Glob("**/*.test.ts")');
+    expect(runtimeRunner).toContain('new Bun.Glob("**/*.test.js")');
     expect(runtimeRunner).toContain('cwd: "tests"');
     expect(runtimeRunner).toContain('Bun.spawn([process.execPath, "test", ...testFiles]');
     expect(frontendPackage.scripts?.test).toBe("bun test src/tests");
+    expect(frontendPackage.scripts?.lint).toBe("tsc --noEmit");
 
     expect(workflow).toContain("bun run test 2>&1 | tee test.log");
     expect(workflow).toContain("working-directory: frontend");
