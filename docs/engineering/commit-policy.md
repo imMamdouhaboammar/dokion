@@ -115,6 +115,17 @@ bun run validate:contracts
 bun run build
 ```
 
+Frontend changes also require:
+
+```bash
+cd frontend
+bun install --frozen-lockfile
+bun run test
+bun run lint
+bun run build
+cd ..
+```
+
 Distribution, adapter, package, binary, or release changes also require:
 
 ```bash
