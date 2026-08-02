@@ -17,7 +17,7 @@ Read `skills/dokion-hardening/SKILL.md` when the task involves Dokion execution,
 Run the complete set before claiming a Dokion code change is ready:
 
 ```bash
-bun test
+bun run test
 bun run typecheck
 bun run validate:contracts
 bun run build
