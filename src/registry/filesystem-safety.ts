@@ -5,11 +5,11 @@ import { DokionError, type DokionErrorCode } from "../core/errors.ts";
 
 function components(path: string): string[] {
   let absolute = resolve(path);
-  if (absolute.startsWith("/var/") || absolute === "/var") {
-    absolute = "/private" + absolute;
-  } else if (absolute.startsWith("/tmp/") || absolute === "/tmp") {
-    absolute = "/private" + absolute;
-  } else if (absolute.startsWith("/etc/") || absolute === "/etc") {
+  if (process.platform === "darwin" && (
+    absolute.startsWith("/var/") || absolute === "/var" ||
+    absolute.startsWith("/tmp/") || absolute === "/tmp" ||
+    absolute.startsWith("/etc/") || absolute === "/etc"
+  )) {
     absolute = "/private" + absolute;
   }
   const root = parse(absolute).root;
