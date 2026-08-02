@@ -82,7 +82,6 @@ Observe:
   audit
   memory <audit|init|status|patterns>
   compare [<run-a> <run-b>]
-  trace [--format human|json|markdown|html]
 
 Configure:
   init
@@ -93,8 +92,6 @@ Configure:
   reset --state-only
   playbooks <import|validate|sync|list>
   registry <pack|verify-package|pull> ...
-  try <pack>
-  accept <digest>
 
 Execute:
   run
@@ -139,6 +136,16 @@ Dokion never installs, selects, substitutes, reorders, or enables capabilities.`
       approvalClass: "BEFORE_WRITE"
     });
     expect(registry.resolveCliCommand("not-a-command")).toBeUndefined();
+  });
+
+  test("quarantines planned adoption commands", async () => {
+    const registry = await registryApi();
+    for (const command of ["try", "accept", "trace"]) {
+      expect(registry.resolveCliCommand(command)).toMatchObject({
+        status: "PLANNED",
+        writeScope: []
+      });
+    }
   });
 
   test("records write and approval boundaries for mutating commands", async () => {
