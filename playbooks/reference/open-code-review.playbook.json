@@ -4,7 +4,7 @@
   "project": {
     "name": "alibaba-open-code-review-workflow",
     "target": "READY_FOR_PRODUCTION",
-    "notes": "Alibaba Open Code Review Playbook (alibaba/open-code-review). Executes hybrid deterministic-AI code review, captures structured JSON findings, dispatches bounded sub-agents for targeted repairs, and verifies build/test proof before commit."
+    "notes": "Alibaba Open Code Review Playbook (alibaba/open-code-review). Executes hybrid deterministic-AI code review, captures structured JSON findings, and verifies build/test proof."
   },
   "authority": {
     "capability_selection": "USER_ONLY",
@@ -58,7 +58,7 @@
   "stages": [
     {
       "id": "stage-open-code-review",
-      "name": "Deterministic Hybrid AI Review",
+      "name": "Deterministic Hybrid AI Review & Verification",
       "execution": "SEQUENTIAL",
       "steps": [
         {
@@ -83,37 +83,6 @@
             "bun test"
           ],
           "success_conditions": ["ocr_scan_completed"],
-          "failure_policy": "STOP_PIPELINE"
-        }
-      ]
-    },
-    {
-      "id": "stage-remediation-and-verification",
-      "name": "Targeted Repair & Empirical Verification",
-      "execution": "SEQUENTIAL",
-      "steps": [
-        {
-          "id": "remediate-findings",
-          "name": "Remediate OCR findings with bounded sub-agents",
-          "capability": {
-            "type": "skill",
-            "id": "superpowers",
-            "version": "1.0.0",
-            "source": "dokion.json"
-          },
-          "responsibility": "Apply targeted bug fixes for reported high-confidence findings while taking clean pre-repair git snapshots.",
-          "mode": "FIX_WITH_APPROVAL",
-          "required": true,
-          "approval": "BEFORE_WRITE",
-          "permissions": {
-            "read": ["**/*"],
-            "write": ["**/*"],
-            "shell": ["bun test", "npm test", "bun run build"]
-          },
-          "verification": [
-            "bun test"
-          ],
-          "success_conditions": ["findings_remediated", "tests_passing"],
           "failure_policy": "STOP_PIPELINE"
         }
       ]
