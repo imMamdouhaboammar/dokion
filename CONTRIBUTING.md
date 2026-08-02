@@ -53,7 +53,7 @@ Detailed boundaries, exception rules, and review criteria are defined in [`docs/
 For every source, schema, contract, runtime, or documentation-contract change:
 
 ```bash
-bun test
+bun run test
 bun run typecheck
 bun run validate:contracts
 bun run build
