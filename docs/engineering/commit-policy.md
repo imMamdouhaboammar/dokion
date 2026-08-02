@@ -109,7 +109,7 @@ Run tests for neighboring contracts and modules that consume the changed interfa
 Every final head must pass:
 
 ```bash
-bun test
+bun run test
 bun run typecheck
 bun run validate:contracts
 bun run build
