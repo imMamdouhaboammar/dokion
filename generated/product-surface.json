@@ -1,0 +1,354 @@
+{
+  "schema_version": "dokion.product-surface.v1",
+  "generated_from_version": "0.3.0",
+  "commands": [
+    {
+      "id": "accept",
+      "status": "PLANNED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "approve",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "audit",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "auto-runner",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "autopilot",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "autoresearch",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "compare",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "configure",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "create",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "doctor",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "findings",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "goal",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "goals",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "hooks",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "hub",
+      "status": "PLANNED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "init",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "inspect",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "loop",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "loops",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "memory",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "plan",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "playbooks",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "plugins",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "registry",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "reject",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "report",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "reset",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "resume",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "run",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "skills",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "skip",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "status",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "step",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "tools",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "trace",
+      "status": "PLANNED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "try",
+      "status": "PLANNED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "validate",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    },
+    {
+      "id": "verify",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/cli/command-registry.ts"
+      ]
+    }
+  ],
+  "integrations": [
+    {
+      "id": "claude-code",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        ".claude-plugin/plugin.json",
+        "tests/m5-platform-adapters.test.ts"
+      ]
+    },
+    {
+      "id": "codex",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        ".codex/AGENTS.md",
+        "tests/m5-platform-adapters.test.ts"
+      ]
+    },
+    {
+      "id": "gemini-cli",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "gemini-extension.json",
+        "tests/m5-platform-adapters.test.ts"
+      ]
+    }
+  ],
+  "packs": [
+    {
+      "id": "secure-release",
+      "status": "PLANNED",
+      "evidence": [
+        "docs/superpowers/plans/2026-08-02-secure-release-guided-first-run.md"
+      ]
+    }
+  ],
+  "registry": [
+    {
+      "id": "artifact-pull",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/registry/pull-service.ts",
+        "tests/registry/pull-service.test.ts"
+      ]
+    },
+    {
+      "id": "package-activation",
+      "status": "UNAVAILABLE",
+      "evidence": [
+        "docs/architecture/registry-truth-audit.md"
+      ]
+    },
+    {
+      "id": "package-build",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/registry/package-builder.ts",
+        "tests/registry/package-builder-verifier.test.ts"
+      ]
+    },
+    {
+      "id": "package-install",
+      "status": "UNAVAILABLE",
+      "evidence": [
+        "docs/architecture/registry-truth-audit.md"
+      ]
+    },
+    {
+      "id": "package-publish",
+      "status": "UNAVAILABLE",
+      "evidence": [
+        "docs/architecture/registry-truth-audit.md"
+      ]
+    },
+    {
+      "id": "package-verify",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "src/registry/package-verifier.ts",
+        "tests/registry/package-builder-verifier.test.ts"
+      ]
+    }
+  ]
+}
