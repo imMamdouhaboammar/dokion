@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "project": {
     "name": "architecture-mapping-and-audit",
-    "target": "ARCHITECTURE_VERIFIED",
+    "target": "READY_FOR_STAGING",
     "notes": "Playbook for deep architectural analysis, data-flow mapping, and interactive diagram generation using tt-a1i/archify in Dokion."
   },
   "authority": {
