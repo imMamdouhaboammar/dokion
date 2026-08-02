@@ -134,11 +134,27 @@ jobs:
       - name: Runtime contract validation
         run: bun run validate:contracts
 
-      - name: Tests
+      - name: Runtime tests
         shell: bash
         run: |
           set -o pipefail
-          bun test 2>&1 | tee test.log
+          bun run test 2>&1 | tee test.log
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: bun install --frozen-lockfile
+
+      - name: Frontend tests
+        working-directory: frontend
+        run: bun run test
+
+      - name: Frontend typecheck
+        working-directory: frontend
+        run: bun run lint
+
+      - name: Frontend build
+        working-directory: frontend
+        run: bun run build
 
       - name: Typecheck
         shell: bash
