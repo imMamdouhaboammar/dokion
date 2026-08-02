@@ -843,6 +843,7 @@ observe cannot mutate, and the commands that mutate cannot run unapproved.
 | `dokion hooks` | Manage lifecycle hook follow-ups and background automation: run and status. |
 | `dokion audit` | Independent audit verifying evidence manifests and repository state. |
 | `dokion compare` | Compare two Dokion run records deterministically without mutating state. |
+| `dokion trace` | Export deterministic execution lineage, step evidence hashes, and shareable reports. |
 
 ### 15.2 Configure — writes only Dokion's own files
 
@@ -856,6 +857,8 @@ observe cannot mutate, and the commands that mutate cannot run unapproved.
 | `dokion create` | Synthesize a new Playbook from memory, transcripts, and workflow optimization logs. |
 | `dokion hub` | Interact with GitHub Native Decentralized Community Playbook Hub, Registry, and Leaderboard. |
 | `dokion reset --state-only` | Clear run state. Never touches the playbook. |
+| `dokion try` | Generate an inert, digest-signed proposal without JSON editing. |
+| `dokion accept` | Promote a signed proposal to active playbook authority after verifying digest and signature. |
 
 `dokion plan` is the only command that authors a playbook, and it can only write the
 `.proposed` path. Activation is a human copying that file. There is no `--activate` flag, and

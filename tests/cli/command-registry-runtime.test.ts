@@ -82,6 +82,7 @@ Observe:
   audit
   memory <audit|init|status|patterns>
   compare [<run-a> <run-b>]
+  trace [--format human|json|markdown|html]
 
 Configure:
   init
@@ -92,6 +93,8 @@ Configure:
   reset --state-only
   playbooks <import|validate|sync|list>
   registry <pack|verify-package|pull> ...
+  try <pack>
+  accept <digest>
 
 Execute:
   run

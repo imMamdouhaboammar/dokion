@@ -602,6 +602,56 @@ export const CLI_COMMAND_REGISTRY = [
     writeScope: ["PLAYBOOK_DECLARED", ".dokion/**", "HARDENING.md"],
     approvalClass: "FROM_PLAYBOOK",
     geminiFiles: []
+  },
+  {
+    id: "try",
+    manifestCommand: "dokion try",
+    purpose: "Generate an inert, digest-signed proposal without JSON editing.",
+    manifestWrites: [".dokion/proposals/**"],
+    manifestApproval: "BEFORE_WRITE",
+    specMarker: "`dokion try`",
+    runtimeCase: "try",
+    helpLine: "  try <pack>",
+    helpGroup: "Configure",
+    helpOrder: 8,
+    status: "IMPLEMENTED",
+    executionMode: "CONFIGURE",
+    writeScope: [".dokion/proposals/**"],
+    approvalClass: "BEFORE_WRITE",
+    geminiFiles: []
+  },
+  {
+    id: "accept",
+    manifestCommand: "dokion accept",
+    purpose: "Promote a signed proposal to active playbook authority after verifying digest and signature.",
+    manifestWrites: [".dokion/playbooks/**"],
+    manifestApproval: "ALWAYS",
+    specMarker: "`dokion accept`",
+    runtimeCase: "accept",
+    helpLine: "  accept <digest>",
+    helpGroup: "Configure",
+    helpOrder: 9,
+    status: "IMPLEMENTED",
+    executionMode: "CONFIGURE",
+    writeScope: [".dokion/playbooks/**"],
+    approvalClass: "ALWAYS",
+    geminiFiles: []
+  },
+  {
+    id: "trace",
+    manifestCommand: "dokion trace",
+    purpose: "Export deterministic execution lineage, step evidence hashes, and shareable reports.",
+    manifestMode: "REPORT_ONLY",
+    specMarker: "`dokion trace`",
+    runtimeCase: "trace",
+    helpLine: "  trace [--format human|json|markdown|html]",
+    helpGroup: "Observe",
+    helpOrder: 16,
+    status: "IMPLEMENTED",
+    executionMode: "REPORT_ONLY",
+    writeScope: [],
+    approvalClass: "NONE",
+    geminiFiles: []
   }
 ] as const satisfies readonly CliCommandDescriptor[];
 

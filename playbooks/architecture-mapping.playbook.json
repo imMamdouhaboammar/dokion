@@ -34,7 +34,7 @@
     ],
     "require_verified": true,
     "require_digest": false,
-    "on_unverified": "WARN"
+    "on_unverified": "STOP_STEP"
   },
   "defaults": {
     "approval": "BEFORE_WRITE",
@@ -64,7 +64,7 @@
             "source": "tt-a1i/archify"
           },
           "responsibility": "Analyze codebase architecture, trust boundaries, and data flows to generate an interactive HTML/SVG diagram using archify.",
-          "mode": "READ_WRITE",
+          "mode": "ANALYZE",
           "required": true,
           "permissions": {
             "read": [

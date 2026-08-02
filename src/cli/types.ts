@@ -88,4 +88,7 @@ export type CliInvocation =
       flags: Set<string>;
       dryRun: boolean;
     } & CliFormatted)
-  | ({ command: "create"; fromMemory?: string; transcript?: string; topic?: string; output?: string } & CliFormatted);
+  | ({ command: "create"; fromMemory?: string; transcript?: string; topic?: string; output?: string } & CliFormatted)
+  | ({ command: "try"; pack: string } & CliFormatted)
+  | ({ command: "accept"; digest: string } & CliFormatted)
+  | ({ command: "trace" } & CliFormatted);

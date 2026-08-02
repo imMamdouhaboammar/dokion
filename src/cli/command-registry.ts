@@ -5,7 +5,18 @@ import {
   type ManifestCliCommand
 } from "./command-registry-base.ts";
 
-export * from "./command-registry-base.ts";
+export {
+  CLI_BUILTIN_CASES,
+  type CliApprovalClass,
+  type CliCommandDescriptor,
+  type CliCommandStatus,
+  type CliExecutionMode,
+  type CliHelpGroup,
+  type GeminiCommandFile,
+  type ManifestApprovalClass,
+  type ManifestCliCommand,
+  type ManifestCommandMode
+} from "./command-registry-base.ts";
 
 const HUB_PURPOSE =
   "Federated Playbook Registry is unavailable while the replacement protocol is implemented under #47.";

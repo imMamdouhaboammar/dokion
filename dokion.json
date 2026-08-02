@@ -358,6 +358,27 @@
         "command": "dokion autoresearch",
         "purpose": "Run autonomous goal-directed iteration loop with Modify-Verify-Guard and orchestrator routing.",
         "approval": "FROM_PLAYBOOK"
+      },
+      {
+        "command": "dokion try",
+        "purpose": "Generate an inert, digest-signed proposal without JSON editing.",
+        "writes": [
+          ".dokion/proposals/**"
+        ],
+        "approval": "BEFORE_WRITE"
+      },
+      {
+        "command": "dokion accept",
+        "purpose": "Promote a signed proposal to active playbook authority after verifying digest and signature.",
+        "writes": [
+          ".dokion/playbooks/**"
+        ],
+        "approval": "ALWAYS"
+      },
+      {
+        "command": "dokion trace",
+        "purpose": "Export deterministic execution lineage, step evidence hashes, and shareable reports.",
+        "mode": "REPORT_ONLY"
       }
     ]
   },
