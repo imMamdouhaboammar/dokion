@@ -20,6 +20,7 @@ export {
 
 const HUB_PURPOSE =
   "Federated Playbook Registry is unavailable while the replacement protocol is implemented under #47.";
+const ADOPTION_PLANNED_IDS = new Set(["try", "accept", "trace"]);
 
 const REGISTRY_PACKAGE_COMMAND: CliCommandDescriptor = {
   id: "registry",
@@ -50,17 +51,29 @@ export const CLI_COMMAND_SPEC_FILES: Readonly<Record<string, string>> = Object.f
 
 export const CLI_COMMAND_REGISTRY: readonly CliCommandDescriptor[] = [
   ...LEGACY_CLI_COMMAND_REGISTRY.map((command) => {
-    if (command.id !== "hub") return command;
+    if (command.id === "hub") {
+      return {
+        ...command,
+        manifestUsage: "dokion hub",
+        purpose: HUB_PURPOSE,
+        helpLine: "  hub",
+        status: "PLANNED",
+        writeScope: [],
+        geminiFiles: []
+      } satisfies CliCommandDescriptor;
+    }
 
-    return {
-      ...command,
-      manifestUsage: "dokion hub",
-      purpose: HUB_PURPOSE,
-      helpLine: "  hub",
-      status: "PLANNED",
-      writeScope: [],
-      geminiFiles: []
-    } satisfies CliCommandDescriptor;
+    if (ADOPTION_PLANNED_IDS.has(command.id)) {
+      return {
+        ...command,
+        purpose: `${command.purpose} Planned and unavailable while Issue #54 completes the executable contract.`,
+        status: "PLANNED",
+        writeScope: [],
+        geminiFiles: []
+      } satisfies CliCommandDescriptor;
+    }
+
+    return command;
   }),
   REGISTRY_PACKAGE_COMMAND
 ];
