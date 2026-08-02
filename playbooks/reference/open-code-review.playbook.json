@@ -76,9 +76,12 @@
           "approval": "NEVER",
           "permissions": {
             "read": ["**/*"],
-            "shell": ["ocr review --format json --audience agent", "ocr review --preview"],
+            "shell": ["ocr review --format json --audience agent", "ocr review --preview", "bun test"],
             "network": true
           },
+          "verification": [
+            "bun test"
+          ],
           "success_conditions": ["ocr_scan_completed"],
           "failure_policy": "STOP_PIPELINE"
         }
@@ -107,6 +110,9 @@
             "write": ["**/*"],
             "shell": ["bun test", "npm test", "bun run build"]
           },
+          "verification": [
+            "bun test"
+          ],
           "success_conditions": ["findings_remediated", "tests_passing"],
           "failure_policy": "STOP_PIPELINE"
         }
