@@ -16,10 +16,10 @@ import { parseCliInvocation } from "../../src/cli/parser.ts";
 const root = process.cwd();
 const EXPECTED_IMPLEMENTED_IDS = [
   "approve", "audit", "auto-runner", "autopilot", "autoresearch", "compare",
-  "configure", "create", "doctor", "findings", "goal", "goals", "hooks",
-  "init", "inspect", "loop", "loops", "memory", "plan", "playbooks",
-  "plugins", "registry", "reject", "report", "reset", "resume", "run",
-  "skills", "skip", "status", "step", "tools", "validate", "verify"
+  "configure", "create", "doctor", "findings", "goal", "goals-list", "hooks",
+  "init", "inspect", "loop", "loops-list", "memory", "plan", "playbooks",
+  "plugins-list", "registry", "reject", "report", "reset-state", "resume", "run",
+  "skills-list", "skip", "status", "step", "tools-list", "validate", "verify"
 ] as const;
 const EXPECTED_PLANNED_IDS = ["accept", "hub", "trace", "try"] as const;
 
