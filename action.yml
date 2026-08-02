@@ -83,6 +83,14 @@ runs:
             echo "::error::Local Dokion source was not found at the action path"
             exit 1
           }
+          test -f "$GITHUB_ACTION_PATH/bun.lock" || {
+            echo "::error::Local Dokion lockfile was not found at the action path"
+            exit 1
+          }
+          (
+            cd "$GITHUB_ACTION_PATH"
+            bun install --frozen-lockfile
+          )
         else
           if ! [[ "$DOKION_VERSION_INPUT" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
             echo "::error::dokion-version must be local or an exact semantic version"
