@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
+import { writeProductSurfaceSnapshot } from "../../scripts/generate-product-surface.ts";
 import {
   CLI_COMMAND_REGISTRY,
   implementedCliCommands,
@@ -48,5 +52,17 @@ describe("canonical product surface", () => {
     const second = serializeProductSurface(buildProductSurface());
     expect(second).toBe(first);
     expect(first.endsWith("\n")).toBe(true);
+  });
+
+  test("writes a snapshot from a clean root", async () => {
+    const root = await mkdtemp(join(tmpdir(), "dokion-product-surface-"));
+    try {
+      const path = await writeProductSurfaceSnapshot(root);
+      expect(path).toBe(join(root, "generated", "product-surface.json"));
+      const written = await Bun.file(path).text();
+      expect(written).toBe(serializeProductSurface(buildProductSurface()));
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });
