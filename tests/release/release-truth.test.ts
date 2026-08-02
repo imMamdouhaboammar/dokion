@@ -6,7 +6,9 @@ import { join } from "node:path";
 import {
   CANONICAL_PACKAGE_DESCRIPTION,
   evaluateReleaseTruth,
+  loadPublicClaimDocuments,
   loadReleaseTruthSources,
+  runTextCommand,
   writeReleaseTruthReport,
   type ReleaseTruthSources
 } from "../../scripts/validate-release-truth.ts";
@@ -26,9 +28,14 @@ function issueCodes(sources: ReleaseTruthSources): string[] {
   return evaluateReleaseTruth(sources).issues.map((issue) => issue.code);
 }
 
+async function cleanRepositorySources(): Promise<ReleaseTruthSources> {
+  const sources = await loadReleaseTruthSources(repositoryRoot);
+  return { ...sources, worktreeClean: true };
+}
+
 describe("release truth gate", () => {
   test("accepts the exact current repository truth surface", async () => {
-    const sources = await loadReleaseTruthSources(repositoryRoot);
+    const sources = await cleanRepositorySources();
     const report = evaluateReleaseTruth(sources);
 
     expect(report.valid, JSON.stringify(report.issues, null, 2)).toBe(true);
@@ -36,7 +43,7 @@ describe("release truth gate", () => {
     expect(report.commitSha).toMatch(/^[a-f0-9]{40}$/);
   });
   test("rejects command status drift in the committed product surface", async () => {
-    const sources = cloneSources(await loadReleaseTruthSources(repositoryRoot));
+    const sources = cloneSources(await cleanRepositorySources());
     const surface = JSON.parse(sources.committedProductSurface) as {
       commands: Array<{ id: string; status: string }>;
     };
@@ -49,7 +56,7 @@ describe("release truth gate", () => {
   });
 
   test("rejects executable CLI help drift", async () => {
-    const sources = cloneSources(await loadReleaseTruthSources(repositoryRoot));
+    const sources = cloneSources(await cleanRepositorySources());
     const trace = resolveCliCommand("trace");
     if (!trace) throw new Error("trace command fixture is missing");
     sources.cliHelp += `\n${trace.helpLine}\n`;
@@ -59,27 +66,34 @@ describe("release truth gate", () => {
   });
 
   test("rejects a structurally invalid product surface", async () => {
-    const sources = cloneSources(await loadReleaseTruthSources(repositoryRoot));
+    const sources = cloneSources(await cleanRepositorySources());
     sources.committedProductSurface = "{}\n";
 
     expect(issueCodes(sources)).toContain("PRODUCT_SURFACE_INVALID_SHAPE");
   });
 
   test("rejects package description drift", async () => {
-    const sources = cloneSources(await loadReleaseTruthSources(repositoryRoot));
+    const sources = cloneSources(await cleanRepositorySources());
     sources.packageManifest.description = "Generic AI automation toolkit";
 
     expect(issueCodes(sources)).toContain("PACKAGE_DESCRIPTION_DRIFT");
   });
 
   test("rejects README examples for planned commands", async () => {
-    const sources = cloneSources(await loadReleaseTruthSources(repositoryRoot));
+    const sources = cloneSources(await cleanRepositorySources());
     sources.readme += "\n```bash\ndokion trace --format html\n```\n";
 
     expect(issueCodes(sources)).toContain("README_COMMAND_UNAVAILABLE");
   });
+
+  test("rejects unsupported nested README command examples", async () => {
+    const sources = cloneSources(await cleanRepositorySources());
+    sources.readme += "\n```bash\ndokion registry install foo\n```\n";
+
+    expect(issueCodes(sources)).toContain("README_COMMAND_INVALID");
+  });
   test("rejects badges for unsupported integrations", async () => {
-    const sources = cloneSources(await loadReleaseTruthSources(repositoryRoot));
+    const sources = cloneSources(await cleanRepositorySources());
     sources.readme += "\n![Cursor](https://img.shields.io/badge/Cursor-supported-blue)\n";
 
     expect(issueCodes(sources)).toContain("UNSUPPORTED_INTEGRATION_BADGE");
@@ -99,14 +113,21 @@ describe("release truth gate", () => {
   });
 
   test("rejects a report that cannot identify the exact commit", async () => {
-    const sources = cloneSources(await loadReleaseTruthSources(repositoryRoot));
+    const sources = cloneSources(await cleanRepositorySources());
     sources.commitSha = null;
 
     expect(issueCodes(sources)).toContain("RELEASE_COMMIT_UNAVAILABLE");
   });
 
+  test("rejects a dirty tracked worktree bound to HEAD", async () => {
+    const sources = cloneSources(await cleanRepositorySources());
+    sources.worktreeClean = false;
+
+    expect(issueCodes(sources)).toContain("RELEASE_WORKTREE_DIRTY");
+  });
+
   test("rejects a stale README release line", async () => {
-    const sources = cloneSources(await loadReleaseTruthSources(repositoryRoot));
+    const sources = cloneSources(await cleanRepositorySources());
     sources.readme = sources.readme
       .replace("release-0.3.x", "release-0.2.x")
       .replace("Current release line: `0.3.x`", "Current release line: `0.2.x`");
@@ -115,7 +136,7 @@ describe("release truth gate", () => {
   });
 
   test("rejects missing claim evidence", async () => {
-    const sources = cloneSources(await loadReleaseTruthSources(repositoryRoot));
+    const sources = cloneSources(await cleanRepositorySources());
     const path = "docs/getting-started/ONBOARDING.md";
     sources.publicDocuments[path] = sources.publicDocuments[path]!.replace(
       "`dokion verify` runs only supported verification commands and release gates explicitly declared by the active Playbook",
@@ -125,10 +146,42 @@ describe("release truth gate", () => {
     expect(issueCodes(sources)).toContain("PUBLIC_CLAIM_EVIDENCE_MISSING");
   });
 
+  test("loads missing public claim documents as structured absence", async () => {
+    const root = await mkdtemp(join(tmpdir(), "dokion-release-truth-docs-"));
+    try {
+      const documents = await loadPublicClaimDocuments(root);
+      expect(documents).toEqual({});
+      const sources = cloneSources(await cleanRepositorySources());
+      sources.publicDocuments = documents;
+      expect(issueCodes(sources)).toContain("PUBLIC_CLAIM_DOCUMENT_MISSING");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  test("captures stderr and bounds subprocess execution", async () => {
+    const failed = await runTextCommand(
+      repositoryRoot,
+      [process.execPath, "-e", "console.error('release-truth-boom'); process.exit(7)"],
+      1_000
+    );
+    expect(failed.exitCode).toBe(7);
+    expect(failed.stderr).toContain("release-truth-boom");
+
+    const started = performance.now();
+    const timed = await runTextCommand(
+      repositoryRoot,
+      [process.execPath, "-e", "await Bun.sleep(10_000)"],
+      50
+    );
+    expect(performance.now() - started).toBeLessThan(2_000);
+    expect(timed.exitCode).not.toBe(0);
+  });
+
   test("refuses to write a report outside the repository root", async () => {
     const root = await mkdtemp(join(tmpdir(), "dokion-release-truth-output-"));
     try {
-      const report = evaluateReleaseTruth(await loadReleaseTruthSources(repositoryRoot));
+      const report = evaluateReleaseTruth(await cleanRepositorySources());
       await expect(
         writeReleaseTruthReport(root, "../outside-release-truth.json", report)
       ).rejects.toThrow("inside the repository root");
@@ -142,7 +195,7 @@ describe("release truth gate", () => {
     const outside = await mkdtemp(join(tmpdir(), "dokion-release-truth-outside-"));
     try {
       await symlink(outside, join(root, "linked-output"), "dir");
-      const report = evaluateReleaseTruth(await loadReleaseTruthSources(repositoryRoot));
+      const report = evaluateReleaseTruth(await cleanRepositorySources());
       await expect(
         writeReleaseTruthReport(root, "linked-output/report.json", report)
       ).rejects.toThrow("real directories");
@@ -194,5 +247,6 @@ describe("release truth gate", () => {
     expect(release).toContain("sha256sum dokion-* release-truth-report.json > SHA256SUMS");
     expect(checklist).toContain("signed review of `release-truth-report.json`");
     expect(checklist).toContain("exact 40-character release-candidate commit SHA");
+    expect(checklist).toContain("tests/cli/verify-command.test.ts");
   });
 });

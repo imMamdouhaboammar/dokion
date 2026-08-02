@@ -16,7 +16,7 @@ This checklist must be evaluated against one exact release-candidate commit. A c
 - [ ] The committed `generated/product-surface.json` regenerates without drift
 - [ ] `bun run validate:release-truth --output release-truth-report.json` passes on the exact release-candidate commit
 - [ ] Every documented executable command is absent from planned-only surfaces and passes packaged CLI validation
-- [x] `dokion verify` independently re-runs the active Playbook's declared test and build gates
+- [x] `dokion verify` independently re-runs the active Playbook's declared test and build gates (evidence: `tests/cli/verify-command.test.ts`)
 - [ ] Non-dry `dokion autoresearch` executes through production callbacks instead of returning `UNSUPPORTED_EXECUTION`
 - [ ] Secure Release passes clean-install positive and negative fixtures on supported Bun and Node TypeScript repositories
 - [ ] Versioned Run Trace exports pass integrity, terminal-state, and unsafe-HTML tests

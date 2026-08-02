@@ -20,6 +20,7 @@ import {
   serializeProductSurface
 } from "../src/product/product-surface.ts";
 import type { ProductSurface } from "../src/product/types.ts";
+import { parseCliInvocation } from "../src/cli/parser.ts";
 import { DOKION_VERSION } from "../src/runtime/package-metadata.ts";
 
 export const CANONICAL_PACKAGE_DESCRIPTION =
@@ -37,6 +38,7 @@ export interface ReleaseTruthSources {
   committedProductSurface: string;
   publicDocuments: Record<string, string>;
   commitSha: string | null;
+  worktreeClean: boolean | null;
 }
 
 export interface ReleaseTruthIssue {
@@ -51,6 +53,7 @@ export interface ReleaseTruthReport {
   schemaVersion: "dokion.release-truth.v1";
   valid: boolean;
   commitSha: string | null;
+  worktreeClean: boolean | null;
   package: {
     name: string | null;
     version: string | null;
@@ -188,12 +191,75 @@ function validateCliHelp(help: string, issues: ReleaseTruthIssue[]): void {
   }
 }
 
+function commandExamples(readme: string): string[] {
+  const examples = new Set<string>();
+  for (const match of readme.matchAll(/`(dokion(?:[ \t]+[^`\n]+)?)`/g)) {
+    examples.add(match[1]!.trim());
+  }
+  for (const line of readme.split("\n")) {
+    const command = line.trim();
+    if (/^dokion(?:\s|$)/.test(command)) examples.add(command);
+  }
+  return [...examples].sort();
+}
+
+function commandTokens(command: string): string[] {
+  const tokens: string[] = [];
+  let current = "";
+  let quote: "'" | '"' | null = null;
+  let escaped = false;
+  for (const character of command) {
+    if (escaped) {
+      current += character;
+      escaped = false;
+      continue;
+    }
+    if (character === "\\" && quote !== "'") {
+      escaped = true;
+      continue;
+    }
+    if (quote) {
+      if (character === quote) quote = null;
+      else current += character;
+      continue;
+    }
+    if (character === "'" || character === '"') {
+      quote = character;
+      continue;
+    }
+    if (/\s/.test(character)) {
+      if (current) {
+        tokens.push(current);
+        current = "";
+      }
+      continue;
+    }
+    current += character;
+  }
+  if (escaped || quote) throw new Error("unterminated shell token");
+  if (current) tokens.push(current);
+  return tokens;
+}
+
 function validateReadmeCommands(readme: string, issues: ReleaseTruthIssue[]): void {
-  const seen = new Set<string>();
-  for (const match of readme.matchAll(/\bdokion[ \t]+([a-z][a-z0-9-]*)/g)) {
-    const commandName = match[1]!;
-    if (seen.has(commandName)) continue;
-    seen.add(commandName);
+  for (const example of commandExamples(readme)) {
+    let tokens: string[];
+    try {
+      tokens = commandTokens(example);
+    } catch (error) {
+      addIssue(
+        issues,
+        "README_COMMAND_INVALID",
+        "README.md",
+        `README command example cannot be parsed: ${example}`,
+        "valid Dokion CLI syntax",
+        error instanceof Error ? error.message : String(error)
+      );
+      continue;
+    }
+    if (tokens[0] !== "dokion" || tokens.length < 2) continue;
+    const commandName = tokens[1]!;
+    if (["help", "--help", "-h"].includes(commandName)) continue;
     const descriptor = resolveCliCommand(commandName);
     if (!descriptor) {
       addIssue(
@@ -204,15 +270,30 @@ function validateReadmeCommands(readme: string, issues: ReleaseTruthIssue[]): vo
       );
       continue;
     }
-    if (descriptor.status === "IMPLEMENTED") continue;
-    addIssue(
-      issues,
-      "README_COMMAND_UNAVAILABLE",
-      "README.md",
-      `README presents planned command dokion ${commandName} as executable`,
-      "IMPLEMENTED",
-      descriptor.status
-    );
+    if (descriptor.status !== "IMPLEMENTED") {
+      addIssue(
+        issues,
+        "README_COMMAND_UNAVAILABLE",
+        "README.md",
+        `README presents planned command dokion ${commandName} as executable`,
+        "IMPLEMENTED",
+        descriptor.status
+      );
+      continue;
+    }
+    if (tokens.length === 2) continue;
+    try {
+      parseCliInvocation(tokens.slice(1));
+    } catch (error) {
+      addIssue(
+        issues,
+        "README_COMMAND_INVALID",
+        "README.md",
+        `README presents an invalid executable command: ${example}`,
+        descriptor.manifestUsage ?? descriptor.manifestCommand,
+        error instanceof Error ? error.message : String(error)
+      );
+    }
   }
 }
 
@@ -325,6 +406,23 @@ export function evaluateReleaseTruth(sources: ReleaseTruthSources): ReleaseTruth
       "Release truth cannot identify the exact release-candidate commit"
     );
   }
+  if (sources.worktreeClean === false) {
+    addIssue(
+      issues,
+      "RELEASE_WORKTREE_DIRTY",
+      "git:worktree",
+      "Tracked working-tree or index changes do not match the commit bound to this report",
+      "clean tracked worktree",
+      "DIRTY"
+    );
+  } else if (sources.worktreeClean === null) {
+    addIssue(
+      issues,
+      "RELEASE_WORKTREE_STATUS_UNAVAILABLE",
+      "git:worktree",
+      "Release truth cannot verify that checked sources match the bound commit"
+    );
+  }
 
   if (sources.packageManifest.name !== "dokion") {
     addIssue(
@@ -412,6 +510,7 @@ export function evaluateReleaseTruth(sources: ReleaseTruthSources): ReleaseTruth
     schemaVersion: "dokion.release-truth.v1",
     valid: orderedIssues.length === 0,
     commitSha: sources.commitSha,
+    worktreeClean: sources.worktreeClean,
     package: {
       name: sources.packageManifest.name ?? null,
       version: sources.packageManifest.version ?? null,
@@ -424,32 +523,63 @@ export function evaluateReleaseTruth(sources: ReleaseTruthSources): ReleaseTruth
     issues: orderedIssues
   };
 }
-async function runTextCommand(root: string, command: string[]): Promise<string | null> {
+export interface TextCommandResult {
+  exitCode: number;
+  stdout: string;
+  stderr: string;
+}
+
+export async function runTextCommand(
+  root: string,
+  command: string[],
+  timeoutMs = 10_000
+): Promise<TextCommandResult> {
   const child = Bun.spawn(command, {
     cwd: root,
     stdout: "pipe",
     stderr: "pipe",
-    stdin: "ignore"
+    stdin: "ignore",
+    timeout: timeoutMs
   });
-  const [exitCode, stdout] = await Promise.all([
+  const [exitCode, stdout, stderr] = await Promise.all([
     child.exited,
-    child.stdout ? new Response(child.stdout).text() : ""
+    child.stdout ? new Response(child.stdout).text() : "",
+    child.stderr ? new Response(child.stderr).text() : ""
   ]);
-  return exitCode === 0 ? stdout : null;
+  return { exitCode, stdout, stderr };
 }
 
 async function currentCommit(root: string): Promise<string | null> {
-  const output = await runTextCommand(root, ["git", "rev-parse", "HEAD"]);
-  const value = output?.trim() ?? "";
+  const result = await runTextCommand(root, ["git", "rev-parse", "HEAD"]);
+  const value = result.exitCode === 0 ? result.stdout.trim() : "";
   return /^[a-f0-9]{40}$/i.test(value) ? value.toLowerCase() : null;
 }
 
+async function currentWorktreeClean(root: string): Promise<boolean | null> {
+  const result = await runTextCommand(
+    root,
+    ["git", "status", "--porcelain=v1", "--untracked-files=no"]
+  );
+  if (result.exitCode !== 0) return null;
+  return result.stdout.trim().length === 0;
+}
+
 async function executableCliHelp(root: string): Promise<string> {
-  const output = await runTextCommand(root, [process.execPath, "src/cli.ts", "--help"]);
-  if (output === null) {
-    throw new Error("Executable CLI help could not be generated from src/cli.ts --help");
+  const result = await runTextCommand(root, [process.execPath, "src/cli.ts", "--help"]);
+  if (result.exitCode !== 0) {
+    const detail = result.stderr.trim() || `exit code ${result.exitCode}`;
+    throw new Error(`Executable CLI help could not be generated from src/cli.ts --help: ${detail}`);
   }
-  return output;
+  return result.stdout;
+}
+
+export async function loadPublicClaimDocuments(root: string): Promise<Record<string, string>> {
+  const publicDocuments: Record<string, string> = {};
+  for (const document of PUBLIC_CLAIM_DOCUMENTS) {
+    const file = Bun.file(join(root, document.path));
+    if (await file.exists()) publicDocuments[document.path] = await file.text();
+  }
+  return publicDocuments;
 }
 
 export async function loadReleaseTruthSources(root: string): Promise<ReleaseTruthSources> {
@@ -458,21 +588,24 @@ export async function loadReleaseTruthSources(root: string): Promise<ReleaseTrut
   const committedProductSurface = await Bun.file(
     join(root, "generated", "product-surface.json")
   ).text();
-  const publicDocuments: Record<string, string> = {};
-
-  for (const document of PUBLIC_CLAIM_DOCUMENTS) {
-    publicDocuments[document.path] = await Bun.file(join(root, document.path)).text();
-  }
+  const [cliHelp, publicDocuments, commitSha, worktreeClean] = await Promise.all([
+    executableCliHelp(root),
+    loadPublicClaimDocuments(root),
+    currentCommit(root),
+    currentWorktreeClean(root)
+  ]);
 
   return {
     packageManifest,
     readme,
-    cliHelp: await executableCliHelp(root),
+    cliHelp,
     committedProductSurface,
     publicDocuments,
-    commitSha: await currentCommit(root)
+    commitSha,
+    worktreeClean
   };
 }
+
 export async function validateReleaseTruth(root = process.cwd()): Promise<ReleaseTruthReport> {
   return evaluateReleaseTruth(await loadReleaseTruthSources(root));
 }
