@@ -95,29 +95,49 @@ export async function evaluateReleaseGates(input: {
   playbook: DokionPlaybook;
   state: DokionState;
   findings: NormalizedFinding[];
+  forceRerun?: boolean;
+  evidenceAttempt?: string;
+  evidenceCommitSha?: string;
 }): Promise<ReleaseGateState[]> {
   const results: ReleaseGateState[] = [];
   const existingById = new Map((input.state.release_gates ?? []).map((gate) => [gate.id, gate] as const));
+  const verificationAttempt = input.forceRerun
+    ? input.evidenceAttempt ?? `verify-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`
+    : undefined;
 
   for (const gate of definitions(input.playbook)) {
     if (gate.command !== undefined) {
       const existing = existingById.get(gate.id);
-      if (existing && existing.status === "PASS") {
+      if (!input.forceRerun && existing && existing.status === "PASS") {
         results.push(existing);
         continue;
       }
-      const commandResult = await runCommand(input.root, gate.command);
-      const artifact = `.dokion/evidence/${input.state.run.id}/release-gates/${safeSegment(gate.id)}.json`;
+      const gateSegment = safeSegment(gate.id);
+      const evidenceRoot = verificationAttempt
+        ? `.dokion/evidence/${input.state.run.id}/verify/${verificationAttempt}/release-gates`
+        : `.dokion/evidence/${input.state.run.id}/release-gates`;
+      const outputPrefix = `${evidenceRoot}/${gateSegment}-output`;
+      const commandResult = await runCommand(input.root, gate.command, {
+        artifactPrefix: outputPrefix
+      });
+      const artifact = `${evidenceRoot}/${gateSegment}.json`;
       await writeJsonAtomic(join(input.root, artifact), {
         gate_id: gate.id,
-        command: gate.command,
+        command: commandResult.command,
+        command_identity: commandResult.commandIdentity,
+        command_kind: commandResult.commandKind,
+        shell_parsing: commandResult.shellParsing,
+        risk: commandResult.risk,
+        degradations: commandResult.degradations,
         stdout: commandResult.stdout,
         stderr: commandResult.stderr,
+        stdout_artifact: commandResult.stdoutArtifact,
+        stderr_artifact: commandResult.stderrArtifact,
         exit_code: commandResult.exitCode,
         started_at: commandResult.startedAt,
         ended_at: commandResult.endedAt,
         duration_ms: commandResult.durationMs,
-        commit_sha: input.state.baseline?.commit ?? null
+        commit_sha: input.evidenceCommitSha ?? input.state.baseline?.commit ?? null
       });
       results.push({
         id: gate.id,
@@ -138,12 +158,28 @@ export async function evaluateReleaseGates(input: {
         state: input.state,
         findings: input.findings
       });
+      const ranAt = new Date().toISOString();
+      const artifact = verificationAttempt
+        ? `.dokion/evidence/${input.state.run.id}/verify/${verificationAttempt}/release-gates/${safeSegment(gate.id)}.json`
+        : undefined;
+      if (artifact) {
+        await writeJsonAtomic(join(input.root, artifact), {
+          gate_id: gate.id,
+          condition: gate.condition,
+          evaluated: conditionResult.evaluated,
+          status: conditionResult.passed ? "PASS" : "FAIL",
+          blocking: gate.blocking,
+          ran_at: ranAt,
+          commit_sha: input.evidenceCommitSha ?? input.state.baseline?.commit ?? null
+        });
+      }
       results.push({
         id: gate.id,
         status: conditionResult.passed ? "PASS" : "FAIL",
         blocking: gate.blocking,
         evaluated: conditionResult.evaluated,
-        ran_at: new Date().toISOString()
+        ...(artifact ? { artifact } : {}),
+        ran_at: ranAt
       });
       continue;
     }

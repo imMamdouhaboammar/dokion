@@ -868,7 +868,7 @@ adding one would break the model.
 | `dokion step` | Execute a single declared step. |
 | `dokion resume` | Continue an interrupted run from disk. |
 | `dokion approve` · `reject` · `skip` | Record a decision. Every one lands in the approvals ledger. |
-| `dokion verify` | Re-run verification against the current commit. |
+| `dokion verify` | Re-run supported declared step verification commands and all release gates against the current repository identity without applying repairs. |
 | `dokion autopilot` | Run deterministic bounded autopilot execution. |
 | `dokion auto-runner` | Run continuous autonomous playbook execution loop to 100% completion with circuit breaker and self-healing. |
 

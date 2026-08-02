@@ -311,8 +311,9 @@ export const CLI_COMMAND_REGISTRY = [
   {
     id: "verify",
     manifestCommand: "dokion verify",
-    purpose: "Run configured verification gates without applying fixes.",
+    purpose: "Re-run supported declared step verification commands and all release gates against the current repository identity without applying repairs.",
     manifestMode: "VERIFY_ONLY",
+    manifestWrites: ["PLAYBOOK_DECLARED", ".dokion/**"],
     specMarker: "`dokion verify`",
     runtimeCase: "verify",
     helpLine: "  verify",
@@ -320,7 +321,7 @@ export const CLI_COMMAND_REGISTRY = [
     helpOrder: 4,
     status: "IMPLEMENTED",
     executionMode: "VERIFY_ONLY",
-    writeScope: [],
+    writeScope: ["PLAYBOOK_DECLARED", ".dokion/**"],
     approvalClass: "NONE",
     geminiFiles: []
   },

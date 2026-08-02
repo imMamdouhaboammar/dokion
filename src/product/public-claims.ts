@@ -48,8 +48,10 @@ export const PUBLIC_CLAIM_DOCUMENTS: readonly PublicClaimDocument[] = [
       },
       {
         id: "verify-command",
-        status: "PLANNED",
-        requiredMarker: "`dokion verify` currently validates repository and Playbook contracts"
+        status: "IMPLEMENTED",
+        requiredMarker: "`dokion verify` independently re-runs every supported declared `step.verification` command and every release gate against the current repository identity",
+        productSurfaceId: "verify",
+        productSurfaceSection: "commands"
       },
       {
         id: "registry-installation",
@@ -83,6 +85,13 @@ export const PUBLIC_CLAIM_DOCUMENTS: readonly PublicClaimDocument[] = [
         productSurfaceSection: "commands"
       },
       {
+        id: "verify-command",
+        status: "IMPLEMENTED",
+        requiredMarker: "`dokion verify` runs only supported verification commands and release gates explicitly declared by the active Playbook",
+        productSurfaceId: "verify",
+        productSurfaceSection: "commands"
+      },
+      {
         id: "registry-activation",
         status: "UNAVAILABLE",
         requiredMarker: "Registry pull verifies and caches packages but does not install or activate them",
@@ -98,6 +107,13 @@ export const PUBLIC_CLAIM_DOCUMENTS: readonly PublicClaimDocument[] = [
         id: "current-supported-story",
         status: "IMPLEMENTED",
         requiredMarker: "User-authored Playbooks executed with declared order, permissions, approvals, state, findings, and evidence"
+      },
+      {
+        id: "verify-command",
+        status: "IMPLEMENTED",
+        requiredMarker: "independent re-verification of supported Playbook-declared step verification commands and release gates",
+        productSurfaceId: "verify",
+        productSurfaceSection: "commands"
       },
       {
         id: "secure-release",

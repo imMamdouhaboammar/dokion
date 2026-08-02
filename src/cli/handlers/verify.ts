@@ -1,9 +1,8 @@
-import { verifyConfiguredGates, type VerifyGateOptions, type VerifyRunResult } from '../../verification/verify-run';
-import type { DokionState } from '../../state/types';
+import {
+  verifyDeclaredGates,
+  type VerifyCommandResult
+} from "../../verification/verify-run.ts";
 
-export async function handleVerifyCommand(
-  options: VerifyGateOptions,
-  state: DokionState | null
-): Promise<VerifyRunResult> {
-  return await verifyConfiguredGates(options, state);
+export async function handleVerifyCommand(root: string): Promise<VerifyCommandResult> {
+  return await verifyDeclaredGates(root);
 }
