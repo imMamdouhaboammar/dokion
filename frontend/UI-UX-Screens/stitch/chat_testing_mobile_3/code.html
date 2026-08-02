@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Skillaude Chat Workspace</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&amp;family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            font-family: 'Manrope', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'EB Garamond', serif;
+        }
+        /* Custom scrollbar for premium feel */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d8d0c8; border-radius: 10px; }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container-high": "#ece6dc",
+              "on-surface": "#3a302a",
+              "surface": "#faf5ee",
+              "primary-container": "#e08850",
+              "on-primary-fixed": "#401a08",
+              "on-background": "#3a302a",
+              "on-tertiary-container": "#3a2020",
+              "error": "#c0392b",
+              "on-tertiary-fixed": "#2e1515",
+              "surface-container-highest": "#e6e0d6",
+              "on-tertiary-fixed-variant": "#6e3030",
+              "primary-fixed-dim": "#f0a878",
+              "on-primary": "#ffffff",
+              "on-tertiary": "#ffffff",
+              "surface-bright": "#faf5ee",
+              "inverse-surface": "#3a302a",
+              "surface-container": "#f2ece4",
+              "inverse-primary": "#f0a878",
+              "surface-dim": "#dcd6cc",
+              "on-secondary-fixed-variant": "#504840",
+              "on-error": "#ffffff",
+              "outline-variant": "#d8d0c8",
+              "on-primary-container": "#fbe8d8",
+              "secondary": "#78706a",
+              "inverse-on-surface": "#faf5ee",
+              "tertiary-fixed-dim": "#e8a0a0",
+              "secondary-fixed-dim": "#cec6be",
+              "primary-fixed": "#fbe8d8",
+              "primary": "#c2652a",
+              "outline": "#9a9088",
+              "on-surface-variant": "#605850",
+              "surface-container-low": "#f6f0e8",
+              "secondary-container": "#eae2da",
+              "on-primary-fixed-variant": "#8a4518",
+              "background": "#faf5ee",
+              "secondary-fixed": "#eae2da",
+              "on-error-container": "#7a1a10",
+              "surface-variant": "#ece6dc",
+              "surface-tint": "#c2652a",
+              "on-secondary-fixed": "#2a2420",
+              "error-container": "#fce4e0",
+              "tertiary-container": "#d47070",
+              "tertiary-fixed": "#fce0e0",
+              "tertiary": "#8c3c3c",
+              "surface-container-lowest": "#ffffff",
+              "on-secondary-container": "#605850",
+              "on-secondary": "#ffffff"
+            },
+            fontFamily: {
+              "headline": ["EB Garamond"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-[#faf5ee] dark:bg-stone-900 border-b border-[#d8d0c8]/60 dark:border-stone-800 flat no shadows">
+<div class="flex items-center gap-3">
+<button class="text-[#c2652a] dark:text-[#d4824d] hover:bg-[#c2652a]/5 dark:hover:bg-[#c2652a]/10 transition-colors p-2 rounded-lg active:opacity-80 active:scale-95">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<h1 class="font-serif italic text-xl text-[#c2652a] dark:text-[#d4824d]">Sahara AI</h1>
+</div>
+<div class="hidden md:flex items-center gap-6">
+<span class="font-sans uppercase tracking-wider text-xs text-[#c2652a] dark:text-[#d4824d] font-bold">Workspace</span>
+<span class="font-sans uppercase tracking-wider text-xs text-[#8c847d] dark:text-stone-500">Analytics</span>
+<span class="font-sans uppercase tracking-wider text-xs text-[#8c847d] dark:text-stone-500">Models</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="bg-surface-container-high px-3 py-1.5 rounded-full flex items-center gap-2 border border-outline-variant/30">
+<span class="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
+<span class="text-[10px] font-label font-bold uppercase tracking-widest text-on-surface-variant">Python Data Analyzer</span>
+</div>
+<button class="text-[#c2652a] dark:text-[#d4824d] hover:bg-[#c2652a]/5 dark:hover:bg-[#c2652a]/10 transition-colors p-2 rounded-lg active:opacity-80 active:scale-95">
+<span class="material-symbols-outlined" data-icon="tune">tune</span>
+</button>
+</div>
+</header>
+<!-- Main Content Area (Conversational View) -->
+<main class="flex-1 mt-16 mb-32 overflow-y-auto px-6 py-8 max-w-3xl mx-auto w-full space-y-12">
+<!-- System Message / Intro -->
+<div class="text-center space-y-4 pt-12">
+<h2 class="font-headline text-4xl text-on-surface leading-tight">Test your skill <br/>with calm precision.</h2>
+<div class="flex items-center justify-center gap-2 text-outline text-xs">
+<span class="material-symbols-outlined text-sm" data-icon="cloud_done">cloud_done</span>
+<span class="font-label tracking-wide">Saved locally</span>
+</div>
+</div>
+<!-- Conversation Bubbles -->
+<div class="space-y-10">
+<!-- User Prompt -->
+<div class="flex flex-col items-end group">
+<div class="max-w-[85%] bg-surface-container px-6 py-4 rounded-2xl rounded-tr-none shadow-sm border border-outline-variant/20">
+<p class="font-body text-on-surface leading-relaxed">
+                        Analyze the last quarter's CSV and highlight any anomalies in the user retention column. Focus on the mobile segment.
+                    </p>
+</div>
+<span class="text-[10px] uppercase tracking-widest text-outline mt-2 px-1">10:42 AM</span>
+</div>
+<!-- AI Response -->
+<div class="flex flex-col items-start group">
+<div class="max-w-[90%] bg-white/40 backdrop-blur-sm px-6 py-5 rounded-2xl rounded-tl-none border border-outline-variant/40">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="science" style="font-variation-settings: 'FILL' 1;">science</span>
+<span class="font-label text-xs font-bold uppercase tracking-widest text-primary">Python Analyzer Output</span>
+</div>
+<div class="space-y-4 font-body text-on-surface leading-relaxed">
+<p>I've processed the <code class="bg-surface-container px-1.5 py-0.5 rounded text-sm font-mono text-primary">q3_retention_data.csv</code> file.</p>
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/30 overflow-x-auto">
+<pre class="text-xs font-mono text-secondary"># Detected anomaly in row 1,402:
+# Segment: Mobile (iOS)
+# Variance: -22.4% vs median
+# Status: Critical Validation Required</pre>
+</div>
+<p>The anomaly appears to correlate with the version 4.2.0 rollout on September 14th.</p>
+</div>
+<div class="mt-6 flex gap-3">
+<button class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="thumb_up">thumb_up</span> Correct
+                        </button>
+<button class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="history">history</span> Regenerate
+                        </button>
+</div>
+</div>
+<span class="text-[10px] uppercase tracking-widest text-outline mt-2 px-1">Just now</span>
+</div>
+</div>
+</main>
+<!-- NavigationDrawer (Hidden by default on small screens, shown as visual part of workspace here) -->
+<aside class="fixed inset-y-0 right-0 z-[60] flex flex-col p-6 h-full w-80 bg-[#faf5ee] dark:bg-stone-900 border-l border-[#d8d0c8] dark:border-stone-800 shadow-2xl translate-x-full md:translate-x-0 transition-transform duration-300">
+<div class="flex items-center justify-between mb-8">
+<h3 class="font-serif text-lg text-on-surface">Testing Suite</h3>
+<button class="material-symbols-outlined text-outline" data-icon="close">close</button>
+</div>
+<nav class="space-y-1">
+<a class="flex items-center gap-3 p-3 rounded-lg bg-[#c2652a]/10 text-[#c2652a] border-r-4 border-[#c2652a]" href="#">
+<span class="material-symbols-outlined" data-icon="search_check">search_check</span>
+<span class="font-sans font-medium text-sm">Skill Inspector</span>
+</a>
+<a class="flex items-center gap-3 p-3 rounded-lg text-[#3a302a] dark:text-[#faf5ee] hover:bg-[#f5eee6] dark:hover:bg-stone-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings_input_component">settings_input_component</span>
+<span class="font-sans font-medium text-sm">Test Controls</span>
+</a>
+<a class="flex items-center gap-3 p-3 rounded-lg text-[#3a302a] dark:text-[#faf5ee] hover:bg-[#f5eee6] dark:hover:bg-stone-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span class="font-sans font-medium text-sm">Logs</span>
+</a>
+</nav>
+<div class="mt-auto space-y-6">
+<div class="bg-surface-container-high rounded-2xl p-5 border border-outline-variant/30">
+<div class="flex justify-between items-center mb-3">
+<span class="text-[10px] font-bold uppercase tracking-widest text-secondary">Validation Score</span>
+<span class="text-primary font-serif italic text-lg">94%</span>
+</div>
+<div class="w-full bg-outline-variant/30 h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[94%]"></div>
+</div>
+</div>
+<button class="w-full bg-primary text-white py-4 rounded-xl font-label font-bold uppercase tracking-widest text-xs hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" data-icon="bolt" style="font-variation-settings: 'FILL' 1;">bolt</span>
+                Validate Skill
+            </button>
+</div>
+</aside>
+<!-- Sticky Composer (Bottom Input) -->
+<div class="fixed bottom-0 left-0 w-full md:w-[calc(100%-320px)] bg-[#faf5ee]/95 dark:bg-stone-900/95 backdrop-blur-md px-6 pb-8 pt-4 z-40">
+<div class="max-w-3xl mx-auto">
+<div class="relative flex items-center">
+<button class="absolute left-4 text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="attach_file">attach_file</span>
+</button>
+<input class="w-full pl-12 pr-28 py-4 bg-white border border-outline-variant rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none font-body text-sm placeholder:text-outline/60" placeholder="Test Prompt" type="text"/>
+<div class="absolute right-2 flex items-center gap-1">
+<button class="bg-primary text-white p-2.5 rounded-xl hover:opacity-90 active:scale-90 transition-all">
+<span class="material-symbols-outlined" data-icon="send" style="font-variation-settings: 'FILL' 1;">send</span>
+</button>
+</div>
+</div>
+<div class="mt-3 flex justify-center gap-4">
+<span class="text-[10px] uppercase tracking-widest text-outline/60 font-bold">Shift + Enter for new line</span>
+</div>
+</div>
+</div>
+<!-- BottomNavBar (Visible on Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2 bg-[#faf5ee]/95 dark:bg-stone-900/95 backdrop-blur-md border-t border-[#d8d0c8]/40 dark:border-stone-800 shadow-[0_-2px_16px_rgba(58,48,42,0.04)]">
+<a class="flex flex-col items-center justify-center bg-[#c2652a] text-white rounded-xl p-3 scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="chat_bubble" style="font-variation-settings: 'FILL' 1;">chat_bubble</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#8c847d] dark:text-stone-500 p-3 hover:text-[#c2652a]" href="#">
+<span class="material-symbols-outlined" data-icon="History">history</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#8c847d] dark:text-stone-500 p-3 hover:text-[#c2652a]" href="#">
+<span class="material-symbols-outlined" data-icon="science">science</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#8c847d] dark:text-stone-500 p-3 hover:text-[#c2652a]" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</a>
+</nav>
+</body></html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Skillaude - Connect Repo</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-surface": "#3a302a",
+              "on-background": "#3a302a",
+              "on-secondary-fixed-variant": "#504840",
+              "surface-bright": "#faf5ee",
+              "surface-variant": "#ece6dc",
+              "on-tertiary-fixed-variant": "#6e3030",
+              "error-container": "#fce4e0",
+              "surface-tint": "#c2652a",
+              "surface-container-high": "#ece6dc",
+              "secondary-fixed-dim": "#cec6be",
+              "surface-container-low": "#f6f0e8",
+              "primary": "#c2652a",
+              "tertiary-container": "#d47070",
+              "error": "#c0392b",
+              "primary-container": "#e08850",
+              "surface-dim": "#dcd6cc",
+              "surface-container-lowest": "#ffffff",
+              "surface-container": "#f2ece4",
+              "on-tertiary": "#ffffff",
+              "tertiary": "#8c3c3c",
+              "secondary-container": "#eae2da",
+              "surface": "#faf5ee",
+              "on-error-container": "#7a1a10",
+              "inverse-on-surface": "#faf5ee",
+              "primary-fixed-dim": "#f0a878",
+              "on-tertiary-fixed": "#2e1515",
+              "surface-container-highest": "#e6e0d6",
+              "on-tertiary-container": "#3a2020",
+              "tertiary-fixed-dim": "#e8a0a0",
+              "on-primary": "#ffffff",
+              "on-secondary": "#ffffff",
+              "secondary": "#78706a",
+              "outline-variant": "#d8d0c8",
+              "on-primary-fixed": "#401a08",
+              "on-secondary-container": "#605850",
+              "on-surface-variant": "#605850",
+              "background": "#faf5ee",
+              "on-secondary-fixed": "#2a2420",
+              "on-error": "#ffffff",
+              "secondary-fixed": "#eae2da",
+              "on-primary-fixed-variant": "#8a4518",
+              "on-primary-container": "#fbe8d8",
+              "inverse-primary": "#f0a878",
+              "primary-fixed": "#fbe8d8",
+              "inverse-surface": "#3a302a",
+              "outline": "#9a9088",
+              "tertiary-fixed": "#fce0e0"
+            },
+            fontFamily: {
+              "headline": ["Eb Garamond"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        body {
+            background-color: #faf5ee;
+            color: #3a302a;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body min-h-screen flex flex-col">
+<!-- Top Navigation (Simplified for Mobile Import Flow) -->
+<header class="flex justify-between items-center px-6 h-16 w-full sticky top-0 z-50 bg-[#faf5ee] border-b border-[#d8d0c8]/60 shadow-[0_2px_16px_rgba(58,48,42,0.04)]">
+<div class="flex items-center gap-3">
+<button class="active:scale-95 transition-transform text-on-surface">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<span class="font-['EB_Garamond'] text-2xl font-bold text-[#c2652a]">Skillaude</span>
+</div>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-stone-500">help_outline</span>
+<span class="material-symbols-outlined text-stone-500">notifications</span>
+</div>
+</header>
+<main class="flex-1 flex flex-col p-6 space-y-8 max-w-md mx-auto w-full pb-32">
+<!-- Header Section -->
+<header class="space-y-1">
+<h1 class="font-headline text-4xl font-semibold tracking-tight text-on-surface leading-tight">Connect Repo</h1>
+<p class="font-body text-stone-600 text-lg">Turn a repo into a skill.</p>
+</header>
+<!-- Main Form Section -->
+<section class="space-y-6">
+<div class="space-y-2">
+<label class="font-label text-xs font-bold uppercase tracking-widest text-stone-500 px-1">Repository URL</label>
+<div class="relative">
+<input class="w-full bg-white border border-outline-variant rounded-xl px-4 py-4 text-on-surface focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all placeholder:text-stone-300" placeholder="https://github.com/user/repo" type="text"/>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400">
+<span class="material-symbols-outlined">link</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 gap-6">
+<div class="space-y-2">
+<label class="font-label text-xs font-bold uppercase tracking-widest text-stone-500 px-1">Branch</label>
+<div class="relative">
+<input class="w-full bg-white border border-outline-variant rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all placeholder:text-stone-300" placeholder="main" type="text"/>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400">
+<span class="material-symbols-outlined">account_tree</span>
+</div>
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-label text-xs font-bold uppercase tracking-widest text-stone-500 px-1">Subfolder (Optional)</label>
+<div class="relative">
+<input class="w-full bg-white border border-outline-variant rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all placeholder:text-stone-300" placeholder="/src" type="text"/>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400">
+<span class="material-symbols-outlined">folder_open</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Guidance Section -->
+<section class="bg-surface-container-low rounded-2xl border border-outline-variant p-5 space-y-4">
+<div class="flex justify-between items-center cursor-pointer">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">info</span>
+<h3 class="font-body font-semibold text-on-surface">How it works</h3>
+</div>
+<span class="material-symbols-outlined text-stone-400">expand_more</span>
+</div>
+<div class="space-y-4 pt-2">
+<div class="flex gap-4">
+<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+<span class="font-bold text-primary text-xs">1</span>
+</div>
+<p class="text-sm text-stone-600 leading-relaxed">Skillaude clones your repository to analyze project structure and dependencies.</p>
+</div>
+<div class="flex gap-4">
+<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+<span class="font-bold text-primary text-xs">2</span>
+</div>
+<p class="text-sm text-stone-600 leading-relaxed">Our scanner identifies vulnerabilities and maps them to specialized technical skills.</p>
+</div>
+<div class="flex gap-4">
+<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+<span class="font-bold text-primary text-xs">3</span>
+</div>
+<p class="text-sm text-stone-600 leading-relaxed">Verified findings are imported as scan results for your dashboard.</p>
+</div>
+</div>
+</section>
+<!-- Visual Element -->
+<div class="relative w-full h-32 rounded-3xl overflow-hidden shadow-[0_2px_16px_rgba(58,48,42,0.04)]">
+<img alt="Code repository visualization" class="w-full h-full object-cover opacity-80" data-alt="Abstract glowing lines of code on a dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-6ZDe_Rhraey5etxPAK7NZozEqTGNjJghzddU_fcQPSvP56Tt5b359FxmwID424kHpeUaG2qWUdB2s0aNA-WV-rZI30cr93pnEfcFG3gn2ugCAXiHHnMjbLlW85tKNdwONJT0uodLjne5crD-MdcSdWofXSG91eWTrc1uQNWk_1UO4QEMuCrK-xwF0nFAYPyXsxKodIWQ-wmQdL_HXblGS-CGOLvIQmhJ8GIqIjOD6CeA3JjYU-97VmoyEqIcxgDu1xFur0eA6J0_"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+</div>
+</main>
+<!-- Fixed Bottom CTA -->
+<div class="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#faf5ee] via-[#faf5ee] to-transparent z-50">
+<button class="w-full bg-[#c2652a] text-white font-body font-bold py-5 rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
+            Connect Repository
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</button>
+<!-- Bottom Safe Area Padding -->
+<div class="h-4"></div>
+</div>
+<!-- Hidden Sidebar Metadata for Reference (Not rendered in mobile view) -->
+<div class="hidden">
+<div data-icons="dashboard,inventory_2,cloud_download,settings" data-name="SideNavBar" data-tabs="Dashboard,Repositories,Imports,Settings"></div>
+</div>
+</body></html>

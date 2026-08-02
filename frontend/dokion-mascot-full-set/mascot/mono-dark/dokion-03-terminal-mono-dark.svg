@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Dokion 03-terminal mono dark">
+<defs><style>
+    .ol{fill:none;stroke-linecap:round;stroke-linejoin:round}
+    </style></defs>
+<path d="M111 370V347H91V321H72V286H88V245H102V205H119V169H141V132H174V105H216V86H296V101H338V122H374V150H398V181H414V219H430V256H444V296H425V333H405V370H111Z" fill="none" stroke="#30323D" stroke-width="18" stroke-linejoin="round"/>
+<circle cx="205" cy="207" r="50" fill="none" stroke="#30323D" stroke-width="16"/>
+<circle cx="327" cy="207" r="50" fill="none" stroke="#30323D" stroke-width="16"/>
+<path d="M255 207H277" class="ol" stroke="#30323D" stroke-width="14"/>
+<circle cx="205" cy="207" r="12" fill="#30323D"/>
+<circle cx="327" cy="207" r="12" fill="#30323D"/>
+<path d="M254 278C261 284 271 284 278 278" class="ol" stroke="#30323D" stroke-width="12"/>
+<path d="M121 303H190V370H121" class="ol" stroke="#30323D" stroke-width="16"/>
+<path d="M322 306L347 329L322 352M365 352H396" class="ol" stroke="#30323D" stroke-width="13"/>
+<path d="M401 76V53M418 82L434 65M384 82L368 65" class="ol" stroke="#30323D" stroke-width="11"/>
+
+</svg>

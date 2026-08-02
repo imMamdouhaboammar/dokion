@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Skills Creator - Choose Starting Point</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&amp;family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "on-error-container": "#7a1a10",
+                "on-surface-variant": "#605850",
+                "on-secondary-fixed": "#2a2420",
+                "on-error": "#ffffff",
+                "primary-fixed": "#fbe8d8",
+                "on-tertiary": "#ffffff",
+                "inverse-primary": "#f0a878",
+                "surface-variant": "#ece6dc",
+                "error-container": "#fce4e0",
+                "surface-container-high": "#ece6dc",
+                "on-tertiary-fixed-variant": "#6e3030",
+                "on-tertiary-fixed": "#2e1515",
+                "on-secondary-fixed-variant": "#504840",
+                "tertiary-fixed": "#fce0e0",
+                "surface-tint": "#c2652a",
+                "secondary": "#78706a",
+                "surface-container-low": "#f6f0e8",
+                "secondary-fixed-dim": "#cec6be",
+                "inverse-on-surface": "#faf5ee",
+                "on-secondary-container": "#605850",
+                "error": "#c0392b",
+                "primary-container": "#e08850",
+                "inverse-surface": "#3a302a",
+                "tertiary": "#8c3c3c",
+                "surface-bright": "#faf5ee",
+                "on-tertiary-container": "#3a2020",
+                "surface": "#faf5ee",
+                "on-primary-container": "#fbe8d8",
+                "primary": "#c2652a",
+                "on-primary": "#ffffff",
+                "tertiary-container": "#d47070",
+                "surface-container": "#f2ece4",
+                "outline": "#9a9088",
+                "primary-fixed-dim": "#f0a878",
+                "on-primary-fixed": "#401a08",
+                "surface-dim": "#dcd6cc",
+                "secondary-container": "#eae2da",
+                "on-background": "#3a302a",
+                "on-primary-fixed-variant": "#8a4518",
+                "outline-variant": "#d8d0c8",
+                "on-secondary": "#ffffff",
+                "on-surface": "#3a302a",
+                "tertiary-fixed-dim": "#e8a0a0",
+                "surface-container-highest": "#e6e0d6",
+                "surface-container-lowest": "#ffffff",
+                "secondary-fixed": "#eae2da",
+                "background": "#faf5ee"
+              },
+              fontFamily: {
+                "headline": ["Eb Garamond"],
+                "body": ["Manrope"],
+                "label": ["Manrope"]
+              },
+              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+          },
+        }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; }
+        h1, h2, h3 { font-family: 'EB Garamond', serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface selection:bg-primary/20">
+<!-- SideNavBar (Execution from JSON) -->
+<aside class="fixed left-0 top-0 flex flex-col py-8 h-screen w-64 border-r border-[#d8d0c8]/60 bg-[#faf5ee] dark:bg-stone-950 shadow-[0_2px_16px_rgba(58,48,42,0.04)] transition-all duration-300 ease-in-out">
+<div class="px-6 mb-10">
+<h1 class="font-serif text-2xl italic text-[#c2652a] dark:text-orange-400">Skillaude</h1>
+<p class="text-stone-500 font-sans text-xs tracking-widest mt-1">Skill Architect</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center px-6 py-3 space-x-3 text-stone-500 hover:text-stone-800 transition-colors hover:bg-stone-100/50" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="grid_view">grid_view</span>
+<span class="font-sans text-sm font-medium tracking-tight">Dashboard</span>
+</a>
+<a class="flex items-center px-6 py-3 space-x-3 text-[#c2652a] font-bold border-r-4 border-[#c2652a] bg-orange-50/50 transition-colors" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="psychology">psychology</span>
+<span class="font-sans text-sm font-medium tracking-tight">Skills Library</span>
+</a>
+<a class="flex items-center px-6 py-3 space-x-3 text-stone-500 hover:text-stone-800 transition-colors hover:bg-stone-100/50" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="layers">layers</span>
+<span class="font-sans text-sm font-medium tracking-tight">Templates</span>
+</a>
+<a class="flex items-center px-6 py-3 space-x-3 text-stone-500 hover:text-stone-800 transition-colors hover:bg-stone-100/50" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="settings">settings</span>
+<span class="font-sans text-sm font-medium tracking-tight">Settings</span>
+</a>
+</nav>
+<div class="px-6 mt-auto">
+<button class="w-full bg-primary text-on-primary py-3 rounded-lg font-sans text-sm font-semibold tracking-wide hover:opacity-90 transition-opacity">
+                New Skill
+            </button>
+<div class="mt-8 flex items-center space-x-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden border border-outline-variant">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="Close up portrait of a professional woman" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2tp2km4xlERp1v73ffLsRiD0KcLPM9gSHrBMC0jVMDhirN0Kxy6NdPlVEYhhnAKSYe53QKvqv2UH71J_G9n1QvbOzWlzqr5y4Ng8FBhPSr_xXuCz4nrLueH7WJIrw-quQDtHOcn3p-rRllQKY_OB5CapjimCB3M4AHesx3gb7TWREpj_mgco07242NFvjBL5I40AeI7COfgC68-CjSlmMR0r57VibGfOkK7yQ3YedaNz0ybhgMhvf1edkpf6jOyNuym9NtB5l0Rdm"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-bold truncate">User Profile</p>
+<p class="text-[10px] text-on-surface-variant truncate">Premium Architect</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Cluster -->
+<main class="ml-64 flex min-h-screen">
+<!-- Center Canvas -->
+<div class="flex-1 px-12 py-10 max-w-5xl mx-auto">
+<!-- TopNavBar (Execution from JSON) -->
+<header class="flex items-center justify-between h-20 mb-12 border-b border-[#d8d0c8]/60 bg-[#faf5ee]/80 backdrop-blur-md">
+<div>
+<h2 class="font-serif font-semibold text-[#c2652a] text-xl">AI Skills Creator</h2>
+</div>
+<div class="flex items-center space-x-6">
+<div class="relative group">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-lg" data-icon="search">search</span>
+<input class="bg-surface-container-lowest border border-outline-variant rounded-full py-2 pl-10 pr-4 text-sm w-64 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" placeholder="Search skills..." type="text"/>
+</div>
+<div class="flex items-center space-x-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors" data-icon="help_outline">help_outline</span>
+</div>
+</div>
+</header>
+<section class="space-y-12">
+<header class="max-w-2xl">
+<h2 class="text-5xl font-headline font-semibold text-on-surface leading-tight tracking-tight">Choose your starting point</h2>
+<p class="mt-4 text-lg font-body text-on-surface-variant leading-relaxed">A skill is a structured package of instructions, scripts, and assets. Select a method to initialize your workspace.</p>
+</header>
+<div class="space-y-6">
+<div class="flex items-center space-x-4">
+<span class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">How are you starting today?</span>
+<div class="flex space-x-2">
+<button class="px-4 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed text-xs font-semibold border border-primary/20 hover:bg-primary-container transition-colors">From a repo</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container text-on-surface-variant text-xs font-semibold border border-outline-variant hover:border-primary/40 transition-colors">From local files</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container text-on-surface-variant text-xs font-semibold border border-outline-variant hover:border-primary/40 transition-colors">From scratch</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container text-on-surface-variant text-xs font-semibold border border-outline-variant hover:border-primary/40 transition-colors">From a package</button>
+</div>
+</div>
+<!-- 2x2 Method Grid -->
+<div class="grid grid-cols-2 gap-6">
+<!-- Card 1 -->
+<div class="group bg-surface-container-lowest p-8 rounded-xl border border-outline-variant shadow-[0_2px_16px_rgba(58,48,42,0.04)] hover:border-primary transition-all duration-300 cursor-pointer relative overflow-hidden">
+<div class="absolute -right-4 -top-4 w-24 h-24 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors"></div>
+<div class="flex flex-col h-full">
+<div class="w-12 h-12 rounded-lg bg-primary-fixed flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-primary text-2xl" data-icon="code">code</span>
+</div>
+<h3 class="text-2xl font-headline font-bold text-on-surface mb-2">Connect GitHub</h3>
+<p class="text-on-surface-variant text-sm font-body leading-relaxed mb-8">Best if your skill already lives in a repo. We'll handle the continuous deployment and versioning.</p>
+<div class="mt-auto flex items-center text-primary text-sm font-bold tracking-tight">
+                                    Start Integration
+                                    <span class="material-symbols-outlined ml-2 text-sm" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="group bg-surface-container-lowest p-8 rounded-xl border border-outline-variant shadow-[0_2px_16px_rgba(58,48,42,0.04)] hover:border-primary transition-all duration-300 cursor-pointer">
+<div class="flex flex-col h-full">
+<div class="w-12 h-12 rounded-lg bg-secondary-fixed flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-secondary text-2xl" data-icon="folder">folder</span>
+</div>
+<h3 class="text-2xl font-headline font-bold text-on-surface mb-2">Upload Folder</h3>
+<p class="text-on-surface-variant text-sm font-body leading-relaxed mb-8">Best for local markdown, scripts, and docs. Drag and drop your existing local workspace folder.</p>
+<div class="mt-auto flex items-center text-primary text-sm font-bold tracking-tight">
+                                    Select Folder
+                                    <span class="material-symbols-outlined ml-2 text-sm" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="group bg-surface-container-lowest p-8 rounded-xl border border-outline-variant shadow-[0_2px_16px_rgba(58,48,42,0.04)] hover:border-primary transition-all duration-300 cursor-pointer">
+<div class="flex flex-col h-full">
+<div class="w-12 h-12 rounded-lg bg-tertiary-fixed flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-tertiary text-2xl" data-icon="edit_note">edit_note</span>
+</div>
+<h3 class="text-2xl font-headline font-bold text-on-surface mb-2">Blank Canvas</h3>
+<p class="text-on-surface-variant text-sm font-body leading-relaxed mb-8">Best for building a new skill from scratch. Use our interactive architect to define parameters.</p>
+<div class="mt-auto flex items-center text-primary text-sm font-bold tracking-tight">
+                                    Create New
+                                    <span class="material-symbols-outlined ml-2 text-sm" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="group bg-surface-container-lowest p-8 rounded-xl border border-outline-variant shadow-[0_2px_16px_rgba(58,48,42,0.04)] hover:border-primary transition-all duration-300 cursor-pointer">
+<div class="flex flex-col h-full">
+<div class="w-12 h-12 rounded-lg bg-primary-fixed/50 flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-[#8a4518] text-2xl" data-icon="package">package</span>
+</div>
+<h3 class="text-2xl font-headline font-bold text-on-surface mb-2">Import Package</h3>
+<p class="text-on-surface-variant text-sm font-body leading-relaxed mb-8">Best for .json or .zip skill bundles. Migration tool for existing Skillaude standard packages.</p>
+<div class="mt-auto flex items-center text-primary text-sm font-bold tracking-tight">
+                                    Upload Bundle
+                                    <span class="material-symbols-outlined ml-2 text-sm" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Side Panel -->
+<aside class="w-80 bg-surface-container-low border-l border-[#d8d0c8]/60 p-8 space-y-8">
+<div class="space-y-4">
+<h4 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Context</h4>
+<!-- Recommendation Card -->
+<div class="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant shadow-sm relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-2">
+<span class="material-symbols-outlined text-primary text-xs" data-icon="auto_awesome" data-weight="fill">auto_awesome</span>
+</div>
+<p class="text-[10px] font-bold text-primary mb-2 uppercase tracking-tighter">Smart Recommendation</p>
+<h5 class="font-headline font-bold text-lg mb-2">For Developers</h5>
+<p class="text-xs font-body text-on-surface-variant leading-relaxed">Based on your activity, we suggest <span class="font-bold">Connect GitHub</span> to leverage existing CI/CD pipelines.</p>
+</div>
+<!-- Resume Card -->
+<div class="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant shadow-sm hover:border-primary transition-colors cursor-pointer">
+<div class="flex items-center justify-between mb-3">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">Resume Previous</span>
+<span class="text-[10px] text-stone-400">12m ago</span>
+</div>
+<h5 class="font-headline font-bold text-lg mb-1">Untitled_Skill_02</h5>
+<div class="flex items-center space-x-2 mb-4">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="text-[10px] font-bold text-on-surface-variant">Draft Phase</span>
+</div>
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full border-2 border-white bg-surface-container flex items-center justify-center text-[10px] font-bold">A</div>
+<div class="w-6 h-6 rounded-full border-2 border-white bg-surface-container flex items-center justify-center text-[10px] font-bold">B</div>
+</div>
+</div>
+</div>
+<div class="pt-8 border-t border-outline-variant/40 space-y-4">
+<h4 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Learning Center</h4>
+<div class="space-y-4">
+<a class="flex items-center group" href="#">
+<div class="w-8 h-8 rounded bg-surface-container-high flex items-center justify-center mr-3 group-hover:bg-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="menu_book">menu_book</span>
+</div>
+<span class="text-xs font-medium group-hover:text-primary transition-colors">Skill Architecture Guide</span>
+</a>
+<a class="flex items-center group" href="#">
+<div class="w-8 h-8 rounded bg-surface-container-high flex items-center justify-center mr-3 group-hover:bg-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="videocam">videocam</span>
+</div>
+<span class="text-xs font-medium group-hover:text-primary transition-colors">Workspace Video Tour</span>
+</a>
+</div>
+</div>
+<!-- Promotion / Tip -->
+<div class="mt-auto bg-primary rounded-xl p-6 text-on-primary">
+<span class="material-symbols-outlined text-on-primary/60 text-3xl mb-4" data-icon="lightbulb">lightbulb</span>
+<p class="text-xs leading-relaxed font-medium">Pro Tip: Import a .zip package if you're migrating from a legacy system.</p>
+</div>
+</aside>
+</main>
+</body></html>

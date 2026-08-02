@@ -1,0 +1,13 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "notGrouped": "bottom",
+  "groupings": [
+    {
+      "title": "Frontend Preflight",
+      "description": "AI-agent readiness checks for product handoff, design contracts, source slop detection, overlays, accessibility, responsive behavior, and fix-list generation before frontend implementation.",
+      "skills": [
+        "unslop-preflight"
+      ]
+    }
+  ]
+}

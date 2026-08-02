@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>AI Skills Creator - Chat Test</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&amp;family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary": "#78706a",
+              "on-surface": "#3a302a",
+              "surface-dim": "#dcd6cc",
+              "inverse-surface": "#3a302a",
+              "inverse-on-surface": "#faf5ee",
+              "primary": "#c2652a",
+              "on-tertiary-container": "#3a2020",
+              "on-primary": "#ffffff",
+              "secondary-container": "#eae2da",
+              "on-tertiary-fixed-variant": "#6e3030",
+              "inverse-primary": "#f0a878",
+              "on-primary-fixed-variant": "#8a4518",
+              "surface-container-lowest": "#ffffff",
+              "on-secondary-fixed-variant": "#504840",
+              "error-container": "#fce4e0",
+              "surface-tint": "#c2652a",
+              "surface": "#faf5ee",
+              "on-secondary-fixed": "#2a2420",
+              "secondary-fixed": "#eae2da",
+              "surface-container": "#f2ece4",
+              "primary-fixed-dim": "#f0a878",
+              "tertiary-fixed": "#fce0e0",
+              "surface-container-low": "#f6f0e8",
+              "surface-container-high": "#ece6dc",
+              "on-background": "#3a302a",
+              "on-primary-fixed": "#401a08",
+              "primary-container": "#e08850",
+              "error": "#c0392b",
+              "tertiary-container": "#d47070",
+              "on-primary-container": "#fbe8d8",
+              "on-secondary": "#ffffff",
+              "tertiary": "#8c3c3c",
+              "on-tertiary-fixed": "#2e1515",
+              "on-tertiary": "#ffffff",
+              "outline-variant": "#d8d0c8",
+              "on-error-container": "#7a1a10",
+              "primary-fixed": "#fbe8d8",
+              "surface-container-highest": "#e6e0d6",
+              "on-error": "#ffffff",
+              "surface-bright": "#faf5ee",
+              "tertiary-fixed-dim": "#e8a0a0",
+              "secondary-fixed-dim": "#cec6be",
+              "outline": "#9a9088",
+              "surface-variant": "#ece6dc",
+              "background": "#faf5ee",
+              "on-secondary-container": "#605850",
+              "on-surface-variant": "#605850"
+            },
+            fontFamily: {
+              "headline": ["EB Garamond"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body text-on-surface min-h-screen flex flex-col">
+<!-- Top Navigation (Contextual Suppression of Main Shell for Focus) -->
+<nav class="flex justify-between items-center w-full px-6 py-3 sticky top-0 bg-surface/80 backdrop-blur-md z-50 border-b border-outline-variant/60">
+<div class="flex items-center gap-3">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-secondary">arrow_back</span>
+</button>
+<div class="flex flex-col">
+<span class="text-sm font-label text-secondary leading-none">Testing Mode</span>
+<span class="text-lg font-headline italic font-bold text-on-surface">AI Skills Creator</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="bg-primary text-on-primary px-4 py-1.5 rounded-xl font-label text-sm font-semibold transition-transform active:scale-95">
+                Save Skill
+            </button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-secondary" data-icon="settings">settings</span>
+</button>
+</div>
+</nav>
+<!-- Active Skills Drawer (Tappable Horizontal Rail) -->
+<section class="bg-surface-container-low px-4 py-4 flex flex-col gap-3">
+<div class="flex items-center justify-between px-2">
+<h3 class="text-xs font-label font-bold uppercase tracking-widest text-secondary">Active Skills</h3>
+<span class="text-[10px] font-label text-primary bg-primary/10 px-2 py-0.5 rounded-full">3 Enabled</span>
+</div>
+<div class="flex gap-3 overflow-x-auto hide-scrollbar pb-1">
+<!-- Active Skill Card -->
+<button class="flex-shrink-0 flex items-center gap-3 bg-surface-container-highest border border-primary/30 p-2 pr-4 rounded-2xl transition-all active:scale-95 shadow-sm">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<div class="text-left">
+<p class="text-xs font-bold leading-tight">Copy Editor</p>
+<p class="text-[10px] text-secondary">Creative Tone</p>
+</div>
+</button>
+<!-- Active Skill Card -->
+<button class="flex-shrink-0 flex items-center gap-3 bg-white/60 border border-outline-variant/40 p-2 pr-4 rounded-2xl transition-all active:scale-95">
+<div class="w-10 h-10 rounded-xl bg-surface-container-highest flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">analytics</span>
+</div>
+<div class="text-left">
+<p class="text-xs font-bold leading-tight">Data Analyst</p>
+<p class="text-[10px] text-secondary">Precision Mode</p>
+</div>
+</button>
+<!-- Active Skill Card -->
+<button class="flex-shrink-0 flex items-center gap-3 bg-white/60 border border-outline-variant/40 p-2 pr-4 rounded-2xl transition-all active:scale-95">
+<div class="w-10 h-10 rounded-xl bg-surface-container-highest flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">translate</span>
+</div>
+<div class="text-left">
+<p class="text-xs font-bold leading-tight">Translator</p>
+<p class="text-[10px] text-secondary">Multi-lang</p>
+</div>
+</button>
+</div>
+</section>
+<!-- Main Chat Canvas -->
+<main class="flex-grow flex flex-col px-6 pt-8 pb-32 overflow-y-auto max-w-2xl mx-auto w-full gap-8">
+<!-- System Greeting -->
+<div class="flex flex-col items-center text-center gap-4 mb-4">
+<div class="w-16 h-16 rounded-3xl bg-surface-container-high flex items-center justify-center mb-2 shadow-sm">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">forum</span>
+</div>
+<h1 class="font-headline text-3xl text-on-surface">Test your logic</h1>
+<p class="text-secondary text-sm max-w-[280px]">Interact with your active skills to verify their behavior and tone in real-time.</p>
+</div>
+<!-- AI Message -->
+<div class="flex flex-col gap-2 max-w-[85%] self-start">
+<div class="flex items-center gap-2 mb-1">
+<span class="text-[10px] font-bold uppercase tracking-widest text-primary">Copy Editor</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="text-[10px] text-secondary">Now</span>
+</div>
+<div class="bg-surface-container-high p-5 rounded-2xl rounded-tl-none shadow-[0_2px_12px_rgba(58,48,42,0.03)] border border-white/40">
+<p class="text-sm leading-relaxed text-on-surface">
+                    Hello! I'm currently running with the <span class="text-primary font-semibold italic font-headline text-base">Sophisticated Tone</span> skill enabled. How would you like me to refine your text today?
+                </p>
+</div>
+</div>
+<!-- User Message -->
+<div class="flex flex-col gap-2 max-w-[85%] self-end">
+<div class="bg-primary text-on-primary p-5 rounded-2xl rounded-tr-none shadow-md">
+<p class="text-sm leading-relaxed">
+                    Can you help me rewrite this product description to sound more luxurious but grounded? 
+                </p>
+</div>
+</div>
+<!-- AI Message (Refining) -->
+<div class="flex flex-col gap-2 max-w-[85%] self-start">
+<div class="flex items-center gap-2 mb-1">
+<span class="text-[10px] font-bold uppercase tracking-widest text-primary">Copy Editor</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="text-[10px] text-secondary">Just now</span>
+</div>
+<div class="bg-surface-container-high p-5 rounded-2xl rounded-tl-none shadow-[0_2px_12px_rgba(58,48,42,0.03)] border border-white/40">
+<p class="text-sm leading-relaxed text-on-surface mb-3">
+                    Of course. Here is a version that prioritizes tactile descriptions and warm imagery:
+                </p>
+<div class="bg-white/50 p-4 rounded-xl border border-primary/10 italic font-headline text-lg leading-snug">
+                    "Sun-baked linen meets the discipline of geometric form. A sanctuary crafted for the modern minimalist."
+                </div>
+</div>
+<div class="flex gap-2 mt-2">
+<button class="px-3 py-1.5 rounded-lg border border-outline-variant text-[10px] font-bold uppercase tracking-tight hover:bg-white transition-colors">
+                    Adjust Tone
+                </button>
+<button class="px-3 py-1.5 rounded-lg border border-outline-variant text-[10px] font-bold uppercase tracking-tight hover:bg-white transition-colors">
+                    Try Different Skill
+                </button>
+</div>
+</div>
+</main>
+<!-- Fixed Message Composer (Claude-like simplicity) -->
+<div class="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-surface via-surface/95 to-transparent">
+<div class="max-w-2xl mx-auto">
+<div class="relative flex items-end gap-3 bg-white p-2 pl-4 pr-2 rounded-2xl shadow-lg border border-outline-variant/40">
+<textarea class="flex-grow bg-transparent border-none focus:ring-0 text-sm py-3 min-h-[44px] max-h-32 resize-none overflow-y-auto" placeholder="Message your skills..." rows="1"></textarea>
+<div class="flex items-center gap-2 pb-1.5">
+<button class="w-10 h-10 flex items-center justify-center text-secondary hover:text-primary transition-colors">
+<span class="material-symbols-outlined">attach_file</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center bg-primary text-on-primary rounded-xl shadow-sm transition-transform active:scale-90">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">arrow_upward</span>
+</button>
+</div>
+</div>
+<!-- Bottom Indicator -->
+<div class="flex justify-center mt-3">
+<div class="w-12 h-1 bg-surface-container-highest rounded-full"></div>
+</div>
+</div>
+</div>
+<!-- Bottom Navigation (Hidden for Focus, but logic-ready) -->
+<nav class="hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-safe pt-2 bg-surface shadow-[0_-4px_16px_rgba(58,48,42,0.04)] border-t border-outline-variant/60">
+<a class="flex flex-col items-center justify-center text-secondary py-1" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label text-[11px] font-medium tracking-wide">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary py-1" href="#">
+<span class="material-symbols-outlined" data-icon="local_library">local_library</span>
+<span class="font-label text-[11px] font-medium tracking-wide">Library</span>
+</a>
+<!-- Active State Logic Applied: Chat -->
+<a class="flex flex-col items-center justify-center text-primary bg-primary/10 rounded-xl px-4 py-1" href="#">
+<span class="material-symbols-outlined" data-icon="forum" style="font-variation-settings: 'FILL' 1;">forum</span>
+<span class="font-label text-[11px] font-medium tracking-wide">Chat</span>
+</a>
+</nav>
+</body></html>

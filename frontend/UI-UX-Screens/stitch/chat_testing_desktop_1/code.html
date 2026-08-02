@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Skills Creator - Chat Workspace</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&amp;family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "secondary": "#78706a",
+                        "on-surface": "#3a302a",
+                        "surface-dim": "#dcd6cc",
+                        "inverse-surface": "#3a302a",
+                        "inverse-on-surface": "#faf5ee",
+                        "primary": "#c2652a",
+                        "on-tertiary-container": "#3a2020",
+                        "on-primary": "#ffffff",
+                        "secondary-container": "#eae2da",
+                        "on-tertiary-fixed-variant": "#6e3030",
+                        "inverse-primary": "#f0a878",
+                        "on-primary-fixed-variant": "#8a4518",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#504840",
+                        "error-container": "#fce4e0",
+                        "surface-tint": "#c2652a",
+                        "surface": "#faf5ee",
+                        "on-secondary-fixed": "#2a2420",
+                        "secondary-fixed": "#eae2da",
+                        "surface-container": "#f2ece4",
+                        "primary-fixed-dim": "#f0a878",
+                        "tertiary-fixed": "#fce0e0",
+                        "surface-container-low": "#f6f0e8",
+                        "surface-container-high": "#ece6dc",
+                        "on-background": "#3a302a",
+                        "on-primary-fixed": "#401a08",
+                        "primary-container": "#e08850",
+                        "error": "#c0392b",
+                        "tertiary-container": "#d47070",
+                        "on-primary-container": "#fbe8d8",
+                        "on-secondary": "#ffffff",
+                        "tertiary": "#8c3c3c",
+                        "on-tertiary-fixed": "#2e1515",
+                        "on-tertiary": "#ffffff",
+                        "outline-variant": "#d8d0c8",
+                        "on-error-container": "#7a1a10",
+                        "primary-fixed": "#fbe8d8",
+                        "surface-container-highest": "#e6e0d6",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#faf5ee",
+                        "tertiary-fixed-dim": "#e8a0a0",
+                        "secondary-fixed-dim": "#cec6be",
+                        "outline": "#9a9088",
+                        "surface-variant": "#ece6dc",
+                        "background": "#faf5ee",
+                        "on-secondary-container": "#605850",
+                        "on-surface-variant": "#605850"
+                    },
+                    fontFamily: {
+                        "headline": ["EB Garamond"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body">
+<!-- SideNavBar (Predicted Rail) -->
+<nav class="fixed left-0 top-0 h-full z-40 py-6 bg-[#faf5ee] dark:bg-stone-900 h-screen w-20 flex flex-col items-center border-r border-[#d8d0c8]/60 dark:border-stone-800 transition-colors duration-200 ease-in-out">
+<div class="mb-10 text-lg font-bold text-[#c2652a] dark:text-[#d97706] font-headline">
+<span class="material-symbols-outlined text-3xl">model_training</span>
+</div>
+<div class="flex flex-col gap-8 flex-1">
+<button class="flex flex-col items-center gap-1 group text-stone-500 dark:text-stone-400 hover:bg-[#c2652a]/5 dark:hover:bg-stone-800 p-2 rounded-xl transition-all">
+<span class="material-symbols-outlined">home</span>
+</button>
+<button class="flex flex-col items-center gap-1 group text-stone-500 dark:text-stone-400 hover:bg-[#c2652a]/5 dark:hover:bg-stone-800 p-2 rounded-xl transition-all">
+<span class="material-symbols-outlined">folder_special</span>
+</button>
+<button class="flex flex-col items-center gap-1 group text-[#c2652a] dark:text-[#d97706] border-r-2 border-[#c2652a] bg-[#c2652a]/5 p-2 rounded-xl transition-all">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">chat</span>
+</button>
+<button class="flex flex-col items-center gap-1 group text-stone-500 dark:text-stone-400 hover:bg-[#c2652a]/5 dark:hover:bg-stone-800 p-2 rounded-xl transition-all">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+<div class="mt-auto">
+<img alt="User Profile" class="w-10 h-10 rounded-full border border-outline-variant" data-alt="User profile avatar illustration" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9abTvF_MgohjC3RSWw301TlCPuSGtvdXgqiyqRonE5Al1qVxhBwOo5f8ooQux_ifMisZz3qWlc1EDzlUxEvTcWC7fgmKnXyElA33enuuA0vq5SXDdiyVFVx-BlXpy8-H7Q5oI0drXdiunwylyLpJbz-lUAJH1bVUspYBf_2-xolxcDgpMEIWJp8nGhQvwlhEJGTs6YYDggP8Ktk42hOTZiSBoj3vpsRGjaiAkHCfd8qxm6d5QBllIt3lHtztBGvRZtC-4DWb5ToVA"/>
+</div>
+</nav>
+<!-- TopNavBar (Predicted Component) -->
+<header class="fixed top-0 right-0 left-0 flex justify-between items-center w-full px-6 py-3 ml-20 bg-[#faf5ee]/80 backdrop-blur-md dark:bg-stone-900/80 border-b border-[#d8d0c8]/60 dark:border-stone-800 shadow-sm dark:shadow-none z-30">
+<div class="flex items-center gap-4">
+<h1 class="text-xl font-serif italic text-stone-800 dark:text-stone-100 font-headline">AI Skills Creator</h1>
+<div class="h-4 w-[1px] bg-outline-variant mx-2"></div>
+<span class="text-sm font-label text-[#c2652a] font-semibold">Project Status: Saved</span>
+</div>
+<div class="flex items-center gap-6">
+<button class="px-5 py-1.5 bg-primary text-on-primary rounded-lg text-sm font-medium transition-transform scale-95 active:scale-100">
+                Test in Chat
+            </button>
+<div class="flex gap-4 text-stone-600 dark:text-stone-400">
+<span class="material-symbols-outlined cursor-pointer hover:text-[#c2652a] transition-colors">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-[#c2652a] transition-colors">account_circle</span>
+</div>
+</div>
+</header>
+<!-- Main Workspace Layout -->
+<main class="ml-20 pt-[60px] h-screen flex overflow-hidden">
+<!-- Left: Chat Workspace -->
+<section class="flex-1 flex flex-col relative bg-surface-container-lowest">
+<!-- Active Skills Header Bar -->
+<div class="px-8 py-3 bg-surface-container-low border-b border-outline-variant flex items-center justify-between">
+<div class="flex items-center gap-4 overflow-x-auto hide-scrollbar">
+<span class="text-[10px] font-bold tracking-widest uppercase text-secondary">Active Skills</span>
+<div class="flex gap-2">
+<div class="flex items-center gap-2 bg-surface border border-outline-variant px-3 py-1 rounded-full shadow-sm">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-xs font-medium">Creative Narrative</span>
+<span class="material-symbols-outlined text-[14px] cursor-pointer">close</span>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-highest/50 border border-outline-variant px-3 py-1 rounded-full">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="text-xs font-medium text-secondary">Historical Fact Checker</span>
+<span class="material-symbols-outlined text-[14px] cursor-pointer text-secondary">add</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 border-l border-outline-variant pl-4">
+<span class="text-xs font-label text-secondary">Compare Mode</span>
+<button class="w-8 h-4 bg-primary/20 rounded-full relative flex items-center px-0.5">
+<div class="w-3 h-3 bg-primary rounded-full translate-x-4 transition-transform"></div>
+</button>
+</div>
+</div>
+<!-- Chat Content (Scrollable) -->
+<div class="flex-1 overflow-y-auto px-8 py-10 space-y-12 max-w-4xl mx-auto w-full">
+<!-- User Message -->
+<div class="flex gap-6 max-w-2xl">
+<div class="w-8 h-8 rounded bg-surface-container-high flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-sm">person</span>
+</div>
+<div class="space-y-2">
+<p class="text-on-surface leading-[1.8] text-[15px]">
+                            Can you write a short description of a sun-drenched library in a desert oasis, using the current skill parameters?
+                        </p>
+</div>
+</div>
+<!-- Compare Response Layout -->
+<div class="grid grid-cols-2 gap-8 w-full border-t border-outline-variant/30 pt-8">
+<!-- Without Skill -->
+<div class="space-y-4">
+<div class="flex items-center gap-2 mb-2">
+<span class="text-[10px] font-bold text-secondary uppercase tracking-widest">Base Model</span>
+</div>
+<div class="bg-surface-container-low/50 p-6 rounded-xl border border-outline-variant/40">
+<p class="text-secondary leading-[1.8] italic text-[14px]">
+                                The library stood in the desert. It was warm and had many books. Outside, palm trees grew near the water. Sunlight came through the windows onto the floor.
+                            </p>
+</div>
+</div>
+<!-- With Skill (Creative Narrative) -->
+<div class="space-y-4">
+<div class="flex items-center gap-2 mb-2">
+<span class="text-[10px] font-bold text-primary uppercase tracking-widest">With Creative Narrative</span>
+</div>
+<div class="bg-surface p-6 rounded-xl border-l-4 border-primary shadow-sm">
+<p class="text-on-surface leading-[1.8] text-[14px]">
+                                Dust motes danced in thick, honeyed shafts of light that pierced the high clerestory windows. The scent of sun-baked parchment and ancient cedar filled the air, a cool sanctuary carved from the unforgiving amber of the Sahara. Outside, the rhythmic rustle of palms whispered against the silence of a thousand stored lifetimes.
+                            </p>
+</div>
+</div>
+</div>
+<!-- Next User Prompt Preview -->
+<div class="flex gap-6 max-w-2xl opacity-50">
+<div class="w-8 h-8 rounded bg-surface-container-high flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-sm">person</span>
+</div>
+<div class="h-4 bg-surface-container-highest w-3/4 rounded"></div>
+</div>
+</div>
+<!-- Composer Area -->
+<div class="p-8 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest to-transparent">
+<div class="max-w-4xl mx-auto bg-surface-container border border-outline-variant rounded-2xl p-4 shadow-sm focus-within:border-primary transition-all">
+<textarea class="w-full bg-transparent border-none focus:ring-0 text-[15px] placeholder:text-outline font-body resize-none h-24" placeholder="How should the AI use your skill now?"></textarea>
+<div class="flex items-center justify-between mt-2 pt-2 border-t border-outline-variant/40">
+<div class="flex items-center gap-4 text-secondary">
+<button class="hover:text-primary transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-xl">attach_file</span>
+<span class="text-xs">Attach</span>
+</button>
+<button class="hover:text-primary transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-xl">history</span>
+<span class="text-xs">Context</span>
+</button>
+</div>
+<button class="bg-primary text-on-primary w-10 h-10 rounded-xl flex items-center justify-center hover:shadow-lg transition-all active:scale-95">
+<span class="material-symbols-outlined">arrow_upward</span>
+</button>
+</div>
+</div>
+<p class="text-[11px] text-center text-secondary mt-3">Testing workspace. Changes to skills must be saved in the Library.</p>
+</div>
+</section>
+<!-- Right: Skill Inspector Panel -->
+<aside class="w-96 bg-surface-container-low border-l border-outline-variant flex flex-col">
+<div class="p-6 border-b border-outline-variant flex justify-between items-center">
+<h2 class="font-headline text-lg font-semibold italic">Output Inspector</h2>
+<span class="material-symbols-outlined text-secondary cursor-pointer">dock_to_right</span>
+</div>
+<div class="flex-1 overflow-y-auto p-6 space-y-8">
+<!-- Skill Trigger Event -->
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-bold text-secondary uppercase tracking-widest">Internal Triggers</span>
+<span class="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-700 rounded font-bold">SUCCESS</span>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant p-4 rounded-lg font-mono text-[11px] leading-relaxed">
+<div class="text-primary-fixed-dim"><span class="text-secondary-fixed-dim">// Triggered:</span> Narrative_Enrichment</div>
+<div class="mt-2 text-on-surface-variant">
+                            {<br/>
+                              "intent": "descriptive",<br/>
+                              "intensity": 0.85,<br/>
+                              "vocabulary_boost": ["parchment", "clerestory"]<br/>
+                            }
+                        </div>
+</div>
+</div>
+<!-- Parameters Controls -->
+<div class="space-y-4">
+<span class="text-[10px] font-bold text-secondary uppercase tracking-widest">Active Parameters</span>
+<div class="space-y-6">
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-medium">
+<span>Metaphor Density</span>
+<span class="text-primary">High (0.8)</span>
+</div>
+<div class="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="w-4/5 h-full bg-primary"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-medium">
+<span>Adjective Richness</span>
+<span class="text-primary">Medium (0.5)</span>
+</div>
+<div class="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="w-1/2 h-full bg-primary"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Prompt Injection Logs -->
+<div class="space-y-3">
+<span class="text-[10px] font-bold text-secondary uppercase tracking-widest">System Instruction</span>
+<div class="text-xs text-on-surface-variant leading-loose italic bg-[#faf5ee] border-l-2 border-primary/40 p-3">
+                        "Enhance all environment descriptions with tactile and olfactory sensory details. Prioritize architectural precision over generic terms."
+                    </div>
+</div>
+<!-- Visual Reference (Generated from skill) -->
+<div class="space-y-3 pt-4">
+<span class="text-[10px] font-bold text-secondary uppercase tracking-widest">Visual Anchor</span>
+<div class="aspect-video w-full rounded-xl overflow-hidden relative group">
+<div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+<img alt="Desert Library" class="w-full h-full object-cover" data-alt="A sun-drenched library with warm desert lighting and books" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDASsMrOcP1KfstZJ_-ZYbCGZ_V_lldnlSCE5cA7djcT_7W06wIUKTO5LIytqpt1UxJQfYSx486dWPE9HHHvV91X76jrPslgYNOL4NPAuSzxBV-7yBKyduH-Sg8RDmiz1qMMfMGmGl65F21WlOltVMble9uwmeNVJKZbnp92f-YXPsQaq1QKGBnqed1Jgh7Jw_ZyrQfTDMkxSf2_JR5hXxBXZHChKDoUcuo6o2YJv86iqmZL4VN9_CAA_savGxIORygw3WI9qAsseE8"/>
+<div class="absolute bottom-2 left-3 text-[10px] text-white/90">Preview of skill tone mapping</div>
+</div>
+</div>
+</div>
+<!-- Footer Stats -->
+<div class="p-4 bg-surface-container border-t border-outline-variant flex items-center justify-between text-[10px] font-bold text-secondary tracking-widest uppercase">
+<span>Latency: 1.2s</span>
+<span>Tokens: 142</span>
+</div>
+</aside>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-safe pt-2 bg-[#faf5ee] dark:bg-stone-950 border-t border-[#d8d0c8]/60 dark:border-stone-800 shadow-[0_-4px_16px_rgba(58,48,42,0.04)] rounded-t-2xl">
+<div class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 py-1">
+<span class="material-symbols-outlined">home</span>
+<span class="font-sans text-[11px] font-medium tracking-wide">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 py-1">
+<span class="material-symbols-outlined">local_library</span>
+<span class="font-sans text-[11px] font-medium tracking-wide">Library</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#c2652a] dark:text-[#d97706] bg-[#c2652a]/10 rounded-xl px-4 py-1">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">forum</span>
+<span class="font-sans text-[11px] font-medium tracking-wide">Chat</span>
+</div>
+</nav>
+</body></html>

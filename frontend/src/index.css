@@ -1,0 +1,195 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: var(--primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary: var(--on-primary);
+  --color-on-primary-container: var(--on-primary-container);
+  
+  --color-secondary: var(--secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary: var(--on-secondary);
+  --color-on-secondary-container: var(--on-secondary-container);
+  
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-container: var(--tertiary-container);
+  --color-on-tertiary: var(--on-tertiary);
+  --color-on-tertiary-container: var(--on-tertiary-container);
+  
+  --color-background: var(--background);
+  --color-on-background: var(--on-background);
+  
+  --color-surface: var(--surface);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-bright: var(--surface-bright);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  
+  --color-error: var(--error);
+  --color-error-container: var(--error-container);
+  --color-on-error: var(--on-error);
+  --color-on-error-container: var(--on-error-container);
+
+  --font-headline: "Geist", "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-body: "Manrope", sans-serif;
+  --font-label: "Plus Jakarta Sans", sans-serif;
+  --font-mono: "Geist Mono", monospace;
+}
+
+@layer base {
+  :root {
+    --primary: #D97958;
+    --primary-container: #F8E5DF;
+    --on-primary: #ffffff;
+    --on-primary-container: #5E2614;
+    
+    --secondary: #5C5E6B;
+    --secondary-container: #EAE8E3;
+    --on-secondary: #ffffff;
+    --on-secondary-container: #30323D;
+    
+    --tertiary: #D97958;
+    --tertiary-container: #F8E5DF;
+    --on-tertiary: #ffffff;
+    --on-tertiary-container: #30323D;
+    
+    --background: var(--surface);
+    --on-background: var(--on-surface);
+    
+    --surface: #FFFDF8;
+    --surface-dim: #F0EDE6;
+    --surface-bright: #FFFDF8;
+    --surface-container-lowest: #ffffff;
+    --surface-container-low: #FBF7F0;
+    --surface-container: #F7F3EB;
+    --surface-container-high: #F0EAE0;
+    --surface-container-highest: #E8E2D6;
+    --on-surface: #30323D;
+    --on-surface-variant: #5C5E6B;
+    
+    --outline: #30323D;
+    --outline-variant: #E2DDD3;
+    
+    --error: #c0392b;
+    --error-container: #fce4e0;
+    --on-error: #ffffff;
+    --on-error-container: #7a1a10;
+
+    --dokion-charcoal: #30323D;
+    --dokion-terracotta: #D97958;
+    --dokion-cream: #FFFDF8;
+    --dokion-white: #FFFFFF;
+  }
+
+  .dark {
+    --primary: #ffb58e;
+    --primary-container: #8c3a00;
+    --on-primary: #5c2000;
+    --on-primary-container: #ffdbca;
+    
+    --secondary: #d3c4b4;
+    --secondary-container: #534335;
+    --on-secondary: #38291c;
+    --on-secondary-container: #f0dfce;
+    
+    --tertiary: #ffb4a9;
+    --tertiary-container: #930006;
+    --on-tertiary: #690003;
+    --on-tertiary-container: #ffdad5;
+    
+    --background: var(--surface);
+    --on-background: var(--on-surface);
+    
+    --surface: #201a17;
+    --surface-dim: #18120f;
+    --surface-bright: #3b302a;
+    --surface-container-lowest: #140d0a;
+    --surface-container-low: #201a17;
+    --surface-container: #241e1b;
+    --surface-container-high: #2f2824;
+    --surface-container-highest: #3a322e;
+    --on-surface: #ece0da;
+    --on-surface-variant: #d3c4b4;
+    
+    --outline: #9c8f84;
+    --outline-variant: #4f453e;
+    
+    --error: #ffb4ab;
+    --error-container: #93000a;
+    --on-error: #690005;
+    --on-error-container: #ffdad6;
+  }
+
+  body {
+    @apply bg-background text-on-background font-body antialiased selection:bg-primary/20 selection:text-primary;
+    text-rendering: optimizeLegibility;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-headline;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+}
+
+@layer utilities {
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+  }
+  
+  .material-symbols-outlined.filled {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+
+  /* Taste-Skill High-End Visual Utilities */
+  .double-bezel {
+    @apply p-1.5 sm:p-2 rounded-2xl md:rounded-3xl border border-[#30323D]/12 bg-black/[0.02] dark:bg-white/[0.04] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[#D97958]/35 hover:shadow-md;
+  }
+
+  .double-bezel-inner {
+    @apply rounded-[calc(1rem-0.25rem)] sm:rounded-[calc(1.5rem-0.375rem)] bg-white dark:bg-[#201a17] border border-[#30323D]/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)];
+  }
+
+  .btn-pill-nested {
+    @apply rounded-full px-5 py-2.5 font-headline font-semibold text-sm transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] inline-flex items-center justify-between gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D97958] focus-visible:ring-offset-2;
+  }
+
+  .btn-icon-wrapper {
+    @apply w-7 h-7 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/10 group-hover:scale-105 group-hover:translate-x-0.5 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)];
+  }
+
+  .mesh-glow {
+    background-image: radial-gradient(circle at 50% 0%, rgba(217, 121, 88, 0.12) 0%, rgba(255, 253, 248, 0) 70%);
+  }
+
+  .glass-panel {
+    @apply bg-white/85 dark:bg-[#201a17]/85 backdrop-blur-md border border-[#30323D]/12 shadow-xs;
+  }
+
+  .eyebrow-badge {
+    @apply rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-bold font-mono bg-[#D97958]/10 text-[#D97958] border border-[#D97958]/20 inline-flex items-center gap-1.5;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

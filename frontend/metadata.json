@@ -1,0 +1,8 @@
+{
+  "name": "Dokion Playbooks Store",
+  "description": "The official marketplace, registry discovery, and verified execution store for Dokion Playbooks. Install, buy, sell, share, inspect metadata, pull content-addressed immutable caches, and activate pinned inert packages with auditable lockfiles.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "Dokion",
+  "short_name": "Dokion",
+  "icons": [
+    {
+      "src": "/icons/dokion-app-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/dokion-app-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#D97958",
+  "background_color": "#FFFDF8",
+  "display": "standalone"
+}

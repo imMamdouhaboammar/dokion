@@ -1,0 +1,728 @@
+{
+  "generationTime": "2026-08-02T06:29:29.730Z",
+  "projectCwd": "/app/applet",
+  "appliedPatches": [],
+  "skippedPatches": [
+    {
+      "ruleName": "modal/dialog without accessible name (M1)",
+      "file": "src/components/SetupMCPModal.tsx",
+      "symptom": "<div className=\"fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-6\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"mcp-modal-title\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "modal-without-focus-trap",
+      "file": "src/components/SetupMCPModal.tsx",
+      "symptom": "<div className=\"fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-6\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"mcp-modal-title\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "modal-internal-scroll-risk",
+      "file": "src/components/SetupMCPModal.tsx",
+      "symptom": "<div className=\"flex-1 overflow-y-auto px-6 pb-2 custom-scrollbar\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "modal-without-focus-trap",
+      "file": "src/components/SetupMCPModal.tsx",
+      "symptom": "Detected dialog without focus trap. Modals must trap focus for accessibility.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "overlay-missing-portal",
+      "file": "src/components/SetupMCPModal.tsx",
+      "symptom": "High z-index overlay detected without a Portal. Use portals for safe stacking.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "blanket overflow:hidden on layout container (D2)",
+      "file": "src/views/CreationMethodPicker.tsx",
+      "symptom": "<div className=\"bg-surface-container-lowest rounded-xl p-5 border border-outline-variant shadow-sm relative overflow-hidden group\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "focus outline removed, verify focus-visible fallback (A2/A4)",
+      "file": "src/views/CreationMethodPicker.tsx",
+      "symptom": "className=\"w-full text-left bg-surface-container-lowest rounded-xl p-5 border border-outline-variant shadow-sm hover:border-primary transition-colors cursor-poi",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "modal-internal-scroll-risk",
+      "file": "src/views/CreationMethodPicker.tsx",
+      "symptom": "<main className=\"flex-1 flex min-h-0 overflow-y-auto\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "fixed-width-mobile-risk",
+      "file": "src/views/CreationMethodPicker.tsx",
+      "symptom": "<aside className=\"hidden xl:block w-80 bg-surface-container-low border-l border-outline-variant/60 p-8 space-y-8\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "blind-overflow-hidden",
+      "file": "src/views/CreationMethodPicker.tsx",
+      "symptom": "<div className=\"bg-surface-container-lowest rounded-xl p-5 border border-outline-variant shadow-sm relative overflow-hidden group\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "blanket overflow:hidden on layout container (D2)",
+      "file": "src/views/GitHub.tsx",
+      "symptom": "<div className=\"bg-surface-container-low rounded-2xl border border-outline-variant/40 overflow-hidden shadow-sm\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "modal-internal-scroll-risk",
+      "file": "src/views/GitHub.tsx",
+      "symptom": "<div className=\"flex-1 min-h-0 w-full overflow-y-auto bg-surface-bright p-6 lg:p-10 pb-32 md:pb-16\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "blind-overflow-hidden",
+      "file": "src/views/GitHub.tsx",
+      "symptom": "<div className=\"bg-surface-container-low rounded-2xl border border-outline-variant/40 overflow-hidden shadow-sm\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "modal-internal-scroll-risk",
+      "file": "src/views/GitHub.tsx",
+      "symptom": "<div className=\"p-6 font-mono text-sm text-on-surface-variant space-y-3 max-h-[500px] overflow-y-auto\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "focus outline removed, verify focus-visible fallback (A2/A4)",
+      "file": "src/views/Home.tsx",
+      "symptom": "className=\"text-sm text-primary font-semibold hover:underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary roun",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "focus outline removed, verify focus-visible fallback (A2/A4)",
+      "file": "src/views/Home.tsx",
+      "symptom": "className=\"bg-on-surface text-surface px-8 py-3.5 rounded-xl font-bold hover:bg-on-surface/90 transition-colors focus-visible:outline-none focus-visible:ring-2 ",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "focus outline removed, verify focus-visible fallback (A2/A4)",
+      "file": "src/views/Home.tsx",
+      "symptom": "className=\"w-full flex items-center gap-4 p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant hover:border-primary/40 hover:bg-primary/5 t",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "focus outline removed, verify focus-visible fallback (A2/A4)",
+      "file": "src/views/Home.tsx",
+      "symptom": "className=\"p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant hover:shadow-md transition-shadow flex flex-col h-full text-left w-full foc",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "focus outline removed, verify focus-visible fallback (A2/A4)",
+      "file": "src/views/Home.tsx",
+      "symptom": "className=\"text-outline hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded p-1\"",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "modal-internal-scroll-risk",
+      "file": "src/views/Home.tsx",
+      "symptom": "<div className=\"flex-1 min-h-0 w-full overflow-y-auto bg-surface-bright p-6 lg:p-10 pb-32 md:pb-16\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "image-without-loading",
+      "file": "src/views/Settings.tsx",
+      "symptom": "import React, { useState, useEffect } from 'react';\nimport { ViewState } from '../App';\nimport { db } from '../db';\n\ninterface SettingsProps {\n  onNavigate: (view: ViewState) => void;\n}\n\nexport function Settings({ onNavigate }: SettingsProps) {\n  const [showConfirmModal, setShowConfirmModal] = useState(false);\n  const [darkMode, setDarkMode] = useState(() => {\n    return document.documentElement.classList.contains('dark');\n  });\n  const [autoSave, setAutoSave] = useState(() => {\n    return localStorage.getItem('autoSave') !== 'false';\n  });\n  const [notifications, setNotifications] = useState(() => {\n    return localStorage.getItem('notifications') !== 'false';\n  });\n\n  useEffect(() => {\n    if (darkMode) {\n      document.documentElement.classList.add('dark');\n      localStorage.setItem('theme', 'dark');\n    } else {\n      document.documentElement.classList.remove('dark');\n      localStorage.setItem('theme', 'light');\n    }\n  }, [darkMode]);\n\n  useEffect(() => {\n    localStorage.setItem('autoSave', autoSave.toString());\n  }, [autoSave]);\n\n  useEffect(() => {\n    localStorage.setItem('notifications', notifications.toString());\n  }, [notifications]);\n\n  const handleClearData = async () => {\n    await db.projects.clear();\n    await db.skills.clear();\n    await db.sessions.clear();\n    await db.chats.clear();\n    setShowConfirmModal(false);\n    onNavigate('home');\n  };\n\n  return (\n    <div className=\"flex-1 min-h-0 w-full overflow-y-auto bg-surface-bright p-6 lg:p-10 pb-32 md:pb-16 relative\">\n      {showConfirmModal && (\n        <div className=\"fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4\">\n          <div className=\"bg-surface-container-lowest rounded-2xl p-6 max-w-sm w-full shadow-lg border border-outline-variant\">\n            <h3 className=\"text-xl font-headline font-bold text-on-surface mb-2\">Clear Local Data?</h3>\n            <p className=\"text-secondary text-sm mb-6\">Are you sure you want to clear all local data? This action cannot be undone and will delete all your projects and skills.</p>\n            <div className=\"flex justify-end gap-3\">\n              <button \n                type=\"button\"\n                onClick={() => setShowConfirmModal(false)}\n                className=\"px-4 py-2 text-sm font-bold text-secondary hover:bg-surface-container-low rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-primary\"\n              >\n                Cancel\n              </button>\n              <button \n                type=\"button\"\n                onClick={handleClearData}\n                className=\"px-4 py-2 text-sm font-bold bg-error text-white hover:bg-error/90 rounded-lg transition-colors shadow-sm focus-visible:ring-2 focus-visible:ring-primary\"\n              >\n                Yes, Clear Data\n              </button>\n            </div>\n          </div>\n        </div>\n      )}\n      <div className=\"max-w-3xl mx-auto\">\n        <h1 className=\"text-4xl md:text-5xl font-headline text-on-surface leading-tight mb-8\">Settings</h1>\n        \n        <div className=\"space-y-8\">\n          <section className=\"bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 shadow-sm\">\n            <h2 className=\"text-xl font-headline font-bold mb-4\">Profile</h2>\n            <div className=\"flex items-center gap-4 mb-6\">\n              <img \n                src=\"https://api.dicebear.com/7.x/notionists/svg?seed=Felix&backgroundColor=f2ece4\" \n                alt=\"User Profile\" \n                className=\"w-16 h-16 rounded-full border border-outline-variant bg-surface-container\"\n              />\n              <div>\n                <p className=\"font-bold text-on-surface\">Felix Developer</p>\n                <p className=\"text-sm text-secondary\">felix@skillaude.dev</p>\n              </div>\n              <button type=\"button\" className=\"ml-auto px-4 py-2 border border-outline-variant rounded-lg text-sm font-semibold hover:bg-surface-container-low transition-colors focus-visible:ring-2 focus-visible:ring-primary\">\n                Edit Profile\n              </button>\n            </div>\n          </section>\n\n          <section className=\"bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 shadow-sm\">\n            <h2 className=\"text-xl font-headline font-bold mb-4\">Preferences</h2>\n            <div className=\"space-y-4\">\n              <div className=\"flex items-center justify-between py-3 border-b border-outline-variant/40\">\n                <div>\n                  <p className=\"font-bold text-sm text-on-surface\">Dark Mode</p>\n                  <p className=\"text-xs text-secondary\">Toggle dark mode appearance</p>\n                </div>\n                <button \n                  type=\"button\"\n                  role=\"switch\"\n                  aria-checked={darkMode}\n                  aria-label=\"Dark Mode\"\n                  onClick={() => setDarkMode(!darkMode)}\n                  className={`w-11 h-6 rounded-full p-1 flex items-center cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary ${darkMode ? 'bg-primary justify-end' : 'bg-surface-dim border border-outline-variant justify-start'}`}\n                >\n                  <span className=\"w-4 h-4 bg-white rounded-full shadow-sm\" />\n                </button>\n              </div>\n              <div className=\"flex items-center justify-between py-3 border-b border-outline-variant/40\">\n                <div>\n                  <p className=\"font-bold text-sm text-on-surface\">Auto-save</p>\n                  <p className=\"text-xs text-secondary\">Automatically save changes in the editor</p>\n                </div>\n                <button \n                  type=\"button\"\n                  role=\"switch\"\n                  aria-checked={autoSave}\n                  aria-label=\"Auto-save\"\n                  onClick={() => setAutoSave(!autoSave)}\n                  className={`w-11 h-6 rounded-full p-1 flex items-center cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary ${autoSave ? 'bg-primary justify-end' : 'bg-surface-dim border border-outline-variant justify-start'}`}\n                >\n                  <span className=\"w-4 h-4 bg-white rounded-full shadow-sm\" />\n                </button>\n              </div>\n              <div className=\"flex items-center justify-between py-3\">\n                <div>\n                  <p className=\"font-bold text-sm text-on-surface\">Notifications</p>\n                  <p className=\"text-xs text-secondary\">Receive alerts for validation checks</p>\n                </div>\n                <button \n                  type=\"button\"\n                  role=\"switch\"\n                  aria-checked={notifications}\n                  aria-label=\"Notifications\"\n                  onClick={() => setNotifications(!notifications)}\n                  className={`w-11 h-6 rounded-full p-1 flex items-center cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary ${notifications ? 'bg-primary justify-end' : 'bg-surface-dim border border-outline-variant justify-start'}`}\n                >\n                  <span className=\"w-4 h-4 bg-white rounded-full shadow-sm\" />\n                </button>\n              </div>\n            </div>\n          </section>\n\n          <section className=\"bg-error/5 border border-error/20 rounded-2xl p-6\">\n            <h2 className=\"text-xl font-headline font-bold text-error mb-2\">Danger Zone</h2>\n            <p className=\"text-sm text-secondary mb-4\">Irreversible actions for your account and data.</p>\n            <button \n              type=\"button\"\n              onClick={() => setShowConfirmModal(true)}\n              className=\"px-4 py-2 bg-error text-white rounded-lg text-sm font-bold hover:bg-error/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary\"\n            >\n              Clear All Local Data\n            </button>\n          </section>\n        </div>\n      </div>\n    </div>\n  );\n}\n",
+      "reason": "unsafe",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "blanket overflow:hidden on layout container (D2)",
+      "file": "src/views/SkillsSh.tsx",
+      "symptom": "<div className=\"bg-primary-container rounded-2xl p-8 border border-primary/20 shadow-sm relative overflow-hidden\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "collection-map-empty-state-review",
+      "file": "src/views/SkillsSh.tsx",
+      "symptom": "Collection rendering appears to lack an empty state.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "async-view-state-review",
+      "file": "src/views/SkillsSh.tsx",
+      "symptom": "Async view should prove loading, error, and empty states before handoff.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "modal-internal-scroll-risk",
+      "file": "src/views/SkillsSh.tsx",
+      "symptom": "<div className=\"flex-1 min-h-0 w-full overflow-y-auto bg-surface pb-32 md:pb-16\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "modal-internal-scroll-risk",
+      "file": "src/views/SkillsSh.tsx",
+      "symptom": "<div className=\"bg-surface-container rounded-xl p-4 h-[300px] overflow-y-auto font-mono text-sm\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "array-index-key-reorder-risk",
+      "file": "src/views/SkillsSh.tsx",
+      "symptom": "Array index key detected. Confirm the list cannot reorder, insert, filter, or delete items.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "oversized-typography-mobile-risk",
+      "file": "src/views/SkillsSh.tsx",
+      "symptom": "<span className=\"material-symbols-outlined text-[16px] opacity-70\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "blind-overflow-hidden",
+      "file": "src/views/SkillsSh.tsx",
+      "symptom": "<div className=\"bg-primary-container rounded-2xl p-8 border border-primary/20 shadow-sm relative overflow-hidden\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "oversized-typography-mobile-risk",
+      "file": "src/views/SkillsSh.tsx",
+      "symptom": "Oversized text utility found without a responsive constraint. This will break mobile layouts.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "transition-all-animation-slop",
+      "file": "src/views/Validation.tsx",
+      "symptom": "import React from 'react';\nimport { ViewState } from '../App';\nimport { useLiveQuery } from 'dexie-react-hooks';\nimport { db } from '../db';\n\ninterface ValidationProps {\n  onNavigate: (view: ViewState, projectId?: string) => void;\n  projectId?: string | null;\n}\n\nexport function Validation({ onNavigate, projectId }: ValidationProps) {\n  const project = useLiveQuery(() => projectId ? db.projects.get(projectId) : undefined, [projectId]);\n  const skills = useLiveQuery(() => projectId ? db.skills.where('projectId').equals(projectId).toArray() : [], [projectId]);\n  const skill = skills?.[0];\n\n  const hasInstructions = skill && skill.instructions.length > 50;\n  const hasExamples = skill && skill.examples.length > 0;\n  const hasTools = skill && (skill.tools?.webSearch || skill.tools?.codeInterpreter);\n  \n  const structureScore = hasInstructions ? 98 : 40;\n  const clarityScore = hasInstructions ? 85 : 30;\n  const triggersScore = 62; // Placeholder\n  const examplesScore = hasExamples ? 100 : 0;\n  \n  const readiness = Math.round((structureScore + clarityScore + triggersScore + examplesScore) / 4);\n\n  if (!projectId || !project) {\n    return (\n      <div className=\"flex h-full w-full items-center justify-center bg-background\">\n        <div className=\"text-center\">\n          <h2 className=\"text-2xl font-headline mb-4\">No Project Selected</h2>\n          <button type=\"button\" onClick={() => onNavigate('home')} className=\"bg-primary text-on-primary px-6 py-2 rounded-xl focus-visible:ring-2 focus-visible:ring-primary\">\n            Go Home\n          </button>\n        </div>\n      </div>\n    );\n  }\n\n  return (\n    <div className=\"flex-1 min-h-0 flex w-full bg-background relative\">\n      {/* SideNavBar */}\n      <aside className=\"hidden lg:flex flex-col w-64 border-r border-outline-variant bg-surface-container-low\">\n        <div className=\"p-4 border-b border-outline-variant\">\n          <p className=\"font-headline text-primary text-lg leading-tight\">Quality Dimensions</p>\n          <p className=\"text-secondary text-xs font-medium tracking-wide uppercase mt-1\">Validation Workspace</p>\n        </div>\n        <div className=\"flex flex-col gap-1 p-3 flex-1 overflow-y-auto hide-scrollbar\">\n          <button type=\"button\" className=\"bg-primary/10 text-primary font-bold rounded-lg px-4 py-3 flex items-center gap-3 transition-colors text-left focus-visible:ring-2 focus-visible:ring-primary\">\n            <span className=\"material-symbols-outlined\">account_tree</span>\n            <span className=\"text-sm\">Structure</span>\n          </button>\n          <button type=\"button\" className=\"text-secondary px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high transition-colors rounded-lg text-left focus-visible:ring-2 focus-visible:ring-primary\">\n            <span className=\"material-symbols-outlined\">auto_awesome</span>\n            <span className=\"text-sm\">Clarity</span>\n          </button>\n          <button type=\"button\" className=\"text-secondary px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high transition-colors rounded-lg text-left focus-visible:ring-2 focus-visible:ring-primary\">\n            <span className=\"material-symbols-outlined\">bolt</span>\n            <span className=\"text-sm\">Triggers</span>\n          </button>\n          <button type=\"button\" className=\"text-secondary px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high transition-colors rounded-lg text-left focus-visible:ring-2 focus-visible:ring-primary\">\n            <span className=\"material-symbols-outlined\">library_books</span>\n            <span className=\"text-sm\">Examples</span>\n          </button>\n        </div>\n        <div className=\"p-4 border-t border-outline-variant\">\n          <button type=\"button\" className=\"w-full bg-primary text-on-primary py-3 px-4 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors focus-visible:ring-2 focus-visible:ring-primary\">\n            <span className=\"material-symbols-outlined text-sm\">add</span>\n            New Check\n          </button>\n        </div>\n      </aside>\n\n      {/* Main Content Canvas */}\n      <main className=\"flex-1 overflow-y-auto bg-surface-bright p-6 md:p-10 hide-scrollbar pb-40 md:pb-24\">\n        <div className=\"max-w-5xl mx-auto space-y-8\">\n          \n          {/* Header Section */}\n          <div className=\"flex flex-col md:flex-row justify-between items-start md:items-end gap-4\">\n            <div>\n              <h1 className=\"text-4xl md:text-5xl font-headline tracking-tight text-on-surface\">Validation: {project.name}</h1>\n              <p className=\"text-secondary mt-2 font-medium flex items-center gap-2\">\n                <span className=\"material-symbols-outlined text-sm\">schedule</span>\n                Last checked just now\n              </p>\n            </div>\n            <div className=\"flex gap-3\">\n              <button type=\"button\" className=\"px-6 py-2.5 rounded-lg border border-outline-variant text-on-surface font-semibold hover:bg-surface-container-low transition-colors focus-visible:ring-2 focus-visible:ring-primary\">Re-run All Tests</button>\n              <button type=\"button\" className=\"px-6 py-2.5 rounded-lg bg-primary text-on-primary font-bold hover:bg-primary/90 transition-colors shadow-sm focus-visible:ring-2 focus-visible:ring-primary\">View Final Report</button>\n            </div>\n          </div>\n\n          {/* Bento Grid Layout */}\n          <div className=\"grid grid-cols-1 lg:grid-cols-12 gap-6\">\n            \n            {/* Summary Block */}\n            <div className=\"lg:col-span-8 bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-8 flex flex-col sm:flex-row items-center gap-8 sm:gap-12 shadow-sm\">\n              <div className=\"relative w-40 h-40 flex items-center justify-center shrink-0\">\n                <svg className=\"w-full h-full transform -rotate-90\">\n                  <circle className=\"text-surface-container\" cx=\"80\" cy=\"80\" fill=\"transparent\" r=\"70\" stroke=\"currentColor\" strokeWidth=\"8\"></circle>\n                  <circle className=\"text-primary\" cx=\"80\" cy=\"80\" fill=\"transparent\" r=\"70\" stroke=\"currentColor\" strokeDasharray=\"440\" strokeDashoffset=\"52.8\" strokeWidth=\"8\"></circle>\n                </svg>\n                <div className=\"absolute inset-0 flex flex-col items-center justify-center\">\n                  <span className=\"text-4xl font-headline font-bold text-on-surface\">{readiness}%</span>\n                  <span className=\"text-xs uppercase tracking-wider text-primary font-bold\">Readiness</span>\n                </div>\n              </div>\n              <div className=\"flex-1 text-center sm:text-left\">\n                <h2 className=\"text-3xl font-headline text-on-surface mb-2\">Almost Ready</h2>\n                <p className=\"text-secondary max-w-md mb-6 mx-auto sm:mx-0\">Your skill logic is highly cohesive, but a few critical resource links are missing for full deployment.</p>\n                <div className=\"flex justify-center sm:justify-start gap-8\">\n                  <div>\n                    <span className=\"block text-2xl font-headline text-error font-bold\">2</span>\n                    <span className=\"text-xs font-bold uppercase tracking-wider text-secondary\">Blockers</span>\n                  </div>\n                  <div>\n                    <span className=\"block text-2xl font-headline text-amber-600 font-bold\">4</span>\n                    <span className=\"text-xs font-bold uppercase tracking-wider text-secondary\">Warnings</span>\n                  </div>\n                  <div>\n                    <span className=\"block text-2xl font-headline text-emerald-600 font-bold\">12</span>\n                    <span className=\"text-xs font-bold uppercase tracking-wider text-secondary\">Passed</span>\n                  </div>\n                </div>\n              </div>\n            </div>\n\n            {/* Next Steps Panel */}\n            <div className=\"lg:col-span-4 bg-primary text-on-primary rounded-2xl p-8 flex flex-col justify-between shadow-md\">\n              <div>\n                <h3 className=\"text-xl font-headline font-semibold mb-6\">Readiness Preview</h3>\n                <div className=\"space-y-4\">\n                  <div className=\"flex items-center gap-3 bg-white/10 p-4 rounded-xl\">\n                    <span className=\"material-symbols-outlined text-emerald-300\">check_circle</span>\n                    <div>\n                      <p className=\"font-bold text-sm\">Safe to Test</p>\n                      <p className=\"text-white/70 text-xs\">Sandbox environment ready</p>\n                    </div>\n                  </div>\n                  <div className=\"flex items-center gap-3 bg-white/10 p-4 rounded-xl border border-white/20\">\n                    <span className=\"material-symbols-outlined text-amber-300\">warning</span>\n                    <div>\n                      <p className=\"font-bold text-sm\">Export Preview</p>\n                      <p className=\"text-white/70 text-xs\">Restricted until blockers fixed</p>\n                    </div>\n                  </div>\n                </div>\n              </div>\n              <button type=\"button\" className=\"w-full bg-white text-primary font-bold py-3 rounded-xl mt-6 hover:bg-surface-container-lowest transition-colors focus-visible:ring-2 focus-visible:ring-primary\">Start Final Verification</button>\n            </div>\n\n            {/* Dimensions Panel */}\n            <div className=\"lg:col-span-12\">\n              <div className=\"flex justify-between items-center mb-6\">\n                <h2 className=\"text-2xl font-headline text-on-surface\">Dimensions Analysis</h2>\n                <button type=\"button\" className=\"text-primary font-bold text-sm flex items-center gap-1 hover:underline focus-visible:ring-2 focus-visible:ring-primary rounded px-1\">\n                  Compare with historical data\n                  <span className=\"material-symbols-outlined text-sm\">arrow_forward</span>\n                </button>\n              </div>\n              <div className=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6\">\n                {/* Dimension Card 1 */}\n                <div className=\"bg-surface-container-low border border-outline-variant/40 p-6 rounded-2xl hover:shadow-md transition-shadow\">\n                  <div className=\"flex justify-between items-start mb-4\">\n                    <div className=\"w-10 h-10 bg-white rounded-xl flex items-center justify-center text-primary shadow-sm\">\n                      <span className=\"material-symbols-outlined\">account_tree</span>\n                    </div>\n                    <span className=\"text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-1 rounded uppercase tracking-wider\">Passed</span>\n                  </div>\n                  <h3 className=\"font-headline text-lg font-bold mb-1\">Structure</h3>\n                  <p className=\"text-xs text-secondary mb-6\">Hierarchy and nodal integrity verified.</p>\n                  <div className=\"flex justify-between items-end\">\n                    <span className=\"text-2xl font-headline font-bold text-on-surface\">{structureScore}%</span>\n                    <button type=\"button\" className=\"text-primary text-xs font-bold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded p-0.5\">View Details</button>\n                  </div>\n                </div>\n\n                {/* Dimension Card 2 */}\n                <div className=\"bg-surface-container-low border border-outline-variant/40 p-6 rounded-2xl border-l-4 border-l-amber-500 shadow-sm\">\n                  <div className=\"flex justify-between items-start mb-4\">\n                    <div className=\"w-10 h-10 bg-white rounded-xl flex items-center justify-center text-amber-600 shadow-sm\">\n                      <span className=\"material-symbols-outlined\">auto_awesome</span>\n                    </div>\n                    <span className=\"text-xs bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded uppercase tracking-wider\">Attention</span>\n                  </div>\n                  <h3 className=\"font-headline text-lg font-bold mb-1\">Clarity</h3>\n                  <p className=\"text-xs text-secondary mb-6\">Some prompts contain ambiguous phrasing.</p>\n                  <div className=\"flex justify-between items-end\">\n                    <span className=\"text-2xl font-headline font-bold text-on-surface\">{clarityScore}%</span>\n                    <button type=\"button\" className=\"text-primary text-xs font-bold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded p-0.5\">View Details</button>\n                  </div>\n                </div>\n\n                {/* Dimension Card 3 */}\n                <div className=\"bg-surface-container-low border border-outline-variant/40 p-6 rounded-2xl border-l-4 border-l-amber-500 shadow-sm\">\n                  <div className=\"flex justify-between items-start mb-4\">\n                    <div className=\"w-10 h-10 bg-white rounded-xl flex items-center justify-center text-amber-600 shadow-sm\">\n                      <span className=\"material-symbols-outlined\">bolt</span>\n                    </div>\n                    <span className=\"text-xs bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded uppercase tracking-wider\">Attention</span>\n                  </div>\n                  <h3 className=\"font-headline text-lg font-bold mb-1\">Triggers</h3>\n                  <p className=\"text-xs text-secondary mb-6\">User intent matching needs refinement.</p>\n                  <div className=\"flex justify-between items-end\">\n                    <span className=\"text-2xl font-headline font-bold text-on-surface\">{triggersScore}%</span>\n                    <button type=\"button\" className=\"text-primary text-xs font-bold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded p-0.5\">View Details</button>\n                  </div>\n                </div>\n\n                {/* Dimension Card 4 */}\n                <div className=\"bg-surface-container-low border border-outline-variant/40 p-6 rounded-2xl hover:shadow-md transition-shadow\">\n                  <div className=\"flex justify-between items-start mb-4\">\n                    <div className=\"w-10 h-10 bg-white rounded-xl flex items-center justify-center text-emerald-600 shadow-sm\">\n                      <span className=\"material-symbols-outlined\">library_books</span>\n                    </div>\n                    <span className=\"text-xs bg-emerald-100 text-emerald-700 font-bold px-2 py-1 rounded uppercase tracking-wider\">Passed</span>\n                  </div>\n                  <h3 className=\"font-headline text-lg font-bold mb-1\">Examples</h3>\n                  <p className=\"text-xs text-secondary mb-6\">Training set coverage is exhaustive.</p>\n                  <div className=\"flex justify-between items-end\">\n                    <span className=\"text-2xl font-headline font-bold text-on-surface\">{examplesScore}%</span>\n                    <button type=\"button\" className=\"text-primary text-xs font-bold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded p-0.5\">View Details</button>\n                  </div>\n                </div>\n              </div>\n            </div>\n\n            {/* Issues Panel */}\n            <div className=\"lg:col-span-7\">\n              <h2 className=\"text-2xl font-headline text-on-surface mb-6\">Issues & Critical Findings</h2>\n              <div className=\"space-y-4\">\n                <div className=\"bg-white border border-outline-variant/60 rounded-2xl p-5 flex items-start gap-4 hover:border-error transition-all group shadow-sm\">\n                  <div className=\"mt-1 flex-shrink-0\">\n                    <span className=\"material-symbols-outlined text-error filled\">error</span>\n                  </div>\n                  <div className=\"flex-1\">\n                    <div className=\"flex justify-between items-start\">\n                      <div>\n                        <h3 className=\"font-bold text-on-surface\">Missing Resource Link</h3>\n                        <p className=\"text-sm text-secondary mt-1\">Component 'DataCleaner' refers to an external documentation link that returns a 404 error.</p>\n                      </div>\n                      <button \n                        onClick={() => onNavigate('editor', projectId)}\n                        className=\"px-4 py-1.5 bg-error/10 text-error font-bold text-xs rounded-lg hover:bg-error hover:text-white transition-all\"\n                      >\n                        Fix\n                      </button>\n                    </div>\n                    <div className=\"mt-4 flex gap-4\">\n                      <span className=\"text-[10px] font-bold bg-surface-container-highest text-secondary px-2 py-0.5 rounded uppercase\">Blocker</span>\n                      <span className=\"text-[10px] font-bold text-outline\">ID: SK-1029</span>\n                    </div>\n                  </div>\n                </div>\n\n                <div className=\"bg-white border border-outline-variant/60 rounded-2xl p-5 flex items-start gap-4 hover:border-amber-500 transition-all group shadow-sm\">\n                  <div className=\"mt-1 flex-shrink-0\">\n                    <span className=\"material-symbols-outlined text-amber-500 filled\">warning</span>\n                  </div>\n                  <div className=\"flex-1\">\n                    <div className=\"flex justify-between items-start\">\n                      <div>\n                        <h5 className=\"font-bold text-on-surface\">Ambiguous Trigger</h5>\n                        <p className=\"text-sm text-secondary mt-1\">The phrase 'Analyze this' matches both Data Processing and Visual Report generation triggers.</p>\n                      </div>\n                      <button \n                        onClick={() => onNavigate('editor', projectId)}\n                        className=\"px-4 py-1.5 bg-amber-500/10 text-amber-700 font-bold text-xs rounded-lg hover:bg-amber-500 hover:text-white transition-all\"\n                      >\n                        Fix\n                      </button>\n                    </div>\n                    <div className=\"mt-4 flex gap-4\">\n                      <span className=\"text-[10px] font-bold bg-surface-container-highest text-secondary px-2 py-0.5 rounded uppercase\">Warning</span>\n                      <span className=\"text-[10px] font-bold text-outline\">ID: SK-1044</span>\n                    </div>\n                  </div>\n                </div>\n              </div>\n            </div>\n\n            {/* Evidence Panel */}\n            <div className=\"lg:col-span-5\">\n              <h2 className=\"text-2xl font-headline text-on-surface mb-6\">Latest Test Results</h2>\n              <div className=\"bg-surface-container-low rounded-2xl p-8 h-full flex flex-col justify-between border border-outline-variant/40 shadow-sm\">\n                <div>\n                  <div className=\"flex items-center gap-4 mb-6\">\n                    <div className=\"flex -space-x-3\">\n                      <div className=\"w-10 h-10 rounded-full border-2 border-white bg-surface-container-highest flex items-center justify-center text-secondary text-xs font-bold\">JD</div>\n                      <div className=\"w-10 h-10 rounded-full border-2 border-white bg-surface-dim flex items-center justify-center text-secondary text-xs font-bold\">AL</div>\n                      <div className=\"w-10 h-10 rounded-full border-2 border-white bg-outline flex items-center justify-center text-white text-xs font-bold\">+1</div>\n                    </div>\n                    <p className=\"text-xs text-secondary font-medium italic\">Summary of the last 3 chat sessions</p>\n                  </div>\n                  <div className=\"space-y-6\">\n                    <div className=\"flex justify-between items-center border-b border-outline-variant/40 pb-4\">\n                      <span className=\"text-sm font-medium text-secondary\">Logic Match Accuracy</span>\n                      <span className=\"text-xl font-headline font-bold text-primary\">94%</span>\n                    </div>\n                    <div className=\"flex justify-between items-center border-b border-outline-variant/40 pb-4\">\n                      <span className=\"text-sm font-medium text-secondary\">Response Latency</span>\n                      <span className=\"text-xl font-headline font-bold text-on-surface\">1.2s</span>\n                    </div>\n                    <div className=\"flex justify-between items-center\">\n                      <span className=\"text-sm font-medium text-secondary\">User Sentiment Score</span>\n                      <span className=\"text-xl font-headline font-bold text-emerald-600\">4.8<small className=\"text-xs text-outline\">/5</small></span>\n                    </div>\n                  </div>\n                </div>\n                <div className=\"mt-8\">\n                  <button onClick={() => onNavigate('chat', projectId)} className=\"inline-flex items-center gap-2 text-primary font-bold text-sm hover:underline\">\n                    Review Conversations\n                    <span className=\"material-symbols-outlined text-sm\">open_in_new</span>\n                  </button>\n                </div>\n              </div>\n            </div>\n\n          </div>\n        </div>\n      </main>\n    </div>\n  );\n}\n",
+      "reason": "unsafe",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "image-without-loading",
+      "file": "src/components/Layout.tsx",
+      "symptom": "import React from 'react';\nimport { ViewState } from '../App';\nimport { Logo } from './Logo';\n\ninterface LayoutProps {\n  children: React.ReactNode;\n  currentView: ViewState;\n  onNavigate: (view: ViewState) => void;\n}\n\nexport function Layout({ children, currentView, onNavigate }: LayoutProps) {\n  return (\n    <div className=\"flex h-[100dvh] bg-background\">\n      {/* Left Rail Navigation */}\n      <aside className=\"hidden md:flex flex-col items-center w-20 py-6 border-r border-outline-variant/60 bg-surface z-30\">\n        <button \n          type=\"button\"\n          onClick={() => onNavigate('home')} \n          title=\"Skillaude Home\"\n          aria-label=\"Skillaude Home\"\n          className=\"mb-10 hover:opacity-80 transition-opacity focus-visible:ring-2 focus-visible:ring-primary rounded-lg p-1\"\n        >\n          <Logo variant=\"icon\" size={32} />\n        </button>\n        <nav className=\"flex flex-col gap-8 flex-1 w-full px-3\" aria-label=\"Main navigation\">\n          <NavItem \n            icon=\"home\" \n            label=\"Home\"\n            active={currentView === 'home'} \n            onClick={() => onNavigate('home')} \n          />\n          <NavItem \n            icon=\"library_books\" \n            label=\"Library\"\n            active={currentView === 'library'} \n            onClick={() => onNavigate('library')} \n          />\n          <NavItem \n            icon=\"folder_special\" \n            label=\"Editor\"\n            active={currentView === 'editor'} \n            onClick={() => onNavigate('editor')} \n          />\n          <NavItem \n            icon=\"fact_check\" \n            label=\"Validation\"\n            active={currentView === 'validation'} \n            onClick={() => onNavigate('validation')} \n          />\n          <NavItem \n            icon=\"chat\" \n            label=\"Chat\"\n            active={currentView === 'chat'} \n            onClick={() => onNavigate('chat')} \n          />\n          <NavItem \n            icon=\"settings\" \n            label=\"Settings\"\n            active={currentView === 'settings'} \n            onClick={() => onNavigate('settings')} \n          />\n        </nav>\n        <button \n          type=\"button\"\n          onClick={() => onNavigate('settings')} \n          title=\"User Profile and Settings\"\n          aria-label=\"User Profile and Settings\"\n          className=\"mt-auto hover:opacity-80 transition-opacity focus-visible:ring-2 focus-visible:ring-primary rounded-full\"\n        >\n          <img \n            src=\"https://api.dicebear.com/7.x/notionists/svg?seed=Felix&backgroundColor=f2ece4\" \n            alt=\"User Profile\" \n            className=\"w-10 h-10 rounded-full border border-outline-variant bg-surface-container\"\n          />\n        </button>\n      </aside>\n\n      {/* Main Content Area */}\n      <div className=\"flex-1 flex flex-col min-w-0 relative\">\n        {/* Top Navigation Bar */}\n        <header className=\"flex justify-between items-center px-6 py-3 bg-surface border-b border-outline-variant/60 z-30\">\n          <div className=\"flex items-center gap-4\">\n            <div className=\"hidden sm:block\">\n              <Logo size={24} />\n            </div>\n            <div className=\"hidden sm:block h-4 w-px bg-outline-variant mx-2\"></div>\n            <div className=\"flex items-center gap-2 text-sm font-label text-primary font-semibold\">\n              <span className=\"material-symbols-outlined text-sm\">\n                {localStorage.getItem('autoSave') === 'false' ? 'sync_disabled' : 'check_circle'}\n              </span>\n              {localStorage.getItem('autoSave') === 'false' ? 'Auto-save Disabled' : 'Project Status: Saved'}\n            </div>\n          </div>\n          <div className=\"flex items-center gap-4 sm:gap-6\">\n            <button \n              type=\"button\"\n              onClick={() => onNavigate('chat')}\n              className=\"px-4 sm:px-5 py-1.5 bg-primary text-on-primary rounded-lg text-sm font-medium transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2\"\n            >\n              Test in Chat\n            </button>\n            <div className=\"flex gap-2 sm:gap-4 text-secondary\">\n              <button \n                type=\"button\"\n                aria-label=\"Notifications\"\n                className=\"hover:text-primary transition-colors focus-visible:ring-2 focus-visible:ring-primary rounded-lg p-1\"\n              >\n                <span className=\"material-symbols-outlined\">notifications</span>\n              </button>\n              <button \n                type=\"button\"\n                aria-label=\"Account Settings\"\n                className=\"hover:text-primary transition-colors md:hidden focus-visible:ring-2 focus-visible:ring-primary rounded-lg p-1\" \n                onClick={() => onNavigate('settings')}\n              >\n                <span className=\"material-symbols-outlined\">account_circle</span>\n              </button>\n            </div>\n          </div>\n        </header>\n\n        {/* Dynamic View Content */}\n        <main className=\"flex-1 flex flex-col min-h-0 relative pb-[88px] md:pb-0\">\n          {children}\n        </main>\n      </div>\n\n      {/* Mobile Bottom Navigation */}\n      <nav className=\"md:hidden fixed bottom-0 left-0 w-full z-30 flex justify-around items-center px-4 pt-2 bg-surface border-t border-outline-variant/60 shadow-[0_-4px_16px_rgba(58,48,42,0.04)] rounded-t-2xl pb-6\" aria-label=\"Mobile Bottom Navigation\">\n        <MobileNavItem icon=\"home\" label=\"Home\" active={currentView === 'home'} onClick={() => onNavigate('home')} />\n        <MobileNavItem icon=\"library_books\" label=\"Library\" active={currentView === 'library'} onClick={() => onNavigate('library')} />\n        <MobileNavItem icon=\"folder_special\" label=\"Build\" active={currentView === 'editor'} onClick={() => onNavigate('editor')} />\n        <MobileNavItem icon=\"fact_check\" label=\"Check\" active={currentView === 'validation'} onClick={() => onNavigate('validation')} />\n        <MobileNavItem icon=\"chat\" label=\"Chat\" active={currentView === 'chat'} onClick={() => onNavigate('chat')} />\n      </nav>\n    </div>\n  );\n}\n\nfunction NavItem({ icon, label, active, onClick }: { icon: string, label: string, active: boolean, onClick: () => void }) {\n  return (\n    <button \n      type=\"button\"\n      onClick={onClick}\n      title={label}\n      aria-label={label}\n      aria-current={active ? 'page' : undefined}\n      className={`flex flex-col items-center justify-center p-2 rounded-xl transition-colors w-full focus-visible:ring-2 focus-visible:ring-primary ${\n        active \n          ? 'text-primary bg-primary/10 font-bold' \n          : 'text-secondary hover:bg-primary/5 hover:text-on-surface'\n      }`}\n    >\n      <span className={`material-symbols-outlined ${active ? 'filled' : ''}`}>{icon}</span>\n    </button>\n  );\n}\n\nfunction MobileNavItem({ icon, label, active, onClick }: { icon: string, label: string, active: boolean, onClick: () => void }) {\n  return (\n    <button \n      type=\"button\"\n      onClick={onClick}\n      aria-label={label}\n      aria-current={active ? 'page' : undefined}\n      className={`flex flex-col items-center justify-center py-1 px-4 rounded-xl transition-colors focus-visible:ring-2 focus-visible:ring-primary ${\n        active ? 'text-primary bg-primary/10 font-bold' : 'text-secondary'\n      }`}\n    >\n      <span className={`material-symbols-outlined ${active ? 'filled' : ''}`}>{icon}</span>\n      <span className=\"font-label text-xs font-medium tracking-wide mt-1\">{label}</span>\n    </button>\n  );\n}\n",
+      "reason": "unsafe",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "hardcoded-color-token-drift",
+      "file": "src/index.css",
+      "symptom": "Hardcoded color found. Move durable color decisions into tokens or theme files.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "fixed-inside-transform-bug",
+      "file": "src/index.css",
+      "symptom": "text-transform: none;",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "transition-all-animation-slop",
+      "file": "src/views/Chat.tsx",
+      "symptom": "import React, { useState, useRef, useEffect } from 'react';\nimport { ViewState } from '../App';\nimport { useLiveQuery } from 'dexie-react-hooks';\nimport { db, ChatEntry as DbChatEntry } from '../db';\nimport { GoogleGenAI } from '@google/genai';\n\ninterface ChatProps {\n  onNavigate: (view: ViewState, projectId?: string) => void;\n  projectId?: string | null;\n}\n\ninterface ChatEntry extends DbChatEntry {\n  isGenerating?: boolean;\n}\n\nexport function Chat({ onNavigate, projectId }: ChatProps) {\n  const skill = useLiveQuery(() => projectId ? db.skills.where('projectId').equals(projectId).first() : undefined, [projectId]);\n  const savedChats = useLiveQuery(() => projectId ? db.chats.where('projectId').equals(projectId).sortBy('timestamp') : [], [projectId]);\n\n  const [input, setInput] = useState('');\n  const [conversation, setConversation] = useState<ChatEntry[]>([]);\n  const [isGenerating, setIsGenerating] = useState(false);\n  const [compareMode, setCompareMode] = useState(true);\n  const [isInspectorOpen, setIsInspectorOpen] = useState(true);\n  const chatEndRef = useRef<HTMLDivElement>(null);\n\n  useEffect(() => {\n    if (savedChats) {\n      setConversation(savedChats.map(c => ({ ...c, isGenerating: false })));\n    }\n  }, [savedChats]);\n\n  const scrollToBottom = () => {\n    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });\n  };\n\n  useEffect(() => {\n    scrollToBottom();\n  }, [conversation]);\n\n  const handleSend = async () => {\n    if (!input.trim() || isGenerating || !projectId) return;\n\n    const prompt = input.trim();\n    setInput('');\n    setIsGenerating(true);\n\n    const newEntry: ChatEntry = {\n      id: Date.now().toString(),\n      projectId,\n      userPrompt: prompt,\n      baseResponse: '',\n      skillResponse: '',\n      timestamp: Date.now(),\n      isGenerating: true\n    };\n\n    setConversation(prev => [...prev, newEntry]);\n\n    try {\n      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });\n      \n      let baseResText = '';\n      let skillResText = '';\n      \n      const tools = [];\n      if (skill?.tools?.webSearch) {\n        tools.push({ googleSearch: {} });\n      }\n      if (skill?.tools?.codeInterpreter) {\n        tools.push({ codeExecution: {} });\n      }\n      \n      // Call Skill Model\n      const skillStream = await ai.models.generateContentStream({\n        model: 'gemini-3-flash-preview',\n        contents: prompt,\n        config: {\n          systemInstruction: skill?.instructions || 'You are a helpful assistant.',\n          ...(tools.length > 0 ? { tools } : {})\n        }\n      });\n\n      if (compareMode) {\n        // Call Base Model\n        const baseStream = await ai.models.generateContentStream({\n          model: 'gemini-3-flash-preview',\n          contents: prompt,\n        });\n        \n        const processStream = async (stream: any, isBase: boolean) => {\n          for await (const chunk of stream) {\n            const text = chunk.text || '';\n            if (isBase) {\n              baseResText += text;\n            } else {\n              skillResText += text;\n            }\n            setConversation(prev => prev.map(e => \n              e.id === newEntry.id \n                ? { ...e, baseResponse: baseResText, skillResponse: skillResText } \n                : e\n            ));\n          }\n        };\n\n        await Promise.all([\n          processStream(baseStream, true),\n          processStream(skillStream, false)\n        ]);\n      } else {\n        for await (const chunk of skillStream) {\n          skillResText += chunk.text || '';\n          setConversation(prev => prev.map(e => \n            e.id === newEntry.id \n              ? { ...e, skillResponse: skillResText } \n              : e\n          ));\n        }\n      }\n\n      const finalEntry = {\n        ...newEntry,\n        baseResponse: baseResText,\n        skillResponse: skillResText,\n        isGenerating: false\n      };\n\n      await db.chats.add({\n        id: finalEntry.id,\n        projectId: finalEntry.projectId,\n        userPrompt: finalEntry.userPrompt,\n        baseResponse: finalEntry.baseResponse,\n        skillResponse: finalEntry.skillResponse,\n        timestamp: finalEntry.timestamp\n      });\n\n    } catch (error) {\n      console.error('Error generating response:', error);\n      setConversation(prev => prev.map(entry =>\n        entry.id === newEntry.id\n          ? {\n              ...entry,\n              baseResponse: 'Error connecting to AI.',\n              skillResponse: 'Error connecting to AI.',\n              isGenerating: false\n            }\n          : entry\n      ));\n    } finally {\n      setIsGenerating(false);\n    }\n  };\n\n  return (\n    <div className=\"flex-1 min-h-0 flex w-full bg-background\">\n      {/* Left: Chat Workspace */}\n      <section className=\"flex-1 min-h-0 flex flex-col relative bg-surface-container-lowest\">\n        {/* Active Skills Header Bar */}\n        <div className=\"px-6 py-3 bg-surface-container-low border-b border-outline-variant flex items-center justify-between z-10\">\n          <div className=\"flex items-center gap-4 overflow-x-auto hide-scrollbar\">\n            <span className=\"text-xs font-bold tracking-widest uppercase text-secondary whitespace-nowrap\">Active Skill</span>\n            <div className=\"flex gap-2\">\n              <div className=\"flex items-center gap-2 bg-white border border-outline-variant px-3 py-1.5 rounded-full shadow-sm\">\n                <span className=\"w-2 h-2 rounded-full bg-primary\"></span>\n                <span className=\"text-xs font-medium text-on-surface whitespace-nowrap\">{skill?.name || 'No Skill Selected'}</span>\n              </div>\n            </div>\n          </div>\n          <div className=\"hidden sm:flex items-center gap-3 border-l border-outline-variant pl-4 ml-4\">\n            <span className=\"text-xs font-label text-secondary whitespace-nowrap\">Compare Mode</span>\n            <button \n              type=\"button\"\n              role=\"switch\"\n              aria-checked={compareMode}\n              aria-label=\"Toggle Compare Mode\"\n              onClick={() => setCompareMode(!compareMode)}\n              className={`w-9 h-5 rounded-full relative flex items-center px-0.5 cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary ${compareMode ? 'bg-primary/20' : 'bg-surface-dim border border-outline-variant'}`}\n            >\n              <span className={`w-4 h-4 bg-primary rounded-full transition-transform shadow-sm ${compareMode ? 'translate-x-4' : 'translate-x-0'}`}></span>\n            </button>\n          </div>\n        </div>\n\n        {/* Chat Content (Scrollable) */}\n        <div className=\"flex-1 min-h-0 overflow-y-auto px-4 sm:px-8 py-8 space-y-10 max-w-4xl mx-auto w-full hide-scrollbar pb-48 md:pb-32\">\n          \n          {conversation.length === 0 && (\n            <div className=\"flex flex-col items-center justify-center h-full text-center opacity-50\">\n              <span className=\"material-symbols-outlined text-4xl mb-4\">forum</span>\n              <p className=\"text-sm font-medium\">Send a message to test your skill.</p>\n              <p className=\"text-xs mt-2\">Compare the base model with your custom instructions.</p>\n            </div>\n          )}\n\n          {conversation.map((entry) => (\n            <div key={entry.id} className=\"space-y-10\">\n              {/* User Message */}\n              <div className=\"flex gap-4 sm:gap-6 max-w-3xl\">\n                <div className=\"w-8 h-8 rounded-lg bg-surface-container-high flex-shrink-0 flex items-center justify-center border border-outline-variant/50\">\n                  <span className=\"material-symbols-outlined text-secondary text-sm\">person</span>\n                </div>\n                <div className=\"space-y-2 pt-1\">\n                  <p className=\"text-on-surface leading-relaxed text-[15px] whitespace-pre-wrap\">\n                    {entry.userPrompt}\n                  </p>\n                </div>\n              </div>\n\n              {/* Compare Response Layout */}\n              <div className={`grid grid-cols-1 ${compareMode ? 'md:grid-cols-2' : ''} gap-6 w-full border-t border-outline-variant/40 pt-8`}>\n                {/* Without Skill */}\n                {compareMode && (\n                  <div className=\"space-y-3\">\n                    <div className=\"flex items-center gap-2 mb-1\">\n                      <span className=\"text-[10px] font-bold text-secondary uppercase tracking-widest\">Base Model</span>\n                    </div>\n                    <div className=\"bg-surface-container-low/50 p-5 sm:p-6 rounded-2xl border border-outline-variant/40\">\n                      {entry.isGenerating ? (\n                        <div className=\"animate-pulse flex space-x-4\">\n                          <div className=\"flex-1 space-y-3 py-1\">\n                            <div className=\"h-2 bg-surface-container-highest rounded w-3/4\"></div>\n                            <div className=\"h-2 bg-surface-container-highest rounded\"></div>\n                            <div className=\"h-2 bg-surface-container-highest rounded w-5/6\"></div>\n                          </div>\n                        </div>\n                      ) : (\n                        <p className=\"text-secondary leading-relaxed italic text-[14px] whitespace-pre-wrap\">\n                          {entry.baseResponse}\n                        </p>\n                      )}\n                    </div>\n                  </div>\n                )}\n\n                {/* With Skill */}\n                <div className=\"space-y-3\">\n                  <div className=\"flex items-center gap-2 mb-1\">\n                    <span className=\"text-[10px] font-bold text-primary uppercase tracking-widest\">With {skill?.name || 'Skill'}</span>\n                  </div>\n                  <div className=\"bg-white p-5 sm:p-6 rounded-2xl border-l-4 border-primary shadow-sm\">\n                    {entry.isGenerating ? (\n                      <div className=\"animate-pulse flex space-x-4\">\n                        <div className=\"flex-1 space-y-3 py-1\">\n                          <div className=\"h-2 bg-surface-container-highest rounded w-3/4\"></div>\n                          <div className=\"h-2 bg-surface-container-highest rounded\"></div>\n                          <div className=\"h-2 bg-surface-container-highest rounded w-5/6\"></div>\n                        </div>\n                      </div>\n                    ) : (\n                      <p className=\"text-on-surface leading-relaxed text-[14px] whitespace-pre-wrap\">\n                        {entry.skillResponse}\n                      </p>\n                    )}\n                  </div>\n                </div>\n              </div>\n            </div>\n          ))}\n          <div ref={chatEndRef} />\n        </div>\n\n        {/* Composer Area */}\n        <div className=\"absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-surface-container-lowest border-t border-outline-variant/40\">\n          <div className=\"max-w-4xl mx-auto bg-surface-container-low border border-outline-variant rounded-2xl p-3 shadow-sm focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/50 transition-all\">\n            <textarea \n              aria-label=\"Skill prompt input\"\n              className=\"w-full bg-transparent border-none focus:ring-0 text-sm placeholder:text-outline font-body resize-none h-16 sm:h-20 p-2\" \n              placeholder=\"How should the AI use your skill now?\"\n              value={input}\n              onChange={(e) => setInput(e.target.value)}\n              onKeyDown={(e) => {\n                if (e.key === 'Enter' && !e.shiftKey) {\n                  e.preventDefault();\n                  handleSend();\n                }\n              }}\n            ></textarea>\n            <div className=\"flex items-center justify-between mt-1 pt-2 border-t border-outline-variant/40\">\n              <div className=\"flex items-center gap-2 sm:gap-4 text-secondary px-2\">\n                <button type=\"button\" aria-label=\"Attach file\" className=\"hover:text-primary transition-colors flex items-center gap-1.5 p-1 focus-visible:ring-2 focus-visible:ring-primary rounded\">\n                  <span className=\"material-symbols-outlined text-lg\">attach_file</span>\n                  <span className=\"text-xs font-medium hidden sm:inline\">Attach</span>\n                </button>\n                <button type=\"button\" aria-label=\"Context settings\" className=\"hover:text-primary transition-colors flex items-center gap-1.5 p-1 focus-visible:ring-2 focus-visible:ring-primary rounded\">\n                  <span className=\"material-symbols-outlined text-lg\">history</span>\n                  <span className=\"text-xs font-medium hidden sm:inline\">Context</span>\n                </button>\n              </div>\n              <button \n                type=\"button\"\n                aria-label=\"Send message\"\n                onClick={handleSend}\n                disabled={isGenerating || !input.trim()}\n                className=\"bg-primary text-on-primary w-10 h-10 rounded-xl flex items-center justify-center hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary\"\n              >\n                <span className=\"material-symbols-outlined filled\">arrow_upward</span>\n              </button>\n            </div>\n          </div>\n          <p className=\"text-xs text-center text-secondary mt-3 hidden sm:block\">\n            Testing workspace. Changes to skills must be saved in the Library.\n          </p>\n        </div>\n      </section>\n\n      {/* Right: Skill Inspector Panel */}\n      {isInspectorOpen ? (\n        <aside className=\"hidden lg:flex flex-col w-80 xl:w-96 bg-surface-container-low border-l border-outline-variant z-20 transition-all duration-300\">\n          <div className=\"p-5 border-b border-outline-variant flex justify-between items-center bg-surface\">\n            <h2 className=\"font-headline text-xl text-on-surface\">Output Inspector</h2>\n            <button \n              type=\"button\"\n              aria-label=\"Close Inspector\"\n              onClick={() => setIsInspectorOpen(false)}\n              className=\"p-1 hover:bg-surface-container rounded-lg transition-colors text-secondary focus-visible:ring-2 focus-visible:ring-primary\"\n              title=\"Close Inspector\"\n            >\n              <span className=\"material-symbols-outlined\">dock_to_right</span>\n            </button>\n          </div>\n          \n          <div className=\"flex-1 overflow-y-auto p-6 space-y-8 hide-scrollbar pb-24\">\n            \n            {/* Skill Trigger Event */}\n            <div className=\"space-y-3\">\n              <div className=\"flex items-center justify-between\">\n                <span className=\"text-xs font-bold text-secondary uppercase tracking-wider\">Internal Triggers</span>\n                <span className=\"text-xs px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold tracking-wide\">SUCCESS</span>\n              </div>\n              <div className=\"bg-white border border-outline-variant p-4 rounded-xl font-mono text-xs leading-relaxed shadow-sm\">\n                <div className=\"text-primary\"><span className=\"text-outline\">// Active Skill:</span> {skill?.name || 'None'}</div>\n                <div className=\"mt-2 text-on-surface\">\n                  {'{'}<br/>\n                  &nbsp;&nbsp;\"status\": \"applied\",<br/>\n                  &nbsp;&nbsp;\"instructions_length\": {skill?.instructions?.length || 0}<br/>\n                  {'}'}\n                </div>\n              </div>\n            </div>\n\n            {/* Prompt Injection Logs */}\n            <div className=\"space-y-3\">\n              <span className=\"text-xs font-bold text-secondary uppercase tracking-wider\">System Instruction</span>\n              <div className=\"text-sm text-on-surface leading-relaxed italic bg-surface-bright border-l-2 border-primary/40 p-4 rounded-r-xl shadow-sm\">\n                {skill?.instructions ? `\"${skill.instructions}\"` : \"No instructions defined. The model will use its default behavior.\"}\n              </div>\n            </div>\n\n          </div>\n        </aside>\n      ) : (\n        <div className=\"hidden lg:flex flex-col border-l border-outline-variant bg-surface-container-low z-20\">\n          <button \n            type=\"button\"\n            aria-label=\"Open Inspector\"\n            onClick={() => setIsInspectorOpen(true)}\n            className=\"p-4 hover:bg-surface-container transition-colors text-secondary h-full flex items-start focus-visible:ring-2 focus-visible:ring-primary\"\n            title=\"Open Inspector\"\n          >\n            <span className=\"material-symbols-outlined\">dock_to_left</span>\n          </button>\n        </div>\n      )}\n    </div>\n  );\n}\n",
+      "reason": "unsafe",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "modal-internal-scroll-risk",
+      "file": "src/views/Editor.tsx",
+      "symptom": "<div className=\"flex-1 overflow-y-auto p-3 space-y-2 hide-scrollbar\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "oversized-typography-mobile-risk",
+      "file": "src/views/Editor.tsx",
+      "symptom": "<div className=\"text-[10px] text-secondary mt-1\">Autosaved</div>",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "modal-internal-scroll-risk",
+      "file": "src/views/Editor.tsx",
+      "symptom": "<section className=\"flex-1 min-h-0 overflow-y-auto bg-surface-bright p-6 md:p-10 hide-scrollbar pb-40 md:pb-24\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "fixed-inside-transform-bug",
+      "file": "src/views/Editor.tsx",
+      "symptom": "<span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${skill.tools?.webSearch ? 'translate-x-4' : 'translate-x-0'}`} />",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "fixed-inside-transform-bug",
+      "file": "src/views/Editor.tsx",
+      "symptom": "<span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${skill.tools?.codeInterpreter ? 'translate-x-4' : 'translate-x-0'}`} />",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "array-index-key-reorder-risk",
+      "file": "src/views/Editor.tsx",
+      "symptom": "Array index key detected. Confirm the list cannot reorder, insert, filter, or delete items.",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "fixed-width-mobile-risk",
+      "file": "src/views/Editor.tsx",
+      "symptom": "<aside className=\"hidden xl:flex flex-col w-[400px] border-l border-outline-variant bg-surface\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "modal-internal-scroll-risk",
+      "file": "src/views/Editor.tsx",
+      "symptom": "<div className=\"flex-1 p-6 overflow-y-auto space-y-6 hide-scrollbar\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "fixed-inside-transform-bug",
+      "file": "src/views/Editor.tsx",
+      "symptom": "className={`absolute bottom-0 left-0 right-0 border-t border-outline-variant bg-surface-container-lowest flex items-center px-6 justify-between z-20 transition-transform duration-300 ${",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "fixed-inside-transform-bug",
+      "file": "src/views/Editor.tsx",
+      "symptom": "isHealthBarOpen ? 'h-14 translate-y-0' : 'h-14 translate-y-[calc(100%-4px)]'",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "fixed-inside-transform-bug",
+      "file": "src/views/Editor.tsx",
+      "symptom": "className=\"absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-3 bg-surface-container-lowest border border-outline-variant border-b-0 rounded-t-full flex items-center justify-center cursor-pointer hover:bg-surface-container",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "sidebar-missing-active-state",
+      "file": "src/views/Editor.tsx",
+      "symptom": "Sidebar is missing active link semantic handling (e.g., aria-current=\"page\" or specific active class).",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    },
+    {
+      "ruleName": "modal-internal-scroll-risk",
+      "file": "src/views/Library.tsx",
+      "symptom": "<div className=\"flex-1 min-h-0 w-full overflow-y-auto bg-surface-bright p-6 lg:p-10 pb-32 md:pb-16\">",
+      "reason": "no-fixer",
+      "fixStrategy": "Handle manually"
+    }
+  ]
+}

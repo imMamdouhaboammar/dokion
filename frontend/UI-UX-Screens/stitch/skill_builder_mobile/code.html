@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sahara AI - Skill Builder</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&amp;family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary-fixed-variant": "#6e3030",
+              "surface-dim": "#dcd6cc",
+              "outline": "#9a9088",
+              "background": "#faf5ee",
+              "surface-variant": "#ece6dc",
+              "surface-container-high": "#ece6dc",
+              "surface-bright": "#faf5ee",
+              "primary-fixed-dim": "#f0a878",
+              "on-secondary-container": "#605850",
+              "on-surface-variant": "#605850",
+              "secondary": "#78706a",
+              "on-primary-fixed": "#401a08",
+              "surface": "#faf5ee",
+              "secondary-fixed-dim": "#cec6be",
+              "on-primary-fixed-variant": "#8a4518",
+              "on-primary-container": "#fbe8d8",
+              "inverse-surface": "#3a302a",
+              "inverse-primary": "#f0a878",
+              "tertiary": "#8c3c3c",
+              "surface-container-highest": "#e6e0d6",
+              "on-error-container": "#7a1a10",
+              "error": "#c0392b",
+              "surface-container-lowest": "#ffffff",
+              "surface-container": "#f2ece4",
+              "on-secondary-fixed": "#2a2420",
+              "tertiary-fixed-dim": "#e8a0a0",
+              "surface-container-low": "#f6f0e8",
+              "on-secondary-fixed-variant": "#504840",
+              "on-secondary": "#ffffff",
+              "secondary-fixed": "#eae2da",
+              "outline-variant": "#d8d0c8",
+              "on-background": "#3a302a",
+              "on-error": "#ffffff",
+              "on-tertiary": "#ffffff",
+              "error-container": "#fce4e0",
+              "primary": "#c2652a",
+              "inverse-on-surface": "#faf5ee",
+              "primary-fixed": "#fbe8d8",
+              "on-primary": "#ffffff",
+              "on-tertiary-fixed": "#2e1515"
+            },
+            fontFamily: {
+              "headline": ["EB Garamond"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Manrope', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        h1, h2, h3 {
+            font-family: 'EB Garamond', serif;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface min-h-screen flex flex-col">
+<!-- Top Navigation Bar (Task-Focused: No SideNav/BottomNav per instructions) -->
+<nav class="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-outline-variant/60 px-4 py-4">
+<div class="flex items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<button class="p-2 -ml-2 hover:bg-surface-container-high rounded-full transition-colors">
+<span class="material-symbols-outlined text-primary" data-icon="arrow_back">arrow_back</span>
+</button>
+<div class="flex flex-col">
+<h1 class="text-xl font-headline font-bold leading-tight">Python Data Analyzer</h1>
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-label font-bold uppercase tracking-widest text-secondary">Skill Builder</span>
+<div class="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span class="text-[10px] font-bold text-primary">85% readiness</span>
+</div>
+</div>
+</div>
+</div>
+<button class="p-2 hover:bg-surface-container-high rounded-full transition-colors text-secondary">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 px-4 py-6 space-y-4 pb-32">
+<!-- Section: Overview (Collapsed) -->
+<section class="bg-surface-container-low rounded-xl border border-outline-variant/40 overflow-hidden shadow-[0_2px_16px_rgba(58,48,42,0.04)]">
+<button class="w-full px-5 py-4 flex items-center justify-between text-left">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary" data-icon="info">info</span>
+<span class="font-headline text-lg font-bold">Overview</span>
+</div>
+<span class="material-symbols-outlined text-outline" data-icon="expand_more">expand_more</span>
+</button>
+</section>
+<!-- Section: Instructions (Expanded) -->
+<section class="bg-surface-container-lowest rounded-xl border border-primary/20 overflow-hidden shadow-[0_4px_20px_rgba(58,48,42,0.06)]">
+<div class="px-5 py-4 border-b border-outline-variant/40 flex items-center justify-between bg-primary/5">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="description">description</span>
+<span class="font-headline text-lg font-bold">Instructions</span>
+</div>
+<span class="material-symbols-outlined text-primary" data-icon="expand_less">expand_less</span>
+</div>
+<!-- Editor Interface -->
+<div class="p-4 space-y-4">
+<div class="flex items-center gap-2 mb-2">
+<button class="px-3 py-1.5 bg-surface-container text-secondary text-xs font-bold rounded-lg border border-outline-variant/40">Prompt</button>
+<button class="px-3 py-1.5 text-outline text-xs font-bold rounded-lg">Context</button>
+<div class="ml-auto flex gap-2">
+<span class="material-symbols-outlined text-outline text-sm" data-icon="undo">undo</span>
+<span class="material-symbols-outlined text-outline text-sm" data-icon="redo">redo</span>
+</div>
+</div>
+<div class="relative min-h-[320px] bg-surface-container-low/30 rounded-lg border border-outline-variant/60 p-4">
+<div class="font-body text-sm leading-relaxed text-on-surface space-y-4">
+<p><span class="text-primary font-bold"># Python Data Analyzer Persona</span></p>
+<p>You are a specialized agent designed to parse messy CSV data and identify statistical anomalies. Your primary goal is to provide concise Python code snippets using <span class="bg-primary/10 text-primary px-1 rounded">pandas</span> and <span class="bg-primary/10 text-primary px-1 rounded">numpy</span>.</p>
+<p>When a user uploads a file:</p>
+<ul class="list-disc list-inside ml-2 space-y-2 text-on-surface-variant">
+<li>Check for missing headers.</li>
+<li>Calculate Z-scores for numerical columns.</li>
+<li>Suggest at least one visualization using Matplotlib.</li>
+</ul>
+<div class="inline-block w-1 h-5 bg-primary animate-pulse vertical-align-middle"></div>
+</div>
+</div>
+<div class="flex justify-between items-center text-[11px] text-outline font-label uppercase tracking-tighter">
+<span>428 Words</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]" data-icon="sync">sync</span> Auto-saved 2m ago</span>
+</div>
+</div>
+</section>
+<!-- Section: Triggers (Collapsed) -->
+<section class="bg-surface-container-low rounded-xl border border-outline-variant/40 overflow-hidden shadow-[0_2px_16px_rgba(58,48,42,0.04)]">
+<button class="w-full px-5 py-4 flex items-center justify-between text-left">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary" data-icon="bolt">bolt</span>
+<span class="font-headline text-lg font-bold">Triggers</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 bg-secondary/10 text-secondary text-[10px] rounded-full font-bold">2 Active</span>
+<span class="material-symbols-outlined text-outline" data-icon="expand_more">expand_more</span>
+</div>
+</button>
+</section>
+<!-- Section: Examples (Collapsed) -->
+<section class="bg-surface-container-low rounded-xl border border-outline-variant/40 overflow-hidden shadow-[0_2px_16px_rgba(58,48,42,0.04)]">
+<button class="w-full px-5 py-4 flex items-center justify-between text-left">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary" data-icon="lightbulb">lightbulb</span>
+<span class="font-headline text-lg font-bold">Examples</span>
+</div>
+<span class="material-symbols-outlined text-outline" data-icon="expand_more">expand_more</span>
+</button>
+</section>
+</main>
+<!-- Persistent Bottom Bar (Footer) -->
+<footer class="fixed bottom-0 left-0 w-full bg-background/95 backdrop-blur-xl border-t border-outline-variant/60 p-4 pb-8 z-50">
+<div class="flex items-center gap-4 max-w-md mx-auto">
+<button class="flex-shrink-0 w-12 h-12 flex items-center justify-center border border-outline-variant rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="save">save</span>
+</button>
+<button class="flex-1 bg-primary text-on-primary h-12 rounded-xl font-label font-bold text-sm shadow-lg shadow-primary/20 active:scale-95 transition-transform flex items-center justify-center gap-2">
+                Continue to Test
+                <span class="material-symbols-outlined text-lg" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</footer>
+</body></html>

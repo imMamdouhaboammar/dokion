@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Eb+Garamond:ital,wght@0,400;0,700;1,400&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "secondary-container": "#eae2da",
+                        "outline-variant": "#d8d0c8",
+                        "surface-container-low": "#f6f0e8",
+                        "on-tertiary-fixed-variant": "#6e3030",
+                        "on-secondary-container": "#605850",
+                        "inverse-primary": "#f0a878",
+                        "tertiary-container": "#d47070",
+                        "on-surface-variant": "#605850",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#e08850",
+                        "on-primary-fixed-variant": "#8a4518",
+                        "inverse-on-surface": "#faf5ee",
+                        "primary-fixed": "#fbe8d8",
+                        "on-background": "#3a302a",
+                        "on-tertiary-container": "#3a2020",
+                        "inverse-surface": "#3a302a",
+                        "on-error-container": "#7a1a10",
+                        "on-error": "#ffffff",
+                        "surface-container-high": "#ece6dc",
+                        "surface-container": "#f2ece4",
+                        "surface-bright": "#faf5ee",
+                        "tertiary": "#8c3c3c",
+                        "on-tertiary": "#ffffff",
+                        "error-container": "#fce4e0",
+                        "surface-container-highest": "#e6e0d6",
+                        "secondary-fixed": "#eae2da",
+                        "outline": "#9a9088",
+                        "secondary-fixed-dim": "#cec6be",
+                        "surface-dim": "#dcd6cc",
+                        "on-primary-container": "#fbe8d8",
+                        "tertiary-fixed-dim": "#e8a0a0",
+                        "surface-tint": "#c2652a",
+                        "background": "#faf5ee",
+                        "on-tertiary-fixed": "#2e1515",
+                        "on-primary-fixed": "#401a08",
+                        "on-surface": "#3a302a",
+                        "secondary": "#78706a",
+                        "tertiary-fixed": "#fce0e0",
+                        "on-secondary-fixed-variant": "#504840",
+                        "primary": "#c2652a",
+                        "surface": "#faf5ee",
+                        "surface-variant": "#ece6dc",
+                        "error": "#c0392b",
+                        "primary-fixed-dim": "#f0a878",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed": "#2a2420"
+                    },
+                    fontFamily: {
+                        "headline": ["Eb Garamond"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Manrope', sans-serif; }
+        h1, h2, h3 { font-family: 'Eb Garamond', serif; }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- Sidebar Navigation -->
+<aside class="hidden md:flex flex-col h-screen w-64 border-r fixed left-0 top-0 border-[#d8d0c8]/60 bg-[#faf5ee] shadow-[0_2px_16px_rgba(58,48,42,0.04)] py-8 z-50">
+<div class="px-6 mb-10">
+<span class="text-2xl font-serif italic text-[#c2652a]">Sahara AI</span>
+<p class="font-sans text-xs uppercase tracking-widest text-secondary mt-1">Creator Hub</p>
+</div>
+<nav class="flex-1 px-4 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#c2652a] font-bold border-r-2 border-[#c2652a] bg-[#c2652a]/5 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-sm">Home</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-stone-500 font-medium hover:bg-stone-100 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="library_books">library_books</span>
+<span class="text-sm">Library</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-stone-500 font-medium hover:bg-stone-100 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="chat_bubble">chat_bubble</span>
+<span class="text-sm">Chat</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-stone-500 font-medium hover:bg-stone-100 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-sm">Settings</span>
+</a>
+</nav>
+<div class="px-6 mt-auto">
+<div class="p-4 rounded-xl bg-surface-container-low border border-outline-variant/30">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="cloud_off">cloud_off</span>
+<span class="text-[10px] font-bold tracking-tight text-secondary uppercase">Local-First</span>
+</div>
+<p class="text-[11px] leading-relaxed text-on-surface-variant">All data stored locally via IndexedDB. Offline-ready.</p>
+</div>
+</div>
+</aside>
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 right-0 left-0 md:left-64 h-16 bg-[#faf5ee]/90 backdrop-blur-md border-b border-[#d8d0c8]/60 flex justify-between items-center px-8 z-40">
+<div class="flex items-center gap-6">
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-sm" data-icon="search">search</span>
+<input class="bg-surface-container-lowest border border-outline-variant/40 rounded-full py-1.5 pl-10 pr-4 text-sm w-64 focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="Search workspaces..." type="text"/>
+</div>
+<nav class="flex gap-4">
+<a class="text-primary font-bold text-sm" href="#">Workspaces</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-stone-600 hover:text-primary transition-colors" data-icon="storage">storage</button>
+<button class="material-symbols-outlined text-stone-600 hover:text-primary transition-colors" data-icon="notifications">notifications</button>
+<div class="h-8 w-8 rounded-full bg-secondary-container flex items-center justify-center overflow-hidden border border-outline-variant">
+<img alt="User profile" class="h-full w-full object-cover" data-alt="Professional female user avatar portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_pIpx-0ksKz9RYu7F4tkmY63c9DBL-TO4bkyMCLCduaGn_ZrJc_dMzJ2GzCal5FvPtVQOHDMxigpqhJg9T2THbVq7JkbLL91BFJar68R521_Vh2nL4GcYUQpvAdCxGpNc1SalFpwXYxSIZ42v0sagIrGwo_4kl7QpJP4pCwPu83yNdsAoEDAdm-pZGWnUNAvfYEiilXfl2Rp8-Qxa4BXq56j3413Z1COk_knJR2UgNHdTCZAvTQRR-b7LOhmobwiFelMbglOEbH6l"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-24 pb-12 px-8 md:ml-64 min-h-screen">
+<div class="max-w-6xl mx-auto">
+<!-- Hero Orientation Zone -->
+<section class="mb-16">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-8">
+<div class="max-w-2xl">
+<span class="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full mb-4 tracking-wider uppercase">Welcome to Sahara AI</span>
+<h1 class="text-5xl md:text-6xl text-on-background leading-none mb-6">Build powerful AI Skills with precision.</h1>
+<p class="text-lg text-secondary leading-relaxed font-body">
+                            Skills are structured packages containing instructions, scripts, and high-fidelity assets. Your workspace is a secure, local-first environment for crafting intelligent automated agents.
+                        </p>
+</div>
+<div class="flex-shrink-0">
+<button class="bg-primary text-white px-8 py-4 rounded-lg font-bold hover:shadow-lg transition-all active:scale-95 flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+                            New Skill
+                        </button>
+</div>
+</div>
+</section>
+<!-- Smart Onboarding (Bento Grid) -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+<div class="md:col-span-2 bg-surface-container-lowest p-8 rounded-2xl border border-outline-variant/40 shadow-[0_2px_16px_rgba(58,48,42,0.04)]">
+<h2 class="text-3xl mb-4">How are you starting today?</h2>
+<p class="text-secondary mb-8">Select a source to begin structuring your AI Skill package. Everything stays on your machine.</p>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+<button class="flex flex-col items-center text-center p-6 rounded-xl border border-outline-variant/60 hover:border-primary hover:bg-primary/5 transition-all group">
+<span class="material-symbols-outlined text-4xl text-secondary group-hover:text-primary mb-4" data-icon="account_tree">account_tree</span>
+<span class="font-bold text-sm">From an existing Repo</span>
+</button>
+<button class="flex flex-col items-center text-center p-6 rounded-xl border border-outline-variant/60 hover:border-primary hover:bg-primary/5 transition-all group">
+<span class="material-symbols-outlined text-4xl text-secondary group-hover:text-primary mb-4" data-icon="folder_open">folder_open</span>
+<span class="font-bold text-sm">From a Local Folder</span>
+</button>
+<button class="flex flex-col items-center text-center p-6 rounded-xl border border-outline-variant/60 hover:border-primary hover:bg-primary/5 transition-all group">
+<span class="material-symbols-outlined text-4xl text-secondary group-hover:text-primary mb-4" data-icon="edit_square">edit_square</span>
+<span class="font-bold text-sm">From Scratch</span>
+</button>
+</div>
+</div>
+<div class="bg-primary text-white p-8 rounded-2xl flex flex-col justify-between">
+<div>
+<h3 class="text-2xl mb-2 italic">Quick Tutorial</h3>
+<p class="text-white/80 text-sm leading-relaxed">Learn the Sahara structure in 2 minutes. See how instructions, assets, and scripts work together.</p>
+</div>
+<button class="flex items-center gap-2 text-sm font-bold mt-6 hover:underline">
+                        Watch Orientation
+                        <span class="material-symbols-outlined" data-icon="play_circle">play_circle</span>
+</button>
+</div>
+</section>
+<!-- Primary Action Cards -->
+<h2 class="text-2xl mb-8 flex items-center gap-3">
+<span class="h-[1px] w-8 bg-outline-variant"></span>
+                Creation Pathways
+            </h2>
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+<!-- GitHub -->
+<div class="group bg-surface-container-low p-8 rounded-2xl border border-outline-variant/20 hover:border-primary/40 transition-all cursor-pointer">
+<div class="h-12 w-12 rounded-lg bg-surface-container-highest flex items-center justify-center mb-6 text-on-surface group-hover:text-primary group-hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined" data-icon="github">terminal</span>
+</div>
+<h3 class="text-xl mb-2">Create from GitHub</h3>
+<p class="text-xs text-secondary leading-relaxed">Import a repository to auto-detect skill structures and assets.</p>
+</div>
+<!-- Folder -->
+<div class="group bg-surface-container-low p-8 rounded-2xl border border-outline-variant/20 hover:border-primary/40 transition-all cursor-pointer">
+<div class="h-12 w-12 rounded-lg bg-surface-container-highest flex items-center justify-center mb-6 text-on-surface group-hover:text-primary group-hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined" data-icon="upload_file">upload_file</span>
+</div>
+<h3 class="text-xl mb-2">Upload Folder</h3>
+<p class="text-xs text-secondary leading-relaxed">Drag and drop local projects to create a packaged AI Skill.</p>
+</div>
+<!-- Blank -->
+<div class="group bg-surface-container-low p-8 rounded-2xl border border-outline-variant/20 hover:border-primary/40 transition-all cursor-pointer">
+<div class="h-12 w-12 rounded-lg bg-surface-container-highest flex items-center justify-center mb-6 text-on-surface group-hover:text-primary group-hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined" data-icon="note_add">note_add</span>
+</div>
+<h3 class="text-xl mb-2">Start Blank</h3>
+<p class="text-xs text-secondary leading-relaxed">Begin with a clean slate. Perfect for custom script development.</p>
+</div>
+<!-- Import -->
+<div class="group bg-surface-container-low p-8 rounded-2xl border border-outline-variant/20 hover:border-primary/40 transition-all cursor-pointer">
+<div class="h-12 w-12 rounded-lg bg-surface-container-highest flex items-center justify-center mb-6 text-on-surface group-hover:text-primary group-hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined" data-icon="package_2">package_2</span>
+</div>
+<h3 class="text-xl mb-2">Import Package</h3>
+<p class="text-xs text-secondary leading-relaxed">Load a .sahara file to resume work on an existing skill.</p>
+</div>
+</section>
+<!-- Recent Workspaces (First-time empty state) -->
+<section class="mb-16">
+<div class="flex items-center justify-between mb-8">
+<h2 class="text-2xl">Recent Workspaces</h2>
+<a class="text-primary text-sm font-bold hover:underline" href="#">View All</a>
+</div>
+<div class="relative bg-surface-container-low/50 border-2 border-dashed border-outline-variant/40 rounded-3xl p-16 flex flex-col items-center justify-center text-center overflow-hidden">
+<!-- Abstract Background Pattern Decor -->
+<div class="absolute inset-0 opacity-5 pointer-events-none">
+<div class="absolute top-10 left-10 w-32 h-32 rounded-full border-2 border-primary"></div>
+<div class="absolute bottom-10 right-10 w-48 h-48 rounded-full border-2 border-primary"></div>
+</div>
+<div class="relative z-10 max-w-sm">
+<div class="w-20 h-20 bg-surface-container-highest rounded-full flex items-center justify-center mb-6 mx-auto">
+<span class="material-symbols-outlined text-4xl text-outline" data-icon="workspaces">workspaces</span>
+</div>
+<h3 class="text-2xl mb-2">Your workspace is empty</h3>
+<p class="text-secondary mb-8 leading-relaxed">We couldn't find any recent skills. Start a scan of your local folders or create a new project to begin.</p>
+<button class="px-6 py-2.5 bg-surface-container-highest text-on-surface font-bold rounded-lg border border-outline-variant/60 hover:bg-secondary-container transition-colors">
+                            Start a scan
+                        </button>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Bottom Nav for Mobile -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center pb-safe pt-2 px-4 bg-[#faf5ee] border-t border-[#d8d0c8]/40 shadow-[0_-4px_20px_rgba(58,48,42,0.06)] z-50 rounded-t-3xl">
+<a class="flex flex-col items-center justify-center text-[#c2652a] p-2" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-[10px] font-sans tracking-wide">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-stone-400 p-2" href="#">
+<span class="material-symbols-outlined" data-icon="library_books">library_books</span>
+<span class="text-[10px] font-sans tracking-wide">Library</span>
+</a>
+<a class="flex flex-col items-center justify-center text-stone-400 p-2" href="#">
+<span class="material-symbols-outlined" data-icon="forum">forum</span>
+<span class="text-[10px] font-sans tracking-wide">Chat</span>
+</a>
+<a class="flex flex-col items-center justify-center text-stone-400 p-2" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-[10px] font-sans tracking-wide">Settings</span>
+</a>
+</nav>
+<!-- Footer for Metadata -->
+<footer class="md:ml-64 px-8 pb-12">
+<div class="max-w-6xl mx-auto border-t border-outline-variant/30 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-secondary">
+<div class="flex items-center gap-6">
+<span>Sahara Creator Hub v1.0.4</span>
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Local Node Active</span>
+</div>
+<div class="flex items-center gap-6">
+<a class="hover:text-primary transition-colors" href="#">Documentation</a>
+<a class="hover:text-primary transition-colors" href="#">Privacy</a>
+<a class="hover:text-primary transition-colors" href="#">Security</a>
+</div>
+</div>
+</footer>
+</body></html>

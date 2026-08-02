@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sahara AI - Skill Builder</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Eb+Garamond:ital,wght@0,400..800;1,400..800&amp;family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary-fixed-variant": "#6e3030",
+              "surface-dim": "#dcd6cc",
+              "outline": "#9a9088",
+              "background": "#faf5ee",
+              "surface-variant": "#ece6dc",
+              "surface-container-high": "#ece6dc",
+              "surface-bright": "#faf5ee",
+              "primary-fixed-dim": "#f0a878",
+              "on-secondary-container": "#605850",
+              "on-surface-variant": "#605850",
+              "secondary": "#78706a",
+              "on-primary-fixed": "#401a08",
+              "surface": "#faf5ee",
+              "secondary-fixed-dim": "#cec6be",
+              "on-primary-fixed-variant": "#8a4518",
+              "on-primary-container": "#fbe8d8",
+              "inverse-surface": "#3a302a",
+              "inverse-primary": "#f0a878",
+              "tertiary": "#8c3c3c",
+              "surface-container-highest": "#e6e0d6",
+              "on-error-container": "#7a1a10",
+              "error": "#c0392b",
+              "surface-container-lowest": "#ffffff",
+              "surface-container": "#f2ece4",
+              "on-secondary-fixed": "#2a2420",
+              "tertiary-fixed-dim": "#e8a0a0",
+              "surface-container-low": "#f6f0e8",
+              "on-secondary-fixed-variant": "#504840",
+              "on-secondary": "#ffffff",
+              "secondary-fixed": "#eae2da",
+              "outline-variant": "#d8d0c8",
+              "on-background": "#3a302a",
+              "on-error": "#ffffff",
+              "on-tertiary": "#ffffff",
+              "error-container": "#fce4e0",
+              "primary-container": "#e08850",
+              "secondary-container": "#eae2da",
+              "on-tertiary-container": "#3a2020",
+              "on-surface": "#3a302a",
+              "tertiary-container": "#d47070",
+              "surface-tint": "#c2652a",
+              "tertiary-fixed": "#fce0e0",
+              "primary": "#c2652a",
+              "inverse-on-surface": "#faf5ee",
+              "primary-fixed": "#fbe8d8",
+              "on-primary": "#ffffff",
+              "on-tertiary-fixed": "#2e1515"
+            },
+            fontFamily: {
+              "headline": ["Eb Garamond"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; }
+        .font-serif { font-family: 'Eb Garamond', serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-[#faf5ee] border-b border-[#d8d0c8]/60 shadow-sm flex justify-between items-center h-16 px-6 w-full sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-serif font-bold text-[#c2652a]">Sahara AI</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-stone-600 font-medium hover:text-[#c2652a] transition-colors font-sans text-sm" href="#">Dashboard</a>
+<a class="text-[#c2652a] border-b-2 border-[#c2652a] pb-1 font-sans text-sm" href="#">Workspaces</a>
+<a class="text-stone-600 font-medium hover:text-[#c2652a] transition-colors font-sans text-sm" href="#">Library</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-stone-600 hover:text-[#c2652a] transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-stone-600 hover:text-[#c2652a] transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="User profile portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6J6l_ekcemo_GCGMfOeMLFgUk15P2RRkcMgZyKTo-Sc8tI9fcdNKsGEiZUTQ_ICLhcrE2p2yHlF-BENbEZUNTCxxqhh7FcbwKX6YJffoo9u80boimDvsi_LYPF3xKgrq8GoUulwc5SFk8G98WigAhOT3yez-BgoOdFRah_ti8ykDsToi01UAwjvknjt2FOjZuYGOGDhoodxuBchnGUY-S6k4KYvm0sBdM_bvXtqx7nRLzxrmUjoo8SVxgiEyBVXrPjeV-2W3rqpJo"/>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- SideNavBar -->
+<aside class="w-64 bg-[#faf5ee] border-r border-[#d8d0c8]/60 flex flex-col h-full sticky top-16">
+<div class="p-6 border-b border-[#d8d0c8]/60">
+<h2 class="font-serif text-lg text-stone-900 leading-tight">Skill Builder</h2>
+<p class="font-sans uppercase tracking-wider text-[11px] text-stone-500 mt-1">v1.0.4 - Draft</p>
+</div>
+<nav class="flex flex-col gap-2 p-4 flex-1 overflow-y-auto">
+<a class="flex items-center gap-3 text-stone-500 px-3 py-2 hover:bg-stone-100 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-sans uppercase tracking-wider text-[11px]">Overview</span>
+</a>
+<a class="flex items-center gap-3 text-[#c2652a] font-bold bg-[#c2652a]/5 rounded-lg px-3 py-2 scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="font-sans uppercase tracking-wider text-[11px]">Instructions</span>
+</a>
+<a class="flex items-center gap-3 text-stone-500 px-3 py-2 hover:bg-stone-100 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="bolt">bolt</span>
+<span class="font-sans uppercase tracking-wider text-[11px]">Triggers</span>
+</a>
+<a class="flex items-center gap-3 text-stone-500 px-3 py-2 hover:bg-stone-100 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
+<span class="font-sans uppercase tracking-wider text-[11px]">Examples</span>
+</a>
+<a class="flex items-center gap-3 text-stone-500 px-3 py-2 hover:bg-stone-100 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="folder_open">folder_open</span>
+<span class="font-sans uppercase tracking-wider text-[11px]">Resources</span>
+</a>
+<a class="flex items-center gap-3 text-stone-500 px-3 py-2 hover:bg-stone-100 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="tune">tune</span>
+<span class="font-sans uppercase tracking-wider text-[11px]">Settings</span>
+</a>
+</nav>
+<div class="p-4 border-t border-[#d8d0c8]/60">
+<button class="w-full bg-[#c2652a] text-white py-2.5 rounded-lg font-sans text-sm font-semibold hover:opacity-90 transition-all shadow-sm">
+                    Publish Skill
+                </button>
+</div>
+</aside>
+<!-- Main Editor (Center Panel) -->
+<main class="flex-1 overflow-y-auto bg-surface flex flex-col">
+<!-- Header -->
+<div class="px-10 py-8 border-b border-outline-variant/30 flex justify-between items-end">
+<div>
+<span class="font-sans uppercase tracking-widest text-[10px] text-secondary font-bold">Workspace / Skills</span>
+<h1 class="font-serif text-4xl text-on-background mt-2">Skill: Python Data Analyzer</h1>
+</div>
+<div class="flex gap-3">
+<button class="px-4 py-2 text-stone-600 font-sans text-sm hover:underline">Save Draft</button>
+<button class="px-5 py-2 bg-primary text-white rounded-lg font-sans text-sm font-semibold hover:opacity-90 transition-all">Continue to Test</button>
+</div>
+</div>
+<!-- Editor Area -->
+<div class="p-10 flex-1 max-w-4xl mx-auto w-full space-y-8">
+<!-- Role Block -->
+<div class="bg-surface-container-low p-8 rounded-xl border border-outline-variant/40 shadow-sm relative group">
+<div class="absolute -left-3 top-8 w-1 h-12 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<label class="font-sans uppercase tracking-widest text-[11px] text-primary font-bold mb-4 block">Role Definition</label>
+<div class="font-serif text-2xl text-on-surface leading-relaxed outline-none min-h-[60px]" contenteditable="true">
+                        You are a senior data scientist specializing in Python-based automation and visual reporting.
+                    </div>
+</div>
+<!-- Context Block -->
+<div class="bg-surface-container-low p-8 rounded-xl border border-outline-variant/40 shadow-sm relative group">
+<div class="absolute -left-3 top-8 w-1 h-12 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<label class="font-sans uppercase tracking-widest text-[11px] text-primary font-bold mb-4 block">Context &amp; Constraints</label>
+<div class="font-serif text-xl text-stone-600 leading-relaxed outline-none min-h-[100px]" contenteditable="true">
+                        The user provides CSV or JSON exports from internal databases. You must prioritize data integrity and handle missing values using mean imputation by default. Do not use external APIs for analysis.
+                    </div>
+</div>
+<!-- Task Block -->
+<div class="bg-surface-container-low p-8 rounded-xl border border-outline-variant/40 shadow-sm relative group">
+<div class="absolute -left-3 top-8 w-1 h-12 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<label class="font-sans uppercase tracking-widest text-[11px] text-primary font-bold mb-4 block">Core Task Sequence</label>
+<div class="space-y-4 font-body text-stone-700 leading-relaxed outline-none min-h-[200px]" contenteditable="true">
+<p>1. Parse the provided input stream and identify the data schema.</p>
+<p>2. Generate a descriptive statistics summary including variance and outliers.</p>
+<p>3. Produce a Matplotlib code block for a correlation heatmap.</p>
+<p>4. Suggest three actionable business insights based on the observed trends.</p>
+</div>
+</div>
+<!-- Footer Status -->
+<div class="flex items-center gap-2 text-stone-400 py-6 border-t border-outline-variant/20">
+<span class="material-symbols-outlined text-[16px]" data-icon="cloud_done">cloud_done</span>
+<span class="text-xs font-sans italic">Autosaved locally at 10:42 AM</span>
+</div>
+</div>
+</main>
+<!-- Right Panel (Preview & Validation) -->
+<aside class="w-80 bg-surface-container-low border-l border-[#d8d0c8]/60 flex flex-col h-full sticky top-16">
+<div class="p-6">
+<h3 class="font-serif text-xl text-stone-900 mb-6">Skill Readiness</h3>
+<!-- Readiness Score -->
+<div class="mb-8 flex items-center gap-4">
+<div class="relative w-20 h-20 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-stone-200" cx="40" cy="40" fill="transparent" r="34" stroke="currentColor" stroke-width="6"></circle>
+<circle class="text-primary" cx="40" cy="40" fill="transparent" r="34" stroke="currentColor" stroke-dasharray="213.6" stroke-dashoffset="32" stroke-width="6"></circle>
+</svg>
+<span class="absolute font-serif text-xl font-bold">85%</span>
+</div>
+<div>
+<p class="font-sans text-xs text-stone-500 uppercase tracking-wide">Quality Score</p>
+<p class="font-serif text-stone-900 font-medium">Almost Ready</p>
+</div>
+</div>
+<!-- Validation Checks -->
+<div class="space-y-4 mb-10">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-green-600 text-[20px]" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div>
+<p class="font-sans text-xs font-bold text-stone-800">Instructions complete</p>
+<p class="font-sans text-[11px] text-stone-500">Core blocks detected</p>
+</div>
+</div>
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-amber-500 text-[20px]" data-icon="warning" style="font-variation-settings: 'FILL' 1;">warning</span>
+<div>
+<p class="font-sans text-xs font-bold text-stone-800">Triggers needed</p>
+<p class="font-sans text-[11px] text-stone-500">Add 2 more activation cues</p>
+</div>
+</div>
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-green-600 text-[20px]" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div>
+<p class="font-sans text-xs font-bold text-stone-800">Resources linked</p>
+<p class="font-sans text-[11px] text-stone-500">Python-lib-v2 attached</p>
+</div>
+</div>
+</div>
+<!-- Package Structure Preview -->
+<div class="bg-white/50 border border-outline-variant/30 rounded-lg p-4">
+<h4 class="font-sans uppercase tracking-widest text-[10px] text-secondary font-bold mb-3">Package Structure</h4>
+<div class="space-y-2 font-mono text-[11px] text-stone-600">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px]" data-icon="folder">folder</span>
+                            skill_manifest.json
+                        </div>
+<div class="flex items-center gap-2 pl-4">
+<span class="material-symbols-outlined text-[14px]" data-icon="description">description</span>
+                            prompt_v1.md
+                        </div>
+<div class="flex items-center gap-2 pl-4">
+<span class="material-symbols-outlined text-[14px]" data-icon="javascript">javascript</span>
+                            logic_hooks.js
+                        </div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px]" data-icon="image">image</span>
+                            asset_icon.png
+                        </div>
+</div>
+</div>
+</div>
+<div class="mt-auto p-6 space-y-3">
+<button class="w-full border border-primary text-primary py-2 rounded-lg font-sans text-sm font-semibold hover:bg-primary/5 transition-all">
+                    Export Preview
+                </button>
+</div>
+</aside>
+</div>
+</body></html>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Dokion 06-focus">
+<defs><style>
+    .ol{fill:none;stroke-linecap:round;stroke-linejoin:round}
+    </style></defs>
+<path d="M102 362C64 338 56 287 82 246C82 175 136 116 213 103C252 96 293 103 326 120C356 136 381 110 408 132C430 151 435 184 426 218C456 263 455 318 421 352C386 386 341 377 315 346C300 360 279 368 255 368C231 368 210 360 195 346C171 376 136 383 102 362Z" fill="#FFFDF8" stroke="#30323D" stroke-width="18" stroke-linejoin="round"/>
+<circle cx="194" cy="212" r="50" fill="none" stroke="#30323D" stroke-width="16"/>
+<circle cx="316" cy="212" r="50" fill="none" stroke="#30323D" stroke-width="16"/>
+<path d="M244 212H266" class="ol" stroke="#30323D" stroke-width="14"/>
+<circle cx="194" cy="212" r="11" fill="#30323D"/>
+<circle cx="316" cy="212" r="11" fill="#30323D"/>
+<path d="M247 280C253 286 261 286 267 280" class="ol" stroke="#30323D" stroke-width="12"/>
+<path d="M130 290C148 314 166 327 188 336" class="ol" stroke="#30323D" stroke-width="15"/>
+<path d="M382 290C364 314 346 327 324 336" class="ol" stroke="#30323D" stroke-width="15"/>
+<path d="M225 319V300H244M287 300H306V319M306 363V382H287M244 382H225V363" class="ol" stroke="#D97958" stroke-width="12"/>
+
+</svg>

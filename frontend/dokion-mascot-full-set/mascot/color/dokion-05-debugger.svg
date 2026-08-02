@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Dokion 05-debugger">
+<defs><style>
+    .ol{fill:none;stroke-linecap:round;stroke-linejoin:round}
+    </style></defs>
+<path d="M98 366C61 342 55 294 78 252C82 184 134 125 209 109C242 102 273 106 302 122C329 137 351 117 374 128C410 145 428 188 426 239C454 282 448 334 410 362C373 389 331 378 307 350C290 363 272 369 249 369C225 369 205 362 190 347C167 376 132 388 98 366Z" fill="#FFFDF8" stroke="#30323D" stroke-width="18" stroke-linejoin="round"/>
+<circle cx="193" cy="210" r="50" fill="none" stroke="#30323D" stroke-width="16"/>
+<circle cx="315" cy="210" r="50" fill="none" stroke="#30323D" stroke-width="16"/>
+<path d="M243 210H265" class="ol" stroke="#30323D" stroke-width="14"/>
+<circle cx="193" cy="210" r="11" fill="#30323D"/>
+<circle cx="315" cy="210" r="11" fill="#30323D"/>
+<path d="M245 279C252 285 261 285 268 279" class="ol" stroke="#30323D" stroke-width="12"/>
+<path d="M128 292C147 315 166 327 187 336" class="ol" stroke="#30323D" stroke-width="15"/>
+<path d="M384 292C365 315 346 327 325 336" class="ol" stroke="#30323D" stroke-width="15"/>
+<ellipse cx="256" cy="343" rx="29" ry="37" fill="none" stroke="#D97958" stroke-width="12"/>
+<path d="M256 306V380M226 326L209 316M286 326L303 316M226 345H206M286 345H306M228 363L211 375M284 363L301 375M240 306L232 294M272 306L280 294" class="ol" stroke="#D97958" stroke-width="10"/>
+
+</svg>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Skillaude | Connect Repository</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700;800&amp;family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-surface": "#3a302a",
+                        "on-background": "#3a302a",
+                        "on-secondary-fixed-variant": "#504840",
+                        "surface-bright": "#faf5ee",
+                        "surface-variant": "#ece6dc",
+                        "on-tertiary-fixed-variant": "#6e3030",
+                        "error-container": "#fce4e0",
+                        "surface-tint": "#c2652a",
+                        "surface-container-high": "#ece6dc",
+                        "secondary-fixed-dim": "#cec6be",
+                        "surface-container-low": "#f6f0e8",
+                        "primary": "#c2652a",
+                        "tertiary-container": "#d47070",
+                        "error": "#c0392b",
+                        "primary-container": "#e08850",
+                        "surface-dim": "#dcd6cc",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#f2ece4",
+                        "on-tertiary": "#ffffff",
+                        "tertiary": "#8c3c3c",
+                        "secondary-container": "#eae2da",
+                        "surface": "#faf5ee",
+                        "on-error-container": "#7a1a10",
+                        "inverse-on-surface": "#faf5ee",
+                        "primary-fixed-dim": "#f0a878",
+                        "on-tertiary-fixed": "#2e1515",
+                        "surface-container-highest": "#e6e0d6",
+                        "on-tertiary-container": "#3a2020",
+                        "tertiary-fixed-dim": "#e8a0a0",
+                        "on-primary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "secondary": "#78706a",
+                        "outline-variant": "#d8d0c8",
+                        "on-primary-fixed": "#401a08",
+                        "on-secondary-container": "#605850",
+                        "on-surface-variant": "#605850",
+                        "background": "#faf5ee",
+                        "on-secondary-fixed": "#2a2420",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#eae2da",
+                        "on-primary-fixed-variant": "#8a4518",
+                        "on-primary-container": "#fbe8d8",
+                        "inverse-primary": "#f0a878",
+                        "primary-fixed": "#fbe8d8",
+                        "inverse-surface": "#3a302a",
+                        "outline": "#9a9088",
+                        "tertiary-fixed": "#fce0e0"
+                    },
+                    fontFamily: {
+                        "headline": ["EB Garamond"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Manrope', sans-serif; }
+        h1, h2, h3 { font-family: 'EB Garamond', serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-fixed selection:text-on-primary-fixed">
+<div class="flex min-h-screen">
+<!-- SideNavBar - Source: Shared Components JSON -->
+<aside class="fixed left-0 top-0 h-full w-64 flex flex-col p-4 z-40 bg-[#faf5ee] dark:bg-stone-900 border-r border-[#d8d0c8]/60 dark:border-stone-700">
+<div class="flex items-center gap-3 mb-8 px-2">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-lg" data-icon="cloud_download">cloud_download</span>
+</div>
+<div>
+<h2 class="font-['EB_Garamond'] text-xl text-[#c2652a] leading-none">Skillaude</h2>
+<p class="font-['Manrope'] text-[10px] uppercase tracking-wider text-stone-500 font-bold">Vulnerability Scanner</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2.5 text-stone-600 dark:text-stone-400 font-['Manrope'] text-sm font-medium hover:bg-stone-200/50 dark:hover:bg-stone-800 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-stone-600 dark:text-stone-400 font-['Manrope'] text-sm font-medium hover:bg-stone-200/50 dark:hover:bg-stone-800 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="inventory_2">inventory_2</span>
+<span>Repositories</span>
+</a>
+<!-- Active Item: Imports (Determined by Intent) -->
+<a class="flex items-center gap-3 px-3 py-2.5 bg-[#c2652a]/10 text-[#c2652a] font-bold rounded-lg font-['Manrope'] text-sm transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="cloud_download" style="font-variation-settings: 'FILL' 1;">cloud_download</span>
+<span>Imports</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-stone-600 dark:text-stone-400 font-['Manrope'] text-sm font-medium hover:bg-stone-200/50 dark:hover:bg-stone-800 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+<button class="mt-6 mb-4 w-full py-2.5 bg-primary text-on-primary rounded-lg font-['Manrope'] text-sm font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
+                New Scan
+            </button>
+<div class="mt-auto pt-4 border-t border-outline-variant/30">
+<a class="flex items-center gap-3 px-3 py-2 text-stone-600 dark:text-stone-400 font-['Manrope'] text-sm font-medium hover:bg-stone-200/50 transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="contact_support">contact_support</span>
+<span>Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-64 flex flex-col md:flex-row">
+<!-- Workspace Panel (Center) -->
+<section class="flex-1 px-12 py-16 max-w-4xl border-r border-outline-variant/40 bg-surface">
+<header class="mb-12">
+<h1 class="text-5xl font-extrabold text-on-surface mb-3 leading-tight tracking-tight">Connect Repository</h1>
+<p class="text-xl text-secondary font-body max-w-xl">
+                        Turn any GitHub repo into a structured <span class="text-primary font-semibold italic">AI skill package</span>.
+                    </p>
+</header>
+<!-- Input Workspace -->
+<div class="space-y-10">
+<!-- URL Input -->
+<div class="group">
+<label class="block text-xs font-bold uppercase tracking-[0.15em] text-outline mb-3 ml-1">GitHub Repository URL</label>
+<div class="relative">
+<span class="absolute left-5 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined" data-icon="link">link</span>
+<input class="w-full pl-14 pr-6 py-5 bg-surface-container-lowest border border-outline-variant rounded-xl text-lg font-body focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none placeholder:text-outline/50 shadow-sm" placeholder="https://github.com/username/repository" type="text"/>
+</div>
+</div>
+<!-- Configuration Row -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div>
+<label class="block text-xs font-bold uppercase tracking-[0.15em] text-outline mb-3 ml-1">Branch</label>
+<div class="relative">
+<select class="w-full pl-5 pr-10 py-4 bg-surface-container-lowest border border-outline-variant rounded-xl font-body appearance-none focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
+<option value="main">main</option>
+<option value="master">master</option>
+<option value="develop">develop</option>
+</select>
+<span class="absolute right-4 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined pointer-events-none" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<div>
+<label class="block text-xs font-bold uppercase tracking-[0.15em] text-outline mb-3 ml-1">Subfolder Path <span class="text-outline/40 font-normal normal-case italic">(Optional)</span></label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[20px]" data-icon="folder">folder</span>
+<input class="w-full pl-12 pr-6 py-4 bg-surface-container-lowest border border-outline-variant rounded-xl font-body focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none placeholder:text-outline/50" placeholder="e.g. /src/skills" type="text"/>
+</div>
+</div>
+</div>
+<!-- CTA Section -->
+<div class="pt-6 border-t border-outline-variant/30 flex flex-col items-center gap-6">
+<button class="w-full py-5 bg-primary text-on-primary rounded-xl text-lg font-bold shadow-lg shadow-primary/10 hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.98] transition-all flex items-center justify-center gap-3">
+                            Connect &amp; Preview Structure
+                            <span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-2 text-secondary text-sm">
+<span class="material-symbols-outlined text-green-600 text-[18px]" data-icon="lock" style="font-variation-settings: 'FILL' 1;">lock</span>
+                                Private repo support
+                            </div>
+<div class="flex items-center gap-2 text-secondary text-sm">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="verified_user" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+                                Files analyzed locally
+                            </div>
+</div>
+</div>
+</div>
+</section>
+<!-- Sidebar/Guidance Panel (Right) -->
+<aside class="w-full md:w-96 bg-surface-container-low/50 p-10 space-y-10 flex flex-col">
+<!-- Guidance Card -->
+<div class="space-y-6">
+<div class="flex items-center justify-between">
+<h3 class="text-2xl font-bold">Guidance</h3>
+<a class="text-primary text-sm font-bold flex items-center gap-1 hover:underline underline-offset-4" href="#">
+                            Why GitHub?
+                            <span class="material-symbols-outlined text-[16px]" data-icon="open_in_new">open_in_new</span>
+</a>
+</div>
+<div class="bg-surface-container-highest p-6 rounded-2xl border border-outline-variant/40">
+<div class="flex items-center gap-3 mb-4">
+<span class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
+</span>
+<span class="font-bold text-sm tracking-tight uppercase">Structure Detection</span>
+</div>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-4">
+                            Skillaude automatically maps your code repositories by looking for high-intent markers:
+                        </p>
+<ul class="space-y-3">
+<li class="flex items-center gap-3 text-xs font-semibold text-secondary">
+<span class="material-symbols-outlined text-primary text-[16px]" data-icon="check_circle">check_circle</span>
+<code class="bg-surface/60 px-1.5 py-0.5 rounded border border-outline-variant/30 text-on-surface">SKILL.md</code> manifest
+                            </li>
+<li class="flex items-center gap-3 text-xs font-semibold text-secondary">
+<span class="material-symbols-outlined text-primary text-[16px]" data-icon="check_circle">check_circle</span>
+<code class="bg-surface/60 px-1.5 py-0.5 rounded border border-outline-variant/30 text-on-surface">/prompts</code> directory
+                            </li>
+<li class="flex items-center gap-3 text-xs font-semibold text-secondary">
+<span class="material-symbols-outlined text-primary text-[16px]" data-icon="check_circle">check_circle</span>
+                                Utility &amp; parsing scripts
+                            </li>
+</ul>
+</div>
+</div>
+<!-- Recent Imports -->
+<div class="flex-1 flex flex-col">
+<h3 class="text-2xl font-bold mb-6">Recent Imports</h3>
+<!-- Empty State Placeholder (Per Requirements) -->
+<div class="flex-1 flex flex-col items-center justify-center text-center p-8 bg-surface-container/30 rounded-2xl border-2 border-dashed border-outline-variant/50">
+<div class="w-12 h-12 rounded-full bg-outline/5 flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-outline/40 text-3xl" data-icon="history">history</span>
+</div>
+<p class="text-secondary text-sm font-medium italic">No recent imports found.</p>
+<p class="text-outline text-xs mt-1">Start by pasting a repository URL.</p>
+</div>
+<!-- Hidden Example of a filled state for layout visualization (optional, but keeping it empty per prompt) -->
+</div>
+<!-- Decorative Asset -->
+<div class="mt-auto relative group overflow-hidden rounded-2xl aspect-[4/3] border border-outline-variant/60 shadow-lg">
+<img alt="Developer workspace with clean interface" class="w-full h-full object-cover grayscale-[0.3] brightness-95" data-alt="Modern minimalist aesthetic desk setup with neutral lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDE3G4XEUkHyva-IGQjtrCrMTzAlv0LKq84U8iMY91ejNC9CSz7rLhWyFdCBQSQvBY7ry4KovsmdfDV1jZev1UnrfIfDyhUrO9A01Dmx_QoLE_gtOK5Zudbo75M6ydiIe0zLTrP_Bkg3kUGoKA3XIcs25naBAbgccMWSXOVgzMm9uyRN2XaOOiPUkhA9bDdMfFVbzJ9__XVTl5nJr2kWkcKOS7WVpoVYQ2vL-_vyLrP59MOfvXpgZLL0im7w9lmzxZLhzv0aWcgdk1z"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6">
+<p class="text-white text-xs font-bold uppercase tracking-widest opacity-80 mb-1">Coming Soon</p>
+<h4 class="text-white font-headline text-xl leading-tight">Native GitLab &amp; Bitbucket Integrations</h4>
+</div>
+</div>
+</aside>
+</main>
+</div>
+</body></html>

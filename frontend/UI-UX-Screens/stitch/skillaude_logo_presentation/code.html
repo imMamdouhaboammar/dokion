@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Skillaude — Brand Presentation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;0,700;1,400&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary-fixed-dim": "#e8a0a0",
+                        "secondary-fixed-dim": "#cec6be",
+                        "on-secondary-fixed": "#2a2420",
+                        "secondary-container": "#eae2da",
+                        "primary": "#c2652a",
+                        "surface-variant": "#ece6dc",
+                        "surface-dim": "#dcd6cc",
+                        "error": "#c0392b",
+                        "outline": "#9a9088",
+                        "secondary-fixed": "#eae2da",
+                        "inverse-surface": "#3a302a",
+                        "surface-bright": "#faf5ee",
+                        "tertiary": "#8c3c3c",
+                        "on-tertiary-fixed-variant": "#6e3030",
+                        "on-primary-fixed": "#401a08",
+                        "on-surface": "#3a302a",
+                        "surface-tint": "#c2652a",
+                        "on-tertiary-fixed": "#2e1515",
+                        "primary-container": "#e08850",
+                        "on-secondary-container": "#605850",
+                        "outline-variant": "#d8d0c8",
+                        "on-primary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "error-container": "#fce4e0",
+                        "inverse-on-surface": "#faf5ee",
+                        "primary-fixed": "#fbe8d8",
+                        "on-primary-fixed-variant": "#8a4518",
+                        "inverse-primary": "#f0a878",
+                        "surface-container-highest": "#e6e0d6",
+                        "surface": "#faf5ee",
+                        "on-tertiary-container": "#3a2020",
+                        "on-surface-variant": "#605850",
+                        "surface-container-low": "#f6f0e8",
+                        "primary-fixed-dim": "#f0a878",
+                        "surface-container": "#f2ece4",
+                        "on-error": "#ffffff"
+                    },
+                    fontFamily: {
+                        "headline": ["EB Garamond"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #faf5ee;
+            color: #3a302a;
+        }
+    </style>
+</head>
+<body class="font-body selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- SideNavBar (Suppressed as this is a focused presentation/transactional context, but included per prompt hierarchy logic if Dashboard is top level. Here we prioritize the clean canvas for Brand Identity) -->
+<aside class="fixed left-0 top-0 flex flex-col py-8 h-screen w-64 border-r border-[#d8d0c8]/60 bg-[#faf5ee] shadow-[0_2px_16px_rgba(58,48,42,0.04)] z-50">
+<div class="px-8 mb-12">
+<h1 class="font-headline text-2xl italic text-[#c2652a]">Sahara AI</h1>
+<p class="font-label text-xs tracking-widest uppercase text-on-surface-variant/60">Skill Architect</p>
+</div>
+<nav class="flex-1 px-4 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:text-stone-800 transition-colors font-label text-sm font-medium tracking-tight" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#c2652a] font-bold border-r-4 border-[#c2652a] bg-orange-50/50 font-label text-sm tracking-tight" href="#">
+<span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+                Skills Library
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:text-stone-800 transition-colors font-label text-sm font-medium tracking-tight" href="#">
+<span class="material-symbols-outlined" data-icon="layers">layers</span>
+                Templates
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:text-stone-800 transition-colors font-label text-sm font-medium tracking-tight" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                Settings
+            </a>
+</nav>
+<div class="px-6 mt-auto">
+<button class="w-full bg-primary text-on-primary py-3 rounded-lg font-label font-bold text-sm tracking-wide shadow-sm hover:opacity-90 transition-all">
+                New Skill
+            </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 min-h-screen bg-surface">
+<!-- Header -->
+<header class="flex items-center justify-between px-10 h-20 w-full border-b border-[#d8d0c8]/60 bg-[#faf5ee]/80 backdrop-blur-md sticky top-0 z-40">
+<div class="flex items-center gap-6">
+<h2 class="font-headline font-semibold text-[#c2652a] text-xl">AI Skills Creator</h2>
+<div class="h-4 w-[1px] bg-outline-variant"></div>
+<span class="font-label text-sm text-on-surface-variant font-medium">Identity Guide V1.0</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-full text-sm focus:ring-1 focus:ring-primary focus:border-primary w-64 transition-all" placeholder="Search assets..." type="text"/>
+</div>
+<div class="flex items-center gap-4 text-on-surface-variant">
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors" data-icon="help_outline">help_outline</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="Close up portrait of a professional male designer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhRTG8LW0L5DWD1xhUE-GQ9752reQB7sK5Iea4s4oYeevZH9eSZhLUa-9oJsK1GDoqcOTWIpn-jV8cEQEUvsN-engZYqGqayzYy8gHpLSaq8moSCD34GSkByeA1fRoRVRbeR1FA_wnJbjODPDRIjqaMvZOZwibxWjZKU9iM1_uZIq2UDHsp-oimFDRVwml8oOEIetVrROzC7qcHGGfxCS28mjyiFyfqRHYSwa5Hbk_Z7w35I6xexSAkWXXq5iZJMY4G9X4V0SVGQ4r"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Presentation Container -->
+<div class="max-w-6xl mx-auto py-20 px-12">
+<!-- Hero: Primary Logo -->
+<section class="mb-32">
+<div class="flex flex-col items-center text-center">
+<span class="font-label text-xs tracking-[0.2em] text-on-surface-variant/70 uppercase mb-8">Concept 1: The Orchestration S</span>
+<div class="bg-surface-container-lowest p-32 rounded-xl shadow-[0_2px_24px_rgba(58,48,42,0.02)] border border-[#d8d0c8]/30 flex items-center gap-8 mb-12 w-full justify-center">
+<div class="w-24 h-24 bg-[#3a302a] flex items-center justify-center rounded-lg">
+<span class="text-white font-headline text-6xl font-bold italic select-none">S</span>
+</div>
+<h1 class="font-body text-7xl font-semibold tracking-tighter text-[#3a302a]">Skillaude</h1>
+</div>
+<p class="font-headline text-3xl text-on-surface max-w-2xl leading-relaxed italic">
+                        "Precision meets fluidity."
+                    </p>
+</div>
+</section>
+<!-- Grid: Technical Assets -->
+<div class="grid grid-cols-12 gap-8 mb-24">
+<!-- App Icon -->
+<div class="col-span-12 md:col-span-4 bg-surface-container-low p-8 rounded-xl border border-outline-variant/40 flex flex-col items-center justify-center aspect-square gap-6">
+<div class="w-32 h-32 bg-[#3a302a] rounded-[24px] flex items-center justify-center shadow-lg">
+<span class="text-white font-headline text-7xl font-bold italic">S</span>
+</div>
+<div class="text-center">
+<h3 class="font-label font-bold text-sm text-on-surface uppercase tracking-widest">App Icon</h3>
+<p class="font-label text-xs text-on-surface-variant mt-1">64x64 Rounded Square Mark</p>
+</div>
+</div>
+<!-- Lockups Comparison -->
+<div class="col-span-12 md:col-span-8 bg-surface-container-low p-8 rounded-xl border border-outline-variant/40 flex flex-col gap-8">
+<div class="flex flex-col gap-2">
+<h3 class="font-label font-bold text-sm text-on-surface uppercase tracking-widest">Lockup Variations</h3>
+</div>
+<div class="grid grid-cols-2 flex-1 gap-8">
+<div class="border border-outline-variant/30 bg-white/40 rounded-lg p-6 flex flex-col items-center justify-center gap-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-[#3a302a] flex items-center justify-center rounded-sm">
+<span class="text-white font-headline text-lg font-bold italic">S</span>
+</div>
+<span class="font-body text-2xl font-semibold tracking-tighter text-[#3a302a]">Skillaude</span>
+</div>
+<span class="text-[10px] font-label text-on-surface-variant uppercase tracking-widest">Horizontal Lockup</span>
+</div>
+<div class="border border-outline-variant/30 bg-white/40 rounded-lg p-6 flex flex-col items-center justify-center gap-4">
+<div class="flex flex-col items-center gap-2">
+<div class="w-10 h-10 bg-[#3a302a] flex items-center justify-center rounded-sm">
+<span class="text-white font-headline text-2xl font-bold italic">S</span>
+</div>
+<span class="font-body text-xl font-semibold tracking-tighter text-[#3a302a]">Skillaude</span>
+</div>
+<span class="text-[10px] font-label text-on-surface-variant uppercase tracking-widest">Stacked Lockup</span>
+</div>
+</div>
+</div>
+<!-- Monochrome Section -->
+<div class="col-span-12 md:col-span-6 bg-[#3a302a] p-12 rounded-xl flex flex-col items-center justify-center gap-8 border border-on-surface">
+<div class="flex items-center gap-6">
+<div class="w-16 h-16 bg-white flex items-center justify-center rounded-md">
+<span class="text-[#3a302a] font-headline text-4xl font-bold italic">S</span>
+</div>
+<span class="font-body text-4xl font-semibold tracking-tighter text-white">Skillaude</span>
+</div>
+<h3 class="font-label font-bold text-xs text-white/50 uppercase tracking-[0.3em]">Monochrome Reverse</h3>
+</div>
+<!-- Favicon & Rationale -->
+<div class="col-span-12 md:col-span-6 flex flex-col gap-8">
+<div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40 flex items-center justify-between">
+<div class="flex flex-col gap-1">
+<h3 class="font-label font-bold text-sm text-on-surface uppercase tracking-widest">Favicon</h3>
+<p class="font-label text-xs text-on-surface-variant">16x16 Simplified SVG</p>
+</div>
+<div class="w-8 h-8 bg-[#3a302a] flex items-center justify-center rounded-sm">
+<span class="text-white font-headline text-sm font-bold italic">S</span>
+</div>
+</div>
+<div class="bg-primary-fixed p-10 rounded-xl border border-primary/20 flex-1">
+<h3 class="font-headline text-2xl text-on-primary-fixed mb-4">Brand Rationale</h3>
+<p class="font-body text-on-primary-fixed-variant leading-relaxed text-sm">
+                            The Skillaude identity is built on the fusion of modular structure (<span class="font-bold italic">Skill</span>) and calm intelligence (<span class="font-bold">aude</span>). 
+                            The 'Orchestration S' mark uses a heavy-set editorial serif to signify authority and timeless wisdom, while the graphite wordmark provides a modern, functional baseline. 
+                            The result is a brand that feels both established and technologically advanced.
+                        </p>
+</div>
+</div>
+</div>
+<!-- Footer Meta -->
+<footer class="pt-12 border-t border-outline-variant/30 flex justify-between items-center opacity-60">
+<p class="font-label text-xs tracking-widest uppercase">Sahara Design System — Internal Use Only</p>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-sm" data-icon="lock">lock</span>
+<span class="material-symbols-outlined text-sm" data-icon="download">download</span>
+<span class="material-symbols-outlined text-sm" data-icon="share">share</span>
+</div>
+</footer>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&amp;family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary": "#78706a",
+              "on-surface": "#3a302a",
+              "surface-dim": "#dcd6cc",
+              "inverse-surface": "#3a302a",
+              "inverse-on-surface": "#faf5ee",
+              "primary": "#c2652a",
+              "on-tertiary-container": "#3a2020",
+              "on-primary": "#ffffff",
+              "secondary-container": "#eae2da",
+              "on-tertiary-fixed-variant": "#6e3030",
+              "inverse-primary": "#f0a878",
+              "on-primary-fixed-variant": "#8a4518",
+              "surface-container-lowest": "#ffffff",
+              "on-secondary-fixed-variant": "#504840",
+              "error-container": "#fce4e0",
+              "surface-tint": "#c2652a",
+              "surface": "#faf5ee",
+              "on-secondary-fixed": "#2a2420",
+              "secondary-fixed": "#eae2da",
+              "surface-container": "#f2ece4",
+              "primary-fixed-dim": "#f0a878",
+              "tertiary-fixed": "#fce0e0",
+              "surface-container-low": "#f6f0e8",
+              "surface-container-high": "#ece6dc",
+              "on-background": "#3a302a",
+              "on-primary-fixed": "#401a08",
+              "primary-container": "#e08850",
+              "error": "#c0392b",
+              "tertiary-container": "#d47070",
+              "on-primary-container": "#fbe8d8",
+              "on-secondary": "#ffffff",
+              "tertiary": "#8c3c3c",
+              "on-tertiary-fixed": "#2e1515",
+              "on-tertiary": "#ffffff",
+              "outline-variant": "#d8d0c8",
+              "on-error-container": "#7a1a10",
+              "primary-fixed": "#fbe8d8",
+              "surface-container-highest": "#e6e0d6",
+              "on-error": "#ffffff",
+              "surface-bright": "#faf5ee",
+              "tertiary-fixed-dim": "#e8a0a0",
+              "secondary-fixed-dim": "#cec6be",
+              "outline": "#9a9088",
+              "surface-variant": "#ece6dc",
+              "background": "#faf5ee",
+              "on-secondary-container": "#605850",
+              "on-surface-variant": "#605850"
+            },
+            fontFamily: {
+              "headline": ["EB Garamond"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        display: inline-block;
+        line-height: 1;
+        text-transform: none;
+        letter-spacing: normal;
+        word-wrap: normal;
+        white-space: nowrap;
+        direction: ltr;
+      }
+      .hide-scrollbar::-webkit-scrollbar { display: none; }
+      .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body overflow-hidden h-screen flex">
+<!-- SideNavBar (Rail) -->
+<aside class="fixed left-0 top-0 h-full z-40 py-6 bg-[#faf5ee] dark:bg-stone-900 h-screen w-20 flex flex-col items-center border-r border-[#d8d0c8]/60 dark:border-stone-800 transition-colors duration-200 ease-in-out">
+<div class="mb-10">
+<span class="text-lg font-bold text-[#c2652a] dark:text-[#d97706]">AC</span>
+</div>
+<nav class="flex flex-col gap-8 flex-1">
+<button class="text-stone-500 dark:text-stone-400 hover:bg-[#c2652a]/5 dark:hover:bg-stone-800 p-2 rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+</button>
+<button class="text-[#c2652a] dark:text-[#d97706] border-r-2 border-[#c2652a] p-2 transition-colors">
+<span class="material-symbols-outlined" data-icon="folder_special">folder_special</span>
+</button>
+<button class="text-stone-500 dark:text-stone-400 hover:bg-[#c2652a]/5 dark:hover:bg-stone-800 p-2 rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="chat">chat</span>
+</button>
+<button class="text-stone-500 dark:text-stone-400 hover:bg-[#c2652a]/5 dark:hover:bg-stone-800 p-2 rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</nav>
+<div class="mt-auto">
+<img class="w-10 h-10 rounded-full border border-outline-variant" data-alt="User profile avatar small circle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9dD7qNIC7zRtbIUkBlVEZ8MEqgsjYH7B6HTkp-UqPDfvM4ezXPfZN_leHQ6afa98_76NLIqyCTN5vqoUwYOqPbZ0Lf_1yE27mxPCIaSzrn-5pkZb2HoutEL0srW7LYWjzTwBWwOIh7nDsa-HkDhq5wpeciZGnceWgaIN6xkufp_RyGjc41synUoxhaOF60Km2JEx4LCD5bVX7HDckeRNVpYIdiEw9tdihdgzTU5aLj921ZgEub9Qx3bdJDgh-0yy_EBScyy4r1M5q"/>
+</div>
+</aside>
+<!-- Main Workspace -->
+<div class="flex-1 flex flex-col ml-20 h-screen relative">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center w-full px-6 py-3 bg-[#faf5ee]/80 backdrop-blur-md border-b border-[#d8d0c8]/60 shadow-sm transition-transform active:scale-100 scale-100">
+<div class="flex items-center gap-6">
+<h1 class="text-xl font-serif italic text-stone-800 dark:text-stone-100">AI Skills Creator</h1>
+<div class="h-4 w-px bg-outline-variant"></div>
+<div class="flex items-center gap-2 text-stone-600 font-medium text-sm">
+<span class="material-symbols-outlined text-sm" data-icon="check_circle">check_circle</span>
+                    Project Status: Saved
+                </div>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-primary text-on-primary px-5 py-1.5 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity">
+                    Test in Chat
+                </button>
+<div class="flex gap-2">
+<button class="text-stone-600 hover:text-[#c2652a] transition-colors p-1">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-stone-600 hover:text-[#c2652a] transition-colors p-1">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Editor Content Area -->
+<main class="flex-1 flex overflow-hidden">
+<!-- Left: Version History (Sidebar) -->
+<aside class="w-64 border-r border-outline-variant bg-surface-container-low flex flex-col hide-scrollbar">
+<div class="p-4 border-b border-outline-variant flex justify-between items-center">
+<span class="text-xs font-bold uppercase tracking-widest text-secondary">History</span>
+<span class="material-symbols-outlined text-sm text-secondary" data-icon="history">history</span>
+</div>
+<div class="flex-1 overflow-y-auto p-2 space-y-2">
+<div class="p-3 bg-surface-container-highest rounded-lg border-l-4 border-primary shadow-sm">
+<div class="text-xs text-primary font-bold">Current Version</div>
+<div class="text-sm font-semibold text-on-surface">Updated Tools &amp; Ref</div>
+<div class="text-[10px] text-secondary">2 mins ago • Autosaved</div>
+</div>
+<div class="p-3 hover:bg-surface-container-high rounded-lg cursor-pointer transition-colors">
+<div class="text-sm font-semibold text-on-surface">Refined Instructions</div>
+<div class="text-[10px] text-secondary">45 mins ago</div>
+</div>
+<div class="p-3 hover:bg-surface-container-high rounded-lg cursor-pointer transition-colors">
+<div class="text-sm font-semibold text-on-surface">Initial Draft</div>
+<div class="text-[10px] text-secondary">2 hours ago</div>
+</div>
+</div>
+</aside>
+<!-- Middle: Rich Form Editor (2-column layout conceptualized as scrollable forms) -->
+<section class="flex-1 overflow-y-auto bg-surface-bright p-8 hide-scrollbar">
+<div class="max-w-4xl mx-auto space-y-12">
+<!-- Skill Header -->
+<header class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-widest text-primary">Skill Identity</label>
+<input class="w-full text-4xl font-headline italic bg-transparent border-none focus:ring-0 p-0 text-on-surface placeholder-surface-dim" placeholder="Enter Skill Name..." type="text" value="Architectural Researcher"/>
+</header>
+<!-- Instructions Panel -->
+<div class="group">
+<div class="flex justify-between items-center mb-4">
+<h3 class="font-headline text-2xl text-on-surface">Instructions</h3>
+<button class="text-secondary hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="unfold_less">unfold_less</span>
+</button>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm focus-within:border-primary transition-all">
+<textarea class="w-full bg-transparent border-none focus:ring-0 text-on-surface leading-relaxed resize-none font-body" placeholder="Define how the AI should behave..." rows="6">You are an expert in brutalist architecture. Your primary objective is to analyze urban structures and provide historical context with a focus on materiality and social impact. Avoid flowery language; be direct and analytical.</textarea>
+</div>
+</div>
+<!-- Tools & Capabilities -->
+<div class="grid grid-cols-2 gap-8">
+<div class="space-y-4">
+<h3 class="font-headline text-2xl text-on-surface">Tools</h3>
+<div class="space-y-2">
+<div class="flex items-center justify-between p-3 bg-white border border-outline-variant rounded-lg">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="search">search</span>
+<span class="text-sm font-medium">Web Search</span>
+</div>
+<div class="w-8 h-4 bg-primary rounded-full relative">
+<div class="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center justify-between p-3 bg-white border border-outline-variant rounded-lg">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="code">code</span>
+<span class="text-sm font-medium">Code Interpreter</span>
+</div>
+<div class="w-8 h-4 bg-surface-dim rounded-full relative">
+<div class="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="space-y-4">
+<h3 class="font-headline text-2xl text-on-surface">References</h3>
+<div class="p-4 border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center text-center cursor-pointer hover:bg-surface-container transition-colors min-h-[100px]">
+<span class="material-symbols-outlined text-secondary mb-2" data-icon="upload_file">upload_file</span>
+<span class="text-xs font-medium text-secondary">Upload PDFs or Docs</span>
+</div>
+</div>
+</div>
+<!-- Examples Section -->
+<div class="space-y-4">
+<div class="flex justify-between items-center">
+<h3 class="font-headline text-2xl text-on-surface">Examples</h3>
+<button class="text-sm font-bold text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span> Add Example
+                            </button>
+</div>
+<div class="space-y-3">
+<div class="p-4 bg-surface-container-low rounded-xl border border-outline-variant relative group/item">
+<div class="text-[10px] font-bold uppercase text-secondary mb-1">User Query</div>
+<div class="text-sm italic mb-3">"What's the significance of the Barbican Estate?"</div>
+<div class="text-[10px] font-bold uppercase text-primary mb-1">AI Output</div>
+<div class="text-sm">The Barbican Estate (1965–1976) represents a pinnacle of British Brutalism, utilizing site-cast concrete to create a utopian 'city within a city'...</div>
+<button class="absolute top-4 right-4 opacity-0 group-hover/item:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-secondary text-sm" data-icon="close">close</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Right: Live Preview Window -->
+<section class="w-[400px] border-l border-outline-variant bg-[#faf5ee] flex flex-col">
+<div class="p-4 border-b border-outline-variant bg-surface flex justify-between items-center">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+<span class="text-xs font-bold uppercase tracking-widest text-secondary">Live Interpretation</span>
+</div>
+<button class="p-1 hover:bg-surface-container rounded transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="refresh">refresh</span>
+</button>
+</div>
+<div class="flex-1 p-6 overflow-y-auto space-y-6">
+<!-- Preview Card -->
+<div class="bg-white rounded-2xl shadow-sm border border-outline-variant overflow-hidden">
+<div class="h-32 relative bg-surface-container">
+<img class="w-full h-full object-cover mix-blend-multiply opacity-20" data-alt="Monochrome brutalist building texture close up" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTLAr-dtWwh7v0TLbIo4ZNn2B8MTdsDIMrJRNGBkFluoZrrKYmepQ2T7Q0t8wEHOpl59k7AtV_3UERnacveWDUPXAwA3gZNMKdg3AXi-fDMUMFfyhkpERmI1UjVBP8SQoia-Pt23eI1KpwdXjSkRL76frCt-8dWP4hE6_vQQAa3BaCnzGnqpBLV_izS4yn_h25cUbFkv2dLDDgSk0TADuSJiWUhgUc_n7Smeumn8FE3o6xUm0mQCSucvwGlYydlXclV7RtgEBLiR0S"/>
+<div class="absolute inset-0 p-4 flex flex-col justify-end">
+<h4 class="font-headline text-xl text-on-surface">Architectural Researcher</h4>
+<p class="text-[10px] text-secondary uppercase tracking-tighter">Brutalist Specialist v1.4</p>
+</div>
+</div>
+<div class="p-4 space-y-4">
+<div class="space-y-1">
+<div class="text-[10px] font-bold text-secondary uppercase">Tone Analysis</div>
+<div class="flex gap-1">
+<div class="h-1.5 flex-1 bg-primary rounded-full"></div>
+<div class="h-1.5 flex-1 bg-primary rounded-full"></div>
+<div class="h-1.5 flex-1 bg-primary rounded-full"></div>
+<div class="h-1.5 flex-1 bg-surface-container rounded-full"></div>
+<div class="h-1.5 flex-1 bg-surface-container rounded-full"></div>
+</div>
+<div class="text-[10px] text-secondary italic">Analytical &amp; Objective</div>
+</div>
+<div class="space-y-2">
+<div class="text-[10px] font-bold text-secondary uppercase">Projected Output</div>
+<div class="bg-surface-container-low p-3 rounded-lg text-xs leading-relaxed text-on-surface/80 font-mono">
+                                    [Research Phase]<br/>
+                                    - Materiality Check: Reinforced Concrete<br/>
+                                    - Social Context: Post-war housing crisis<br/>
+                                    - Architectural Style: Brutalism
+                                </div>
+</div>
+</div>
+</div>
+<!-- Insight Tip -->
+<div class="bg-primary/5 rounded-xl p-4 border border-primary/20">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary text-sm mt-0.5" data-icon="lightbulb">lightbulb</span>
+<div class="text-xs text-on-surface">
+<p class="font-bold mb-1">Creator Tip</p>
+<p class="text-secondary leading-relaxed">Your instructions are highly specific, which is great! Consider adding more references for better factual accuracy.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Validation Status Bar (Fixed at bottom) -->
+<footer class="h-12 border-t border-outline-variant bg-surface-container-lowest flex items-center px-6 justify-between z-10">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-2">
+<span class="text-xs font-bold text-secondary uppercase tracking-tighter">Skill Health</span>
+<div class="flex gap-0.5">
+<div class="w-1 h-3 bg-primary rounded-full"></div>
+<div class="w-1 h-3 bg-primary rounded-full"></div>
+<div class="w-1 h-3 bg-primary rounded-full"></div>
+<div class="w-1 h-3 bg-primary rounded-full"></div>
+<div class="w-1 h-3 bg-surface-dim rounded-full"></div>
+</div>
+<span class="text-xs font-bold text-primary">84%</span>
+</div>
+<div class="h-4 w-px bg-outline-variant"></div>
+<div class="flex items-center gap-2 text-xs text-secondary font-medium">
+<span class="material-symbols-outlined text-sm text-amber-500" data-icon="warning">warning</span>
+                    1 Warning: Missing reference link
+                </div>
+</div>
+<div class="flex items-center gap-4 text-[10px] text-secondary font-medium">
+<span class="flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    Local storage active
+                </span>
+<span class="text-outline">|</span>
+<span>Last sync: 12:44 PM</span>
+</div>
+</footer>
+</div>
+<!-- Mobile Navigation Suppressed as per Task Intent (Editor is a focused desktop task) -->
+<!-- BottomNavBar would go here for mobile top-level destinations -->
+</body></html>

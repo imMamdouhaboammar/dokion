@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Dokion 01-core mono dark">
+<defs><style>
+    .ol{fill:none;stroke-linecap:round;stroke-linejoin:round}
+    </style></defs>
+<path d="M94 354C52 334 45 278 80 238C78 158 148 88 256 88C364 88 434 158 432 238C467 278 460 334 418 354C380 372 338 364 315 334C300 351 280 360 256 360C232 360 212 351 197 334C174 364 132 372 94 354Z" fill="none" stroke="#30323D" stroke-width="18" stroke-linejoin="round"/>
+<circle cx="190" cy="205" r="51" fill="none" stroke="#30323D" stroke-width="16"/>
+<circle cx="322" cy="205" r="51" fill="none" stroke="#30323D" stroke-width="16"/>
+<path d="M241 205H271" class="ol" stroke="#30323D" stroke-width="14"/>
+<circle cx="190" cy="205" r="12" fill="#30323D"/>
+<circle cx="322" cy="205" r="12" fill="#30323D"/>
+<path d="M246 277C252 283 260 283 266 277" class="ol" stroke="#30323D" stroke-width="12"/>
+<path d="M132 278C149 304 172 317 197 302C186 322 192 342 213 350" class="ol" stroke="#30323D" stroke-width="15"/>
+<path d="M380 278C363 304 340 317 315 302C326 322 320 342 299 350" class="ol" stroke="#30323D" stroke-width="15"/>
+<path d="M230 295H218V326H230" class="ol" stroke="#30323D" stroke-width="13"/>
+<path d="M282 295H294V326H282" class="ol" stroke="#30323D" stroke-width="13"/>
+
+</svg>

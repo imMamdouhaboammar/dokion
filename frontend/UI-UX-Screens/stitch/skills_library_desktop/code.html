@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Skillaude - AI Skills Library</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-container": "#e08850",
+                        "on-primary-fixed-variant": "#8a4518",
+                        "inverse-on-surface": "#faf5ee",
+                        "primary-fixed": "#fbe8d8",
+                        "on-background": "#3a302a",
+                        "on-tertiary-container": "#3a2020",
+                        "inverse-surface": "#3a302a",
+                        "on-error-container": "#7a1a10",
+                        "on-error": "#ffffff",
+                        "surface-container-high": "#ece6dc",
+                        "surface-container": "#f2ece4",
+                        "on-secondary": "#ffffff",
+                        "surface-container-low": "#f6f0e8",
+                        "on-tertiary-fixed-variant": "#6e3030",
+                        "on-secondary-container": "#605850",
+                        "inverse-primary": "#f0a878",
+                        "tertiary-container": "#d47070",
+                        "on-surface-variant": "#605850",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-container": "#eae2da",
+                        "outline-variant": "#d8d0c8",
+                        "error": "#c0392b",
+                        "primary-fixed-dim": "#f0a878",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed": "#2a2420",
+                        "on-surface": "#3a302a",
+                        "secondary": "#78706a",
+                        "tertiary-fixed": "#fce0e0",
+                        "on-secondary-fixed-variant": "#504840",
+                        "primary": "#c2652a",
+                        "surface": "#faf5ee",
+                        "surface-variant": "#ece6dc",
+                        "surface-dim": "#dcd6cc",
+                        "on-primary-container": "#fbe8d8",
+                        "tertiary-fixed-dim": "#e8a0a0",
+                        "surface-tint": "#c2652a",
+                        "background": "#faf5ee",
+                        "on-tertiary-fixed": "#2e1515",
+                        "on-primary-fixed": "#401a08",
+                        "surface-bright": "#faf5ee",
+                        "tertiary": "#8c3c3c",
+                        "on-tertiary": "#ffffff",
+                        "error-container": "#fce4e0",
+                        "surface-container-highest": "#e6e0d6",
+                        "secondary-fixed": "#eae2da",
+                        "outline": "#9a9088",
+                        "secondary-fixed-dim": "#cec6be"
+                    },
+                    fontFamily: {
+                        "headline": ["EB Garamond"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body selection:bg-primary-fixed selection:text-on-primary-fixed">
+<div class="flex h-screen overflow-hidden">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col h-full w-64 border-r border-outline-variant/60 bg-surface z-50">
+<div class="p-6">
+<div class="flex items-center gap-3 mb-8">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-sm" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<div>
+<h2 class="font-headline font-semibold text-primary text-xl leading-none">Skillaude</h2>
+<p class="text-[10px] text-secondary tracking-widest uppercase mt-1">AI Skill Management</p>
+</div>
+</div>
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-3 text-primary bg-primary/5 rounded-lg px-4 py-2.5 font-medium" href="#">
+<span class="material-symbols-outlined" data-icon="local_library">local_library</span>
+<span>Library</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-low rounded-lg px-4 py-2.5 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="storefront">storefront</span>
+<span>Marketplace</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-low rounded-lg px-4 py-2.5 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="download_done">download_done</span>
+<span>Installed</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-low rounded-lg px-4 py-2.5 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span>Analytics</span>
+</a>
+</nav>
+<div class="mt-8">
+<button class="w-full bg-primary text-on-primary py-3 rounded-lg font-semibold flex items-center justify-center gap-2 shadow-sm hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-lg" data-icon="add_circle">add_circle</span>
+<span>Create New Skill</span>
+</button>
+</div>
+</div>
+<div class="mt-auto p-6 border-t border-outline-variant/30">
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-low rounded-lg px-4 py-2 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+<span>Help</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-low rounded-lg px-4 py-2 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="chat_bubble_outline">chat_bubble_outline</span>
+<span>Feedback</span>
+</a>
+</nav>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col h-full bg-surface-bright relative overflow-hidden">
+<!-- TopNavBar -->
+<header class="h-16 flex justify-between items-center w-full px-8 bg-surface border-b border-outline-variant/60 shadow-[0_2px_16px_rgba(58,48,42,0.04)] z-40">
+<div class="flex items-center gap-8 flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-full py-2 pl-10 pr-4 text-sm focus:ring-1 focus:ring-primary/40 placeholder:text-outline" placeholder="Search skills, tags, or repositories..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 px-3 py-1 bg-surface-container rounded-full text-xs font-medium text-secondary">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span>12 Active Projects</span>
+</div>
+<div class="h-4 w-px bg-outline-variant mx-2"></div>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img alt="User profile" data-alt="Professional headshot of a user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-F6X2oWlE-qDaGGuY684_nZbcp692KRDo7nrU7ss2XBhtZoo5Y2avNS_aysdg8WMH7vRSp5d1-na9NM0Vk1aGvQoTQhAhoeMFF915iq2vI6KZhH-uUJUh3O9ZoTzVdLKqtd6WOGgPX85jw6bZAALtUMfdm9QrcLs9sT6XKwR7KclySzGd35-f4DXG-ZmovMKMEPbVgfxfrX1boxZZGtperDodZynwDhMs-YVGZvjfi4fs0Sr1XZeJIhEhvaSIk_KJbdzZk4o0xxQA"/>
+</div>
+</div>
+</header>
+<!-- Scrollable Content -->
+<div class="flex-1 overflow-y-auto">
+<div class="p-8 max-w-7xl mx-auto">
+<!-- Activity Strip -->
+<section class="mb-12">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-headline text-2xl font-semibold text-on-surface">Continue Working</h3>
+<button class="text-sm font-medium text-primary hover:underline">View History</button>
+</div>
+<div class="flex gap-4">
+<div class="flex-1 bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-4 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer group">
+<div class="w-12 h-12 rounded-lg bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="code">code</span>
+</div>
+<div class="flex-1">
+<h4 class="text-sm font-bold text-on-surface">CustomerSupport_v2</h4>
+<p class="text-xs text-secondary">Modified 14 mins ago</p>
+</div>
+<div class="opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-primary" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+<div class="flex-1 bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-4 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer group">
+<div class="w-12 h-12 rounded-lg bg-tertiary-fixed flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" data-icon="biotech">biotech</span>
+</div>
+<div class="flex-1">
+<h4 class="text-sm font-bold text-on-surface">DataSynthesizer_Alpha</h4>
+<p class="text-xs text-secondary">Modified 2 hours ago</p>
+</div>
+<div class="opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-primary" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Main Library Grid -->
+<section>
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-headline text-3xl font-semibold text-on-surface">Skill Library</h3>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-lg text-sm font-medium hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="filter_list">filter_list</span>
+                                    Filter
+                                </button>
+<button class="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-lg text-sm font-medium hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="file_upload">file_upload</span>
+                                    Import
+                                </button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Skill Card 1 (Ready) -->
+<div class="bg-surface-container-lowest rounded-xl p-6 border-2 border-primary ring-4 ring-primary/5 shadow-sm flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<span class="px-2 py-1 rounded bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider">Ready</span>
+<button class="text-outline hover:text-primary"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button>
+</div>
+<div>
+<h4 class="text-lg font-headline font-bold text-on-surface mb-1">FinancialAnalyst_GPT4</h4>
+<p class="text-sm text-secondary line-clamp-2">Autonomous financial report generator with real-time stock API hooks.</p>
+</div>
+<div class="flex items-center gap-4 mt-2">
+<div class="flex items-center gap-1.5 text-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="hub">hub</span>
+                                        GitHub
+                                    </div>
+<div class="flex items-center gap-1.5 text-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="memory">memory</span>
+                                        v1.4.2
+                                    </div>
+</div>
+<div class="pt-4 border-t border-outline-variant/30 flex items-center justify-between">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full border-2 border-surface bg-primary-fixed-dim text-[8px] flex items-center justify-center font-bold">PY</div>
+<div class="w-6 h-6 rounded-full border-2 border-surface bg-secondary-fixed text-[8px] flex items-center justify-center font-bold">JS</div>
+</div>
+<span class="text-[10px] text-primary font-bold">Selected</span>
+</div>
+</div>
+<!-- Skill Card 2 (Tested) -->
+<div class="bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/60 hover:border-primary/40 transition-all cursor-pointer group flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<span class="px-2 py-1 rounded bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wider">Tested</span>
+<button class="text-outline"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button>
+</div>
+<div>
+<h4 class="text-lg font-headline font-bold text-on-surface mb-1">LegalDrafting_A1</h4>
+<p class="text-sm text-secondary line-clamp-2">Standardizes contract language based on internal compliance guidelines.</p>
+</div>
+<div class="flex items-center gap-4 mt-2">
+<div class="flex items-center gap-1.5 text-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="folder">folder</span>
+                                        Local
+                                    </div>
+<div class="flex items-center gap-1.5 text-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="memory">memory</span>
+                                        v0.8.0
+                                    </div>
+</div>
+<div class="pt-4 border-t border-outline-variant/30 flex items-center justify-between">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full border-2 border-surface bg-primary-fixed-dim text-[8px] flex items-center justify-center font-bold">PY</div>
+</div>
+</div>
+</div>
+<!-- Skill Card 3 (Draft) -->
+<div class="bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/60 hover:border-primary/40 transition-all cursor-pointer group flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<span class="px-2 py-1 rounded bg-orange-100 text-orange-700 text-[10px] font-bold uppercase tracking-wider">Draft</span>
+<button class="text-outline"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button>
+</div>
+<div>
+<h4 class="text-lg font-headline font-bold text-on-surface mb-1">ContentOptimizer</h4>
+<p class="text-sm text-secondary line-clamp-2">SEO focused content refactoring for marketing teams.</p>
+</div>
+<div class="flex items-center gap-4 mt-2">
+<div class="flex items-center gap-1.5 text-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="hub">hub</span>
+                                        GitHub
+                                    </div>
+<div class="flex items-center gap-1.5 text-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="memory">memory</span>
+                                        v0.1.2
+                                    </div>
+</div>
+<div class="pt-4 border-t border-outline-variant/30 flex items-center justify-between">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full border-2 border-surface bg-secondary-fixed text-[8px] flex items-center justify-center font-bold">JS</div>
+</div>
+</div>
+</div>
+<!-- Skill Card 4 (Exported) -->
+<div class="bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/60 hover:border-primary/40 transition-all cursor-pointer group flex flex-col gap-4 opacity-70">
+<div class="flex justify-between items-start">
+<span class="px-2 py-1 rounded bg-secondary-container text-secondary text-[10px] font-bold uppercase tracking-wider">Exported</span>
+<button class="text-outline"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button>
+</div>
+<div>
+<h4 class="text-lg font-headline font-bold text-on-surface mb-1">Legacy_NLP_Bot</h4>
+<p class="text-sm text-secondary line-clamp-2">Initial NLP testing module from early 2023 development phase.</p>
+</div>
+<div class="flex items-center gap-4 mt-2">
+<div class="flex items-center gap-1.5 text-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="folder">folder</span>
+                                        Archive
+                                    </div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Inspect Panel -->
+<aside class="w-96 border-l border-outline-variant/60 bg-surface flex flex-col shadow-[-4px_0_16px_rgba(58,48,42,0.02)] z-30">
+<div class="p-8 h-full flex flex-col">
+<div class="flex items-center justify-between mb-8">
+<h3 class="font-headline text-2xl font-bold text-on-surface">Quick Inspect</h3>
+<button class="p-1 rounded-full hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-outline" data-icon="close">close</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto space-y-8 pr-2">
+<!-- Summary -->
+<div>
+<div class="flex items-center gap-4 mb-4">
+<div class="w-14 h-14 rounded-xl bg-primary-fixed flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-3xl" data-icon="monitoring">monitoring</span>
+</div>
+<div>
+<h4 class="font-headline text-xl font-bold text-on-surface">FinancialAnalyst</h4>
+<p class="text-xs text-secondary">Active Production Build</p>
+</div>
+</div>
+<p class="text-sm text-on-surface-variant leading-relaxed">
+                            A high-precision skill designed for financial data ingestion and synthesis. Compatible with OpenAI GPT-4 and Anthropic Claude 3.
+                        </p>
+</div>
+<!-- Recent Test Results -->
+<div>
+<h5 class="text-xs font-bold uppercase tracking-widest text-secondary mb-3">Recent Test Results</h5>
+<div class="space-y-2">
+<div class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-green-600 text-sm" data-icon="check_circle">check_circle</span>
+<span class="text-sm font-medium text-green-900">Logic Accuracy</span>
+</div>
+<span class="text-sm font-bold text-green-700">98%</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-green-600 text-sm" data-icon="check_circle">check_circle</span>
+<span class="text-sm font-medium text-green-900">API Latency</span>
+</div>
+<span class="text-sm font-bold text-green-700">240ms</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-low rounded-lg border border-outline-variant/30">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-sm" data-icon="info">info</span>
+<span class="text-sm font-medium text-on-surface-variant">Token Efficiency</span>
+</div>
+<span class="text-sm font-bold text-secondary">A+</span>
+</div>
+</div>
+</div>
+<!-- Compatibility -->
+<div>
+<h5 class="text-xs font-bold uppercase tracking-widest text-secondary mb-3">Deployment Targets</h5>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 rounded-full bg-surface-container text-xs font-medium border border-outline-variant">AWS Lambda</span>
+<span class="px-3 py-1 rounded-full bg-surface-container text-xs font-medium border border-outline-variant">Docker</span>
+<span class="px-3 py-1 rounded-full bg-surface-container text-xs font-medium border border-outline-variant">Vercel Edge</span>
+</div>
+</div>
+</div>
+<!-- Footer Action -->
+<div class="pt-8 border-t border-outline-variant/60 mt-auto">
+<p class="text-[10px] text-secondary text-center mb-4 italic">Next recommended action based on lifecycle state:</p>
+<button class="w-full bg-primary text-on-primary py-3.5 rounded-lg font-bold shadow-md hover:translate-y-[-1px] transition-all flex items-center justify-center gap-2">
+<span>Export Package</span>
+<span class="material-symbols-outlined text-lg" data-icon="package_2">package_2</span>
+</button>
+<button class="w-full mt-2 text-primary text-sm font-bold py-2 hover:bg-primary/5 rounded-lg transition-colors">
+                        Return to Test Suite
+                    </button>
+</div>
+</div>
+</aside>
+</div>
+</body></html>

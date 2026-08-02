@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Skillaude - Validation &amp; Quality Check</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&amp;family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary": "#8c3c3c",
+                        "error": "#c0392b",
+                        "inverse-surface": "#3a302a",
+                        "surface-tint": "#c2652a",
+                        "secondary-fixed": "#eae2da",
+                        "on-primary-container": "#fbe8d8",
+                        "surface-dim": "#dcd6cc",
+                        "surface-container": "#f2ece4",
+                        "on-tertiary": "#ffffff",
+                        "on-surface": "#3a302a",
+                        "on-secondary-container": "#605850",
+                        "surface-bright": "#faf5ee",
+                        "background": "#faf5ee",
+                        "surface-container-low": "#f6f0e8",
+                        "secondary-container": "#eae2da",
+                        "primary-fixed": "#fbe8d8",
+                        "inverse-on-surface": "#faf5ee",
+                        "surface-container-high": "#ece6dc",
+                        "surface": "#faf5ee",
+                        "on-error": "#ffffff",
+                        "error-container": "#fce4e0",
+                        "surface-container-highest": "#e6e0d6",
+                        "outline": "#9a9088",
+                        "on-surface-variant": "#605850",
+                        "on-secondary-fixed-variant": "#504840",
+                        "on-background": "#3a302a",
+                        "tertiary-fixed": "#fce0e0",
+                        "surface-variant": "#ece6dc",
+                        "on-tertiary-container": "#3a2020",
+                        "on-primary-fixed": "#401a08",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#2e1515",
+                        "tertiary-fixed-dim": "#e8a0a0",
+                        "primary": "#c2652a",
+                        "tertiary-container": "#d47070",
+                        "on-primary-fixed-variant": "#8a4518",
+                        "secondary-fixed-dim": "#cec6be",
+                        "on-error-container": "#7a1a10",
+                        "inverse-primary": "#f0a878",
+                        "primary-fixed-dim": "#f0a878",
+                        "on-tertiary-fixed-variant": "#6e3030",
+                        "on-secondary": "#ffffff",
+                        "secondary": "#78706a",
+                        "primary-container": "#e08850",
+                        "on-secondary-fixed": "#2a2420",
+                        "outline-variant": "#d8d0c8"
+                    },
+                    fontFamily: {
+                        "headline": ["EB Garamond"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Manrope', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1, h2, h3 {
+            font-family: 'EB Garamond', serif;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface min-h-screen pb-32">
+<!-- TopAppBar Navigation Shell -->
+<header class="bg-[#faf5ee] dark:bg-stone-950 text-[#c2652a] dark:text-[#d4824d] flex justify-between items-center w-full px-8 h-16 sticky top-0 z-40 border-b border-[#d8d0c8]/60 dark:border-stone-800 shadow-[0_2px_16px_rgba(58,48,42,0.04)]">
+<div class="flex items-center gap-2">
+<span class="text-2xl font-serif italic text-[#c2652a] dark:text-[#d4824d]">Skillaude</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-stone-600 dark:text-stone-400 hover:text-[#c2652a] transition-colors">notifications</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="Close up portrait of a smiling user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB47bU4a0YziZklt2nuRPcXo4SRS3NZamiu0twdClxvtQ_801YGwZgyhPUFBVfSqoLUgC9d2YPCTVVCtaCMiKIJxpyB_43NjJ9EGfmgZTg2P_s5-wB2vR-3DmralLfZW-W3pVNzSaf1nezoh7YQQ-25R9A9DW8iZkvUnDMzqCrTVVaffwmvJUgx6CN7Qx3_dwaCKtPUkBAHB7CYhDWRbmlGVJ2_uqfCjX_aNEkGYTvYkUi8fJWT89LbYTSrVpa2Zb1A9PKnN93zRC_E"/>
+</div>
+</div>
+</header>
+<main class="px-6 py-6 max-w-md mx-auto space-y-8">
+<!-- Compact Title Section -->
+<section class="flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<h1 class="text-3xl font-bold tracking-tight text-on-background">Python Data Analyzer</h1>
+<div class="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-bold border border-primary/20">
+                    88% Ready
+                </div>
+</div>
+<p class="text-on-surface-variant font-body text-sm">Validation Session #402</p>
+</section>
+<!-- Summary Gauge Bento -->
+<section class="grid grid-cols-2 gap-4">
+<div class="col-span-2 bg-surface-container-lowest p-6 rounded-xl shadow-[0_2px_16px_rgba(58,48,42,0.04)] border border-outline-variant/30 flex items-center justify-between">
+<div class="space-y-1">
+<p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Overall Health</p>
+<p class="text-4xl font-headline font-bold text-primary">Strong</p>
+</div>
+<div class="relative w-20 h-20 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-surface-container-highest" cx="40" cy="40" fill="transparent" r="34" stroke="currentColor" stroke-width="6"></circle>
+<circle class="text-primary" cx="40" cy="40" fill="transparent" r="34" stroke="currentColor" stroke-dasharray="213.6" stroke-dashoffset="25.6" stroke-width="6"></circle>
+</svg>
+<span class="absolute text-sm font-bold text-on-surface">88%</span>
+</div>
+</div>
+<div class="bg-error-container p-5 rounded-xl border border-error/10">
+<span class="material-symbols-outlined text-error mb-2" style="font-variation-settings: 'FILL' 1;">error</span>
+<p class="text-2xl font-bold text-on-error-container">2</p>
+<p class="text-xs font-medium text-on-error-container/80">Blockers</p>
+</div>
+<div class="bg-primary-fixed p-5 rounded-xl border border-primary/10">
+<span class="material-symbols-outlined text-primary mb-2" style="font-variation-settings: 'FILL' 1;">warning</span>
+<p class="text-2xl font-bold text-on-primary-fixed">4</p>
+<p class="text-xs font-medium text-on-primary-fixed/80">Warnings</p>
+</div>
+</section>
+<!-- Quality Dimensions (Collapsible Style Cards) -->
+<section class="space-y-3">
+<h2 class="text-xl font-bold text-on-surface">Quality Dimensions</h2>
+<div class="space-y-2">
+<!-- Structure -->
+<div class="group bg-surface-container-low border border-outline-variant/40 rounded-xl p-4 flex items-center justify-between hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-4">
+<div class="bg-[#c2652a]/10 text-[#c2652a] w-10 h-10 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined">account_tree</span>
+</div>
+<div>
+<p class="font-bold text-sm">Structure</p>
+<p class="text-xs text-on-surface-variant">Validated Logic Flow</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">expand_more</span>
+</div>
+<!-- Clarity -->
+<div class="group bg-surface-container-low border border-outline-variant/40 rounded-xl p-4 flex items-center justify-between hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-4">
+<div class="bg-[#c2652a]/10 text-[#c2652a] w-10 h-10 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined">auto_awesome</span>
+</div>
+<div>
+<p class="font-bold text-sm">Clarity</p>
+<p class="text-xs text-on-surface-variant">2 Minor improvements</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">expand_more</span>
+</div>
+<!-- Triggers -->
+<div class="group bg-surface-container-low border border-outline-variant/40 rounded-xl p-4 flex items-center justify-between hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-4">
+<div class="bg-[#c2652a]/10 text-[#c2652a] w-10 h-10 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined">bolt</span>
+</div>
+<div>
+<p class="font-bold text-sm">Triggers</p>
+<p class="text-xs text-on-surface-variant">Activation Paths Verified</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">expand_more</span>
+</div>
+<!-- Examples -->
+<div class="group bg-surface-container-low border border-outline-variant/40 rounded-xl p-4 flex items-center justify-between hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-4">
+<div class="bg-[#c2652a]/10 text-[#c2652a] w-10 h-10 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined">library_books</span>
+</div>
+<div>
+<p class="font-bold text-sm">Examples</p>
+<p class="text-xs text-on-surface-variant">Missing Edge Case</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">expand_more</span>
+</div>
+</div>
+</section>
+<!-- Critical Issues -->
+<section class="space-y-4">
+<div class="flex items-center justify-between">
+<h2 class="text-xl font-bold text-on-surface">Critical Issues</h2>
+<span class="text-xs font-bold text-error uppercase tracking-tighter">Action Required</span>
+</div>
+<div class="space-y-4">
+<div class="bg-surface-container-highest/30 p-5 rounded-2xl border-l-4 border-error">
+<div class="flex justify-between items-start mb-3">
+<h3 class="font-bold text-on-surface">Dependency Loop</h3>
+<span class="text-[10px] bg-error/10 text-error px-2 py-0.5 rounded uppercase font-bold">Blocker</span>
+</div>
+<p class="text-sm text-on-surface-variant mb-4 leading-relaxed">The module 'DataCleaner' references 'Analyzer' which creates a circular call during initialization.</p>
+<button class="w-full bg-on-surface text-surface-bright py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
+<span class="material-symbols-outlined text-sm">build</span>
+                        Jump to Fix
+                    </button>
+</div>
+<div class="bg-surface-container-highest/30 p-5 rounded-2xl border-l-4 border-error">
+<div class="flex justify-between items-start mb-3">
+<h3 class="font-bold text-on-surface">Missing Error Handler</h3>
+<span class="text-[10px] bg-error/10 text-error px-2 py-0.5 rounded uppercase font-bold">Blocker</span>
+</div>
+<p class="text-sm text-on-surface-variant mb-4 leading-relaxed">No fallback mechanism defined for API timeout in the production environment.</p>
+<button class="w-full bg-on-surface text-surface-bright py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
+<span class="material-symbols-outlined text-sm">build</span>
+                        Jump to Fix
+                    </button>
+</div>
+</div>
+</section>
+<!-- Test Evidence -->
+<section class="bg-secondary-container/30 rounded-2xl p-6 border border-outline-variant/40">
+<h2 class="text-lg font-bold text-on-surface mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl">verified</span>
+                Test Evidence
+            </h2>
+<div class="flex items-center justify-between">
+<div>
+<p class="text-sm font-bold text-on-surface">Sanity Test Pass</p>
+<p class="text-xs text-on-surface-variant">Completed 12m ago • Build v1.4.2</p>
+</div>
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-surface bg-primary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-xs" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface bg-primary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-xs" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar Sticky Actions Shell -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-center gap-4 items-center px-6 py-4 bg-white/90 dark:bg-stone-900/90 backdrop-blur-md border-t border-[#d8d0c8]/60 dark:border-stone-800 shadow-[0_-4px_20px_rgba(58,48,42,0.06)] rounded-t-3xl">
+<button class="flex-1 flex flex-col items-center justify-center bg-[#c2652a] text-white rounded-xl px-4 py-3 scale-95 duration-150 active:scale-90 transition-all">
+<span class="material-symbols-outlined" data-icon="build">build</span>
+<span class="font-bold uppercase tracking-wider text-[10px] mt-1">Fix Issues</span>
+</button>
+<button class="flex-1 flex flex-col items-center justify-center text-stone-600 dark:text-stone-400 px-4 py-3 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined" data-icon="ios_share">ios_share</span>
+<span class="font-bold uppercase tracking-wider text-[10px] mt-1">Export Preview</span>
+</button>
+</nav>
+</body></html>

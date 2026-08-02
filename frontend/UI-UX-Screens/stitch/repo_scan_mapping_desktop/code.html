@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sahara AI - Repo Analysis</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Eb+Garamond:ital,wght@0,400..800;1,400..800&amp;family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-error-container": "#7a1a10",
+              "on-error": "#ffffff",
+              "on-secondary-fixed": "#2a2420",
+              "on-primary-fixed-variant": "#8a4518",
+              "surface-container-high": "#ece6dc",
+              "on-tertiary-container": "#3a2020",
+              "error": "#c0392b",
+              "surface-container": "#f2ece4",
+              "tertiary": "#8c3c3c",
+              "secondary-container": "#eae2da",
+              "tertiary-fixed": "#fce0e0",
+              "surface-dim": "#dcd6cc",
+              "primary-fixed": "#fbe8d8",
+              "on-surface-variant": "#605850",
+              "on-background": "#3a302a",
+              "on-surface": "#3a302a",
+              "on-secondary": "#ffffff",
+              "background": "#faf5ee",
+              "tertiary-fixed-dim": "#e8a0a0",
+              "on-secondary-container": "#605850",
+              "outline": "#9a9088",
+              "surface-container-lowest": "#ffffff",
+              "error-container": "#fce4e0",
+              "on-primary-fixed": "#401a08",
+              "inverse-primary": "#f0a878",
+              "secondary": "#78706a",
+              "primary-container": "#e08850",
+              "primary": "#c2652a",
+              "inverse-surface": "#3a302a",
+              "surface": "#faf5ee",
+              "on-tertiary": "#ffffff",
+              "surface-tint": "#c2652a",
+              "on-secondary-fixed-variant": "#504840",
+              "inverse-on-surface": "#faf5ee",
+              "surface-container-highest": "#e6e0d6",
+              "on-primary-container": "#fbe8d8",
+              "primary-fixed-dim": "#f0a878",
+              "secondary-fixed": "#eae2da",
+              "on-tertiary-fixed": "#2e1515",
+              "outline-variant": "#d8d0c8",
+              "surface-container-low": "#f6f0e8",
+              "surface-bright": "#faf5ee",
+              "on-tertiary-fixed-variant": "#6e3030",
+              "on-primary": "#ffffff",
+              "tertiary-container": "#d47070",
+              "secondary-fixed-dim": "#cec6be",
+              "surface-variant": "#ece6dc"
+            },
+            fontFamily: {
+              "headline": ["Eb Garamond"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body {
+        background-color: #faf5ee;
+        color: #3a302a;
+        font-family: 'Manrope', sans-serif;
+      }
+      .serif-heading {
+        font-family: 'Eb Garamond', serif;
+      }
+    </style>
+</head>
+<body class="bg-background text-on-surface antialiased overflow-hidden h-screen flex flex-col">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-8 h-16 bg-[#faf5ee] dark:bg-stone-900 border-b border-[#d8d0c8]/60 dark:border-stone-700/60 shadow-[0_2px_16px_rgba(58,48,42,0.04)]">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-serif italic text-[#c2652a] dark:text-[#d4824d]">Sahara AI</span>
+<nav class="hidden md:flex gap-6 h-full items-center">
+<a class="text-stone-600 dark:text-stone-400 font-medium hover:text-[#c2652a] transition-colors duration-200 font-['EB_Garamond'] text-lg tracking-tight" href="#">Dashboard</a>
+<a class="text-stone-600 dark:text-stone-400 font-medium hover:text-[#c2652a] transition-colors duration-200 font-['EB_Garamond'] text-lg tracking-tight" href="#">Workspaces</a>
+<a class="text-[#c2652a] dark:text-[#d4824d] border-b-2 border-[#c2652a] font-semibold font-['EB_Garamond'] text-lg tracking-tight" href="#">Assets</a>
+<a class="text-stone-600 dark:text-stone-400 font-medium hover:text-[#c2652a] transition-colors duration-200 font-['EB_Garamond'] text-lg tracking-tight" href="#">Settings</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">search</span>
+<input class="bg-surface-container-lowest border border-outline-variant rounded-full py-1.5 pl-10 pr-4 text-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none w-64" placeholder="Search..." type="text"/>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">notifications</span></button>
+<button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">account_circle</span></button>
+</div>
+</header>
+<!-- Sidebar Navigation -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 flex flex-col py-6 bg-[#faf5ee] dark:bg-stone-900 border-r border-[#d8d0c8]/60 dark:border-stone-700/60 font-['Manrope'] text-sm antialiased z-40">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary-fixed flex items-center justify-center text-primary font-bold">PA</div>
+<div>
+<h3 class="font-bold text-[#c2652a] text-sm">Project Alpha</h3>
+<p class="text-[10px] text-stone-500 uppercase tracking-widest">AI Skill Builder</p>
+</div>
+</div>
+<nav class="flex-1 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-6 py-3 text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all" href="#">
+<span class="material-symbols-outlined text-xl">folder_open</span>
+                Repository
+            </a>
+<a class="flex items-center gap-3 px-6 py-3 bg-[#c2652a]/10 text-[#c2652a] dark:bg-[#c2652a]/20 border-r-4 border-[#c2652a] font-bold transition-all" href="#">
+<span class="material-symbols-outlined text-xl">account_tree</span>
+                Mapping
+            </a>
+<a class="flex items-center gap-3 px-6 py-3 text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all" href="#">
+<span class="material-symbols-outlined text-xl">analytics</span>
+                Inspector
+            </a>
+<a class="flex items-center gap-3 px-6 py-3 text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all" href="#">
+<span class="material-symbols-outlined text-xl">psychology</span>
+                Skills
+            </a>
+<a class="flex items-center gap-3 px-6 py-3 text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all" href="#">
+<span class="material-symbols-outlined text-xl">package</span>
+                Export
+            </a>
+</nav>
+<div class="px-6 mt-auto">
+<button class="w-full bg-primary text-on-primary py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 shadow-sm hover:opacity-90 transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Scan
+            </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 mt-16 flex-1 flex flex-col h-[calc(100vh-64px)] overflow-hidden">
+<!-- Header Panel: Breadcrumbs & Status -->
+<header class="px-8 py-6 flex flex-col gap-2 bg-surface">
+<nav class="flex items-center text-[11px] font-bold uppercase tracking-widest text-on-surface-variant/60 gap-2">
+<span>GitHub Import</span>
+<span class="material-symbols-outlined text-[12px]">chevron_right</span>
+<span class="text-primary">Mapping</span>
+</nav>
+<div class="flex justify-between items-end">
+<div>
+<h1 class="serif-heading text-4xl text-on-surface font-light leading-none">Repo Analysis</h1>
+<div class="flex items-center gap-3 mt-3">
+<div class="flex items-center gap-1.5 px-2 py-0.5 bg-surface-container rounded-full border border-outline-variant text-xs">
+<span class="material-symbols-outlined text-sm text-outline">account_tree</span>
+<span class="font-medium">anthropics/skills-example</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-0.5 bg-surface-container rounded-full border border-outline-variant text-xs">
+<span class="material-symbols-outlined text-sm text-outline">fork_right</span>
+<span class="font-medium">main</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 text-xs font-medium text-on-surface-variant">
+<span class="material-symbols-outlined text-sm text-primary">cloud_done</span>
+                    Saved to local draft
+                </div>
+</div>
+</header>
+<!-- Workspace Grid -->
+<section class="flex-1 grid grid-cols-12 overflow-hidden">
+<!-- Left Panel: Repository Tree -->
+<div class="col-span-3 border-r border-outline-variant/60 bg-surface-container-low/50 overflow-y-auto p-6">
+<h4 class="text-[10px] font-extrabold uppercase tracking-[0.2em] text-on-surface-variant mb-6">File Structure</h4>
+<div class="space-y-1">
+<div class="flex items-center gap-2 py-1.5 px-3 rounded-md bg-primary/10 text-primary border border-primary/20">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">description</span>
+<span class="text-sm font-bold">SKILL.md</span>
+<span class="ml-auto text-[10px] bg-primary text-on-primary px-1.5 py-0.5 rounded leading-none uppercase">Root</span>
+</div>
+<div class="flex items-center gap-2 py-1.5 px-3 rounded-md text-on-surface hover:bg-surface-variant/40 transition-colors">
+<span class="material-symbols-outlined text-sm text-outline">folder</span>
+<span class="text-sm font-medium">lib/</span>
+</div>
+<div class="flex items-center gap-2 py-1.5 pl-8 pr-3 rounded-md bg-secondary-container/40 text-on-surface">
+<span class="material-symbols-outlined text-sm text-secondary">terminal</span>
+<span class="text-sm font-medium">scripts.js</span>
+<span class="ml-auto text-[9px] border border-secondary text-secondary px-1 py-0.5 rounded leading-none">Logic</span>
+</div>
+<div class="flex items-center gap-2 py-1.5 pl-8 pr-3 rounded-md text-on-surface/60">
+<span class="material-symbols-outlined text-sm text-outline/50">javascript</span>
+<span class="text-sm font-medium">utils.js</span>
+</div>
+<div class="flex items-center gap-2 py-1.5 px-3 rounded-md text-on-surface hover:bg-surface-variant/40 transition-colors">
+<span class="material-symbols-outlined text-sm text-outline">folder</span>
+<span class="text-sm font-medium">examples/</span>
+</div>
+<div class="flex items-center gap-2 py-1.5 pl-8 pr-3 rounded-md bg-tertiary-fixed text-on-tertiary-fixed">
+<span class="material-symbols-outlined text-sm text-tertiary">data_object</span>
+<span class="text-sm font-medium">test-1.md</span>
+</div>
+<div class="flex items-center gap-2 py-1.5 px-3 rounded-md text-on-surface/60">
+<span class="material-symbols-outlined text-sm text-outline/50">settings_suggest</span>
+<span class="text-sm font-medium">package.json</span>
+</div>
+</div>
+</div>
+<!-- Center Panel: Mapping Workspace -->
+<div class="col-span-6 overflow-y-auto p-8 space-y-6 bg-surface">
+<div class="flex justify-between items-center mb-4">
+<h4 class="text-[10px] font-extrabold uppercase tracking-[0.2em] text-on-surface-variant">Mapping Definition</h4>
+<button class="text-primary text-xs font-bold underline decoration-primary/30 underline-offset-4">Reset Defaults</button>
+</div>
+<!-- Instructions Card -->
+<div class="group bg-surface-container-low border border-outline-variant/60 rounded-xl p-6 hover:shadow-[0_4px_24px_rgba(58,48,42,0.06)] transition-all">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">menu_book</span>
+</div>
+<div>
+<h3 class="font-bold text-on-surface">Instructions</h3>
+<p class="text-xs text-on-surface-variant">Mapped to <span class="text-primary font-medium">SKILL.md</span></p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded uppercase">High Confidence</span>
+<button class="p-1 text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">edit</span></button>
+</div>
+</div>
+<p class="text-sm text-on-surface-variant leading-relaxed line-clamp-2">
+                        Comprehensive skill documentation covering natural language processing routines, memory management schemas, and personality weightings.
+                    </p>
+</div>
+<!-- Scripts Card -->
+<div class="group bg-surface-container-low border border-outline-variant/60 rounded-xl p-6 hover:shadow-[0_4px_24px_rgba(58,48,42,0.06)] transition-all">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-secondary-fixed flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">code</span>
+</div>
+<div>
+<h3 class="font-bold text-on-surface">Scripts</h3>
+<p class="text-xs text-on-surface-variant">Mapped to <span class="text-primary font-medium">lib/scripts.js</span></p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded uppercase">High Confidence</span>
+<button class="p-1 text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">edit</span></button>
+</div>
+</div>
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-surface-container text-on-surface-variant text-[10px] rounded border border-outline-variant">processRequest()</span>
+<span class="px-2 py-1 bg-surface-container text-on-surface-variant text-[10px] rounded border border-outline-variant">validateInput()</span>
+</div>
+</div>
+<!-- Examples Card -->
+<div class="group bg-surface-container-low border border-outline-variant/60 rounded-xl p-6 hover:shadow-[0_4px_24px_rgba(58,48,42,0.06)] transition-all">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-tertiary-fixed flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined">chat_bubble</span>
+</div>
+<div>
+<h3 class="font-bold text-on-surface">Examples</h3>
+<p class="text-xs text-on-surface-variant">Mapped to <span class="text-primary font-medium">examples/test-1.md</span></p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-2 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold rounded uppercase">Medium Confidence</span>
+<button class="p-1 text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">edit</span></button>
+</div>
+</div>
+<p class="text-sm italic text-on-surface-variant">3 training examples detected. Formatting requires manual verification of JSON markers.</p>
+</div>
+<!-- Metadata Card -->
+<div class="group bg-surface-container-low border border-outline-variant/60 rounded-xl p-6 hover:shadow-[0_4px_24px_rgba(58,48,42,0.06)] transition-all">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-outline/10 flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined">info</span>
+</div>
+<div>
+<h3 class="font-bold text-on-surface">Metadata</h3>
+<p class="text-xs text-on-surface-variant">Extracted from <span class="text-primary font-medium">package.json</span></p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-2 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded uppercase">Needs Review</span>
+<button class="p-1 text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">edit</span></button>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase text-on-surface-variant/60 font-bold">Version</span>
+<span class="text-sm font-medium">1.0.4-beta</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase text-on-surface-variant/60 font-bold">Author</span>
+<span class="text-sm font-medium">Sahara Labs</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Panel: Inspector -->
+<div class="col-span-3 border-l border-outline-variant/60 bg-surface-container-low/30 overflow-y-auto flex flex-col">
+<div class="p-6 border-b border-outline-variant/40 text-center">
+<span class="text-[10px] font-extrabold uppercase tracking-[0.2em] text-on-surface-variant mb-4 block">Confidence Score</span>
+<div class="relative inline-flex items-center justify-center">
+<svg class="w-24 h-24 transform -rotate-90">
+<circle class="text-surface-container-highest" cx="48" cy="48" fill="transparent" r="40" stroke="currentColor" stroke-width="6"></circle>
+<circle class="text-primary" cx="48" cy="48" fill="transparent" r="40" stroke="currentColor" stroke-dasharray="251.2" stroke-dashoffset="20.1" stroke-width="6"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-2xl serif-heading font-bold text-on-surface">92</span>
+<span class="text-[10px] font-bold text-on-surface-variant">/ 100</span>
+</div>
+</div>
+</div>
+<div class="p-6 flex-1">
+<h4 class="text-[10px] font-extrabold uppercase tracking-[0.2em] text-on-surface-variant mb-4">Warnings</h4>
+<div class="space-y-3 mb-8">
+<div class="flex gap-3 p-3 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-lg">
+<span class="material-symbols-outlined text-red-500 text-lg">warning</span>
+<p class="text-xs text-red-800 dark:text-red-300 leading-tight">Missing compatibility tags in SKILL.md for Sahari-V2 models.</p>
+</div>
+<div class="flex gap-3 p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20 rounded-lg">
+<span class="material-symbols-outlined text-amber-500 text-lg">inventory_2</span>
+<p class="text-xs text-amber-800 dark:text-amber-300 leading-tight">Large asset file detected (3.2MB). May impact loading time.</p>
+</div>
+</div>
+<h4 class="text-[10px] font-extrabold uppercase tracking-[0.2em] text-on-surface-variant mb-4">Skill Structure Preview</h4>
+<div class="p-4 bg-surface-container-highest/40 border border-outline-variant/60 rounded-xl font-mono text-[10px] leading-relaxed text-on-surface-variant">
+<div class="text-primary">{</div>
+<div class="pl-4">"id": <span class="text-on-surface">"skill_alpha_01"</span>,</div>
+<div class="pl-4">"type": <span class="text-on-surface">"conversational"</span>,</div>
+<div class="pl-4">"components": [</div>
+<div class="pl-8">"instructions_v1",</div>
+<div class="pl-8">"logic_v4",</div>
+<div class="pl-8">"test_suite"</div>
+<div class="pl-4">],</div>
+<div class="pl-4">"meta": { ... }</div>
+<div class="text-primary">}</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Footer Workspace Controls -->
+<footer class="h-20 bg-surface border-t border-outline-variant/60 px-8 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<button class="px-6 py-2.5 text-sm font-bold text-on-surface-variant hover:text-primary transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">refresh</span>
+                    Re-scan Repo
+                </button>
+<button class="px-6 py-2.5 text-sm font-bold text-on-surface-variant hover:text-primary transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">tune</span>
+                    Adjust Mappings
+                </button>
+</div>
+<button class="bg-primary text-on-primary px-10 py-3 rounded-lg font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-3">
+                Continue to Skill Builder
+                <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</footer>
+</main>
+</body></html>
