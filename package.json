@@ -43,6 +43,7 @@
     "scripts/validate-distribution.ts",
     "scripts/smoke-test-package.ts",
     "dokion.json",
+    "action.yml",
     "SPEC.md",
     "AGENTS.md",
     "GEMINI.md",

@@ -1,0 +1,131 @@
+name: 'Dokion Action'
+description: 'Run Dokion software hardening playbooks and record verification evidence in GitHub Actions'
+author: 'Mamdouh Aboammar'
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+inputs:
+  playbook:
+    description: 'Path to active playbook file'
+    required: false
+    default: '.dokion/playbook.json'
+  dokion-version:
+    description: 'Version of dokion package to install/run'
+    required: false
+    default: 'latest'
+  working-directory:
+    description: 'Working directory path'
+    required: false
+    default: '.'
+  fail-on-findings:
+    description: 'Exit with failure status if findings or verification errors are detected'
+    required: false
+    default: 'true'
+  create-summary:
+    description: 'Write HARDENING.md and findings report to GitHub Step Summary'
+    required: false
+    default: 'true'
+
+outputs:
+  status:
+    description: 'Execution status'
+    value: ${{ steps.dokion-run.outputs.status }}
+  exit-code:
+    description: 'Exit code from dokion run'
+    value: ${{ steps.dokion-run.outputs.exit-code }}
+  report-path:
+    description: 'Path to generated HARDENING.md report'
+    value: ${{ steps.dokion-run.outputs.report-path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: latest
+
+    - name: Install Dokion
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        if [ "${{ inputs.dokion-version }}" = "local" ]; then
+          echo "Using pre-built local Dokion distribution"
+        else
+          echo "Installing dokion@${{ inputs.dokion-version }}"
+          bun add --global "dokion@${{ inputs.dokion-version }}"
+        fi
+
+    - name: Validate Playbook
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "Validating Playbook..."
+        if [ -f "${{ inputs.playbook }}" ]; then
+          bunx dokion validate --playbook "${{ inputs.playbook }}" || {
+            echo "::error::Dokion Playbook validation failed"
+            exit 1
+          }
+        else
+          echo "::warning::Specified playbook '${{ inputs.playbook }}' not found. Validating runtime catalog..."
+          bunx dokion validate --catalog-only
+        fi
+
+    - name: Run Dokion Hardening
+      id: dokion-run
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        RUN_ARGS=""
+        if [ -f "${{ inputs.playbook }}" ]; then
+          RUN_ARGS="--playbook ${{ inputs.playbook }}"
+        fi
+
+        set +e
+        bunx dokion run $RUN_ARGS
+        EXIT_CODE=$?
+        set -e
+
+        echo "exit-code=$EXIT_CODE" >> $GITHUB_OUTPUT
+        echo "report-path=HARDENING.md" >> $GITHUB_OUTPUT
+
+        if [ "$EXIT_CODE" -eq 0 ]; then
+          echo "status=SUCCEEDED" >> $GITHUB_OUTPUT
+          echo "failed=false" >> $GITHUB_OUTPUT
+        else
+          echo "status=FAILED" >> $GITHUB_OUTPUT
+          if [ "${{ inputs.fail-on-findings }}" = "true" ]; then
+            echo "failed=true" >> $GITHUB_OUTPUT
+          else
+            echo "failed=false" >> $GITHUB_OUTPUT
+          fi
+        fi
+
+    - name: Generate Findings & Job Summary
+      if: always()
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "::group::Dokion Status"
+        bunx dokion status || true
+        echo "::endgroup::"
+
+        echo "::group::Dokion Findings"
+        bunx dokion findings || true
+        echo "::endgroup::"
+
+        if [ "${{ inputs.create-summary }}" = "true" ] && [ -f "HARDENING.md" ] && [ -n "$GITHUB_STEP_SUMMARY" ]; then
+          echo "### 🛡️ Dokion Hardening Report" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          cat HARDENING.md >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+    - name: Enforce Exit Status
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        if [ "${{ steps.dokion-run.outputs.failed }}" = "true" ]; then
+          echo "::error::Dokion step failed. Check job summary and logs for details."
+          exit 1
+        fi

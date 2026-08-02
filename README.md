@@ -112,6 +112,42 @@ bun add --dev dokion
 
 ---
 
+## 🛡️ GitHub Actions Integration
+
+Automate Dokion software hardening playbooks in your CI/CD pipeline using the official GitHub Action:
+
+```yaml
+# .github/workflows/dokion.yml
+name: Dokion Hardening Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  dokion:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Dokion Hardening
+        uses: imMamdouhaboammar/dokion@v0.3.0
+        with:
+          playbook: '.dokion/playbook.json'
+          fail-on-findings: 'true'
+          create-summary: 'true'
+```
+
+Key features in CI:
+- **Zero-Setup Setup:** Installs Bun and Dokion CLI automatically.
+- **Job Summary Reports:** Automatically appends `HARDENING.md` reports and evidence to GitHub CI Job Summaries.
+- **Fail-Closed Gate:** Fails CI workflows if unverified mutations or unresolved findings are detected.
+
+---
+
 ## Quickstart Workflow
 
 ### 1. Initialize Dokion State
