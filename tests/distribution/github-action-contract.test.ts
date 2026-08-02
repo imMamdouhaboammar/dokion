@@ -12,7 +12,7 @@ function compositeRunSource(source: string): string {
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index]!;
-    const match = line.match(/^(\s*)run:\s*(.*?)\s*$/);
+    const match = line.match(/^(\s*)(?:-\s+)?run:\s*(.*?)\s*$/);
     if (!match) continue;
 
     const keyIndent = match[1]!.length;
@@ -48,7 +48,8 @@ describe("official GitHub Action contract", () => {
       'steps:\n  - run: |+\n      echo "${{ inputs.literal-keep }}"',
       'steps:\n  - run: >\n      echo "${{ inputs.folded }}"',
       'steps:\n  - run: >-\n      echo "${{ inputs.folded-strip }}"',
-      'steps:\n  - run: >+\n      echo "${{ inputs.folded-keep }}"'
+      'steps:\n  - run: >+\n      echo "${{ inputs.folded-keep }}"',
+      'steps:\n  - name: Expanded\n    run: |\n      echo "${{ inputs.expanded }}"'
     ];
 
     for (const fixture of fixtures) {
