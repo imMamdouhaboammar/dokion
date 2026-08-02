@@ -48,18 +48,23 @@ describe("canonical product surface", () => {
   });
 
   test("keeps the current command inventory explicit", () => {
-    expect(implementedCliCommands()).toHaveLength(34);
-    expect(plannedCliCommands()).toHaveLength(4);
+    expect(implementedCliCommands()).toHaveLength(33);
+    expect(plannedCliCommands()).toHaveLength(5);
     expect(plannedCliCommands().map((command) => command.id).sort()).toEqual([
       "accept",
+      "autoresearch",
       "hub",
       "trace",
       "try"
     ]);
   });
 
-  test("keeps Secure Release planned until acceptance evidence exists", () => {
+  test("keeps incomplete execution paths planned", () => {
     const surface = buildProductSurface();
+    expect(surface.commands).toContainEqual(expect.objectContaining({
+      id: "autoresearch",
+      status: "PLANNED"
+    }));
     expect(surface.packs).toContainEqual(expect.objectContaining({
       id: "secure-release",
       status: "PLANNED"
