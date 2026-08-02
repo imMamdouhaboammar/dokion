@@ -21,6 +21,21 @@ describe("official GitHub Action contract", () => {
     expect(source).not.toContain("default: 'latest'");
   });
 
+  test("passes caller inputs through environment variables and validates allowlists", async () => {
+    const source = await Bun.file(`${root}/action.yml`).text();
+
+    expect(source).toContain("DOKION_VERSION_INPUT: ${{ inputs.dokion-version }}");
+    expect(source).toContain("PLAYBOOK_INPUT: ${{ inputs.playbook }}");
+    expect(source).toContain("FAIL_ON_FINDINGS_INPUT: ${{ inputs.fail-on-findings }}");
+    expect(source).toContain("CREATE_SUMMARY_INPUT: ${{ inputs.create-summary }}");
+    expect(source).toContain('bun add --global "dokion@$DOKION_VERSION_INPUT"');
+    expect(source).toContain('if ! [[ "$DOKION_VERSION_INPUT" =~ ^[0-9]+\\.[0-9]+\\.[0-9]+');
+    expect(source).toContain('case "$FAIL_ON_FINDINGS_INPUT" in');
+    expect(source).toContain('case "$CREATE_SUMMARY_INPUT" in');
+    expect(source).not.toMatch(/run:\s*\|[\s\S]*?"\$\{\{ inputs\./);
+    expect(source).not.toContain("dokion@${{ inputs.dokion-version }}");
+  });
+
   test("publishes a report path only when the report exists", async () => {
     const source = await Bun.file(`${root}/action.yml`).text();
 
