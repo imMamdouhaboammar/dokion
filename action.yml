@@ -35,7 +35,7 @@ outputs:
     description: 'Exit code from dokion run'
     value: ${{ steps.dokion-run.outputs.exit-code }}
   report-path:
-    description: 'Path to HARDENING.md when present'
+    description: 'Absolute path to HARDENING.md when present, otherwise empty'
     value: ${{ steps.dokion-run.outputs.report-path }}
 
 runs:
@@ -98,7 +98,11 @@ runs:
         set -e
 
         echo "exit-code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
-        echo "report-path=HARDENING.md" >> "$GITHUB_OUTPUT"
+        if [ -f "HARDENING.md" ]; then
+          echo "report-path=$PWD/HARDENING.md" >> "$GITHUB_OUTPUT"
+        else
+          echo "report-path=" >> "$GITHUB_OUTPUT"
+        fi
         if [ "$EXIT_CODE" -eq 0 ]; then
           echo "status=SUCCEEDED" >> "$GITHUB_OUTPUT"
           echo "failed=false" >> "$GITHUB_OUTPUT"
