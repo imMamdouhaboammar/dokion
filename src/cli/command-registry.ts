@@ -66,7 +66,6 @@ export const CLI_COMMAND_REGISTRY: readonly CliCommandDescriptor[] = [
     if (ADOPTION_PLANNED_IDS.has(command.id)) {
       return {
         ...command,
-        purpose: `${command.purpose} Planned and unavailable while Issue #54 completes the executable contract.`,
         status: "PLANNED",
         writeScope: [],
         geminiFiles: []
