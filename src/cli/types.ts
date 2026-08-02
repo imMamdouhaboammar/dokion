@@ -81,14 +81,4 @@ export type CliInvocation =
     } & CliFormatted)
   | ({ command: "compare"; baselineRunId?: string; targetRunId?: string } & CliFormatted)
   | ({ command: "auto-runner"; options: Map<string, true | string>; flags: Set<string> } & CliFormatted)
-  | ({
-      command: "autoresearch";
-      positionals: string[];
-      options: Map<string, true | string>;
-      flags: Set<string>;
-      dryRun: boolean;
-    } & CliFormatted)
-  | ({ command: "create"; fromMemory?: string; transcript?: string; topic?: string; output?: string } & CliFormatted)
-  | ({ command: "try"; pack: string } & CliFormatted)
-  | ({ command: "accept"; digest: string } & CliFormatted)
-  | ({ command: "trace" } & CliFormatted);
+  | ({ command: "create"; fromMemory?: string; transcript?: string; topic?: string; output?: string } & CliFormatted);

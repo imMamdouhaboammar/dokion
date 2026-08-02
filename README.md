@@ -1,8 +1,8 @@
 # Dokion
 
-> **The Playbook Engine for AI Coding Agents.**
+> **Execution control for user-authored engineering Playbooks**
 >
-> Connect single-task Skills into autonomous, multi-stage engineering pipelines with explicit user governance, empirical test verification, and automatic Git rollback.
+> Dokion preserves declared order, permissions, approvals, state, evidence, verification boundaries, and repair decisions without selecting capabilities for the user
 
 [![Bun Baseline](https://img.shields.io/badge/bun-v1.3.14-black.svg?style=flat&logo=bun)](https://bun.sh)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -22,214 +22,207 @@
 
 ## Current truth boundary
 
-The built-in runtime and user-authored Playbooks are available.
+The built-in runtime and user-authored Playbooks are available
 
-The replacement Registry is being built as a federated, content-addressed protocol under [Issue #47](https://github.com/imMamdouhaboammar/dokion/issues/47).
+The runtime can validate and execute the active `.dokion/playbook.json`, preserve ordered state, record findings and evidence, enforce declared approvals and write scopes, resume supported runs, and verify repair transactions where the active Playbook declares the required commands and policies
 
----
+Registry package building, read-only package verification, and digest-anchored artifact pull into an immutable cache are implemented. Registry installation, activation, publishing, and Store behavior are unavailable
 
-## Why Dokion? (Skills Evolve into Playbooks)
+The replacement Registry is being built as a federated, content-addressed protocol under [Issue #47](https://github.com/imMamdouhaboammar/dokion/issues/47)
 
-AI coding agents (Claude Code, Gemini CLI, Cursor, Codex, AGY) are remarkably capable. However, left unsupervised in complex codebases, they encounter major reliability and safety challenges:
+The guided Secure Release Pack, exact proposal activation flow, and versioned Run Trace are planned under [Issue #54](https://github.com/imMamdouhaboammar/dokion/issues/54). They are not current release features
 
-1. **Prompt Loops & Out-of-Scope Edits**: Agents lose context during long sessions, editing unrelated files or destroying repository structure.
-2. **Hallucinated Verification**: Agents often claim *"Tests pass!"* without running them, or secretly delete failing test cases.
-3. **Skill Fragmentation**: Single-task **Skills** work great for quick lookups, but fail when attempting multi-hour, multi-agent engineering workflows.
+`dokion verify` currently validates repository and Playbook contracts. It does not yet re-run the active Playbook's declared test and build gates as an independent verification operation
 
-**Dokion solves this by introducing Playbooks.** A Playbook is a declarative, user-controlled execution contract that orchestrates skills, multi-agent swarms, verification gates, and rollback policies.
+## What Dokion controls
 
-| Dimension | Single Skill | Dokion Playbook |
-| :--- | :--- | :--- |
-| **Workflow Scope** | Single task / one-off action | Multi-hour, multi-stage autonomous pipeline |
-| **Agent Governance** | Freeform agent execution | Explicit write scopes, permission boundaries & release gates |
-| **Verification** | Relies on agent self-reporting | Empirical verification (actual build & test execution logs) |
-| **Repository Safety** | Manual git revert if agent breaks code | Automatic pre-repair snapshot & instant rollback |
-| **Multi-Agent Swarms**| Single agent thread | Coordinates swarms of sub-agents with strict stage gates |
+A Skill, tool, scanner, or agent adapter provides a capability
 
----
+A Dokion Playbook is the user-authored execution contract that declares:
 
-## Execution Lifecycle
+- Capability identity and source
+- Step and stage order
+- Read, write, shell, and network permissions
+- Approval boundaries
+- Failure and retry policy
+- Verification commands and release conditions
+- Applicability and coverage assignments
 
-```text
-Inspect project & capabilities
-    ↓
-Validate active Playbook (.dokion/playbook.json)
-    ↓
-Render approved execution plan (`dokion plan`)
-    ↓
-Execute stage steps with bounded sub-agents (`dokion run`)
-    ↓
-Record empirical evidence & normalized findings
-    ↓
-Verify test/build proof (`dokion verify`)
-    ↓
-Accept clean result OR restore pre-repair Git snapshot
-    ↓
-Write immutable audit journal (HARDENING.md)
-```
+Dokion executes only the active Playbook. It does not infer a replacement capability, widen permissions, reorder steps, or install an undeclared dependency
 
----
+## Authority model
 
-## Authority & Security Model
+`dokion.json` is an inert catalog
 
-`dokion.json` is an inert catalog describing available skills, tools, and commands.
+`.dokion/playbook.json` is the sole execution authority
 
-`.dokion/playbook.json` is the **sole execution authority**. The user explicitly controls:
+The user controls capability selection, execution order, write scope, commands, approvals, and required gates
 
-- Capability & skill selection
-- Execution order & stage sequence
-- File write permissions & shell scopes
-- Approval triggers (`BEFORE_WRITE`, `FIX_WITH_APPROVAL`, `NEVER`)
-- Retry & timeout limits
-- Mandatory verification commands & release gates
+The runtime is designed to fail closed when authority, evidence, repository identity, or persisted state cannot be verified
 
-**Dokion Guaranteed Invariants**:
-- Never installs undeclared capabilities automatically.
-- Never expands write scope beyond declared permissions.
-- Never silences or suppresses failing test findings.
-- Never reports success without empirical verification evidence.
-
----
+Platform guarantees differ by adapter and host. Read [`docs/compatibility.md`](docs/compatibility.md) before relying on hooks, process isolation, subagent behavior, or operating-system support
 
 ## Installation
 
-Dokion is built natively on Bun for near-instant execution speed.
+Dokion uses Bun `1.3.14` or later
 
-### Global Installation
 ```bash
-bun add --global dokion
+bun add --global dokion@0.3.0
 ```
 
-### Project-Local Installation
+Project-local installation:
+
 ```bash
-bun add --dev dokion
+bun add --dev dokion@0.3.0
 ```
 
-### System Requirements
-- **Bun** `>= 1.3.14`
-- **Git** (for snapshot creation, verification, and rollback)
-- **Python** `3.13` (for optional JSON schema conformance checks)
+Git is required for repository identity, worktree policy, repair snapshots, and rollback checks
 
----
+Python is used by repository maintainers for schema conformance checks. It is not required for every installed CLI operation
 
-## 🛡️ GitHub Actions Integration
+## Current quickstart
 
-Automate Dokion software hardening playbooks in your CI/CD pipeline using the official GitHub Action:
+Initialize Dokion-owned state:
 
-```yaml
-# .github/workflows/dokion.yml
-name: Dokion Hardening Check
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
-jobs:
-  dokion:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Run Dokion Hardening
-        uses: imMamdouhaboammar/dokion@v0.3.0
-        with:
-          playbook: '.dokion/playbook.json'
-          fail-on-findings: 'true'
-          create-summary: 'true'
-```
-
-Key features in CI:
-- **Zero-Setup Setup:** Installs Bun and Dokion CLI automatically.
-- **Job Summary Reports:** Automatically appends `HARDENING.md` reports and evidence to GitHub CI Job Summaries.
-- **Fail-Closed Gate:** Fails CI workflows if unverified mutations or unresolved findings are detected.
-
----
-
-## Quickstart Workflow
-
-### 1. Initialize Dokion State
 ```bash
 dokion init
 ```
 
-### 2. List & Select a Reference Playbook
+`dokion init` creates Dokion-owned state and `HARDENING.md`. It does not create or activate `.dokion/playbook.json`
+
+Choose and review a Playbook yourself, then copy the exact approved file to the sole execution-authority path:
+
 ```bash
-dokion playbooks list
+mkdir -p .dokion
+cp /path/to/reviewed-playbook.json .dokion/playbook.json
 ```
 
-### 3. Preview the Execution Plan (Dry-Run)
-Inspect the exact execution stages, capability steps, permissions, and gates without modifying files:
+The source path is intentionally user-controlled. Review the Playbook's capabilities, commands, permissions, approvals, and verification gates before copying it
+
+Inspect the project and local prerequisites:
+
+```bash
+dokion inspect
+dokion doctor
+```
+
+Validate the active Playbook and repository contracts:
+
+```bash
+dokion validate
+```
+
+Preview declared order and permissions without executing steps:
+
 ```bash
 dokion plan
 ```
 
-### 4. Execute the Playbook Engine
-Execute the active playbook with explicit approval boundaries:
+Execute through the production engine:
+
 ```bash
 dokion run
-# Or execute in bounded autopilot mode:
-dokion autopilot
 ```
 
-### 5. Inspect Status, Findings & Audit
+Inspect recorded state and evidence:
+
 ```bash
 dokion status
 dokion findings
 dokion report
 ```
 
----
+Resume only when the persisted state and repository identity remain valid:
 
-## CLI Command Map
-
-```text
-Observe & Audit
-  dokion status        View current run status, stage states, and approvals
-  dokion findings      List normalized quality & security findings
-  dokion report        Generate and write HARDENING.md
-  dokion inspect       Inspect project files, frameworks, and capabilities
-  dokion doctor        Verify system health, Bun runtime, and dependencies
-  dokion audit         Audit repository compliance against active playbook
-  dokion compare       Compare baseline and target execution runs
-
-Configure & Plan
-  dokion init          Initialize .dokion/ runtime directory and state
-  dokion plan          Render detailed execution plan for active playbook
-  dokion configure     Interactive environment configuration
-  dokion validate      Validate playbook schema and repository contracts
-  dokion create        Generate custom playbooks interactively
-  dokion playbooks     Manage playbooks (list, import, validate)
-
-Execute & Govern
-  dokion run           Execute active playbook stages
-  dokion autopilot     Run bounded hardening autopilot
-  dokion step          Execute a single designated step
-  dokion resume        Resume stopped execution from state journal
-  dokion verify        Verify project state and test proof
-  dokion approve       Record explicit approval for a stage/step
-  dokion reject        Reject proposed step and trigger rollback
-  dokion skip          Skip step with explicit reason
+```bash
+dokion resume
 ```
 
----
+## Verification and rollback scope
 
-## Ecosystem & Agent Adapters
+Verification commands run as part of the declared execution path and repair transaction checks
 
-Dokion seamlessly integrates with your favorite AI coding environment:
+A repair is accepted only when its declared command succeeds, its delta remains in scope, suppression and test-deletion checks pass, required regression evidence exists, and declared verification commands succeed
 
-- **Gemini CLI**: Included adapter via `gemini-extension.json` and `commands/dokion/`.
-- **Claude Code**: First-class skill support in `.claude/skills/dokion`.
-- **Cursor & AGY**: Pre-configured agent skill in `.agents/skills/dokion-hardening`.
-- **CI/CD Integration**: Run `dokion verify` and `dokion audit` in GitHub Actions for automated PR release gating.
+Rollback applies to supported repair transactions with a captured pre-repair snapshot. Dokion does not claim that every command, every Playbook step, or every external side effect is automatically reversible
 
----
+The independent `dokion verify` correction remains part of Issue #54 and must not be used as proof of fresh build or test execution in the current release
+
+## CLI status
+
+Implemented command status is derived from `src/cli/command-registry.ts`
+
+Important current commands:
+
+```text
+Observe
+  dokion inspect
+  dokion doctor
+  dokion status
+  dokion findings
+  dokion report
+  dokion audit
+  dokion compare
+
+Configure
+  dokion init
+  dokion plan
+  dokion configure
+  dokion validate
+  dokion create
+  dokion playbooks
+  dokion registry
+
+Execute and decide
+  dokion run
+  dokion step
+  dokion resume
+  dokion approve
+  dokion reject
+  dokion skip
+  dokion autopilot
+```
+
+Run `dokion --help` for the registry-derived command list
+
+## Registry status
+
+Implemented:
+
+- Deterministic package construction
+- Read-only package verification
+- Local, bounded HTTPS, and pinned Git source policy
+- Digest verification
+- Immutable content-addressed cache publication
+- Cache-hit re-verification
+
+Unavailable:
+
+- Package installation
+- Lockfile mutation through pull
+- Package activation
+- Registry publishing
+- Ratings, rankings, download metrics, or trust scores
+
+Registry metadata grants no selection, installation, activation, substitution, or execution authority
+
+## Agent adapters
+
+Packaged adapters currently exist for Claude Code, Codex, and Gemini CLI
+
+Packaging does not imply identical platform guarantees. Adapter-specific degradations are recorded and documented in [`docs/compatibility.md`](docs/compatibility.md)
+
+Cursor, AGY, and other environments must not be treated as tested merely because they can read generic repository instructions
+
+## GitHub Action status
+
+The root composite `action.yml` is an experimental repository integration until its release-candidate workflow passes on the exact tagged commit
+
+It requires the canonical active authority file at `.dokion/playbook.json`, uses supported CLI syntax only, and does not accept another Playbook path as runtime authority
+
+Do not describe the Action as release-proven until the corresponding workflow and package checks pass for the release candidate
 
 ## Contributing
-
-We welcome pull requests! Please ensure all contract checks pass before submitting:
 
 ```bash
 bun install --frozen-lockfile
@@ -238,12 +231,11 @@ bun test
 bun run typecheck
 bun run build
 bun run validate:distribution
+bun run smoke:package
 ```
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`SECURITY.md`](SECURITY.md) for details.
-
----
+See [`CONTRIBUTING.md`](CONTRIBUTING.md), [`SECURITY.md`](SECURITY.md), and the accepted architecture decisions under [`docs/adr/`](docs/adr/)
 
 ## License
 
-MIT © [Mamdouh Aboammar](https://github.com/imMamdouhaboammar). See [`LICENSE`](LICENSE).
+MIT © [Mamdouh Aboammar](https://github.com/imMamdouhaboammar). See [`LICENSE`](LICENSE)

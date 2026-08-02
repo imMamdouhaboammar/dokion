@@ -20,6 +20,7 @@ export {
 
 const HUB_PURPOSE =
   "Federated Playbook Registry is unavailable while the replacement protocol is implemented under #47.";
+const ADOPTION_PLANNED_IDS = new Set(["autoresearch", "try", "accept", "trace"]);
 
 const REGISTRY_PACKAGE_COMMAND: CliCommandDescriptor = {
   id: "registry",
@@ -50,17 +51,28 @@ export const CLI_COMMAND_SPEC_FILES: Readonly<Record<string, string>> = Object.f
 
 export const CLI_COMMAND_REGISTRY: readonly CliCommandDescriptor[] = [
   ...LEGACY_CLI_COMMAND_REGISTRY.map((command) => {
-    if (command.id !== "hub") return command;
+    if (command.id === "hub") {
+      return {
+        ...command,
+        manifestUsage: "dokion hub",
+        purpose: HUB_PURPOSE,
+        helpLine: "  hub",
+        status: "PLANNED",
+        writeScope: [],
+        geminiFiles: []
+      } satisfies CliCommandDescriptor;
+    }
 
-    return {
-      ...command,
-      manifestUsage: "dokion hub",
-      purpose: HUB_PURPOSE,
-      helpLine: "  hub",
-      status: "PLANNED",
-      writeScope: [],
-      geminiFiles: []
-    } satisfies CliCommandDescriptor;
+    if (ADOPTION_PLANNED_IDS.has(command.id)) {
+      return {
+        ...command,
+        status: "PLANNED",
+        writeScope: [],
+        geminiFiles: []
+      } satisfies CliCommandDescriptor;
+    }
+
+    return command;
   }),
   REGISTRY_PACKAGE_COMMAND
 ];
@@ -104,7 +116,7 @@ export function renderCliHelp(version: string): string {
 }
 
 export function manifestCliCommands(): ManifestCliCommand[] {
-  return CLI_COMMAND_REGISTRY.map((command) => ({
+  return implementedCliCommands().map((command) => ({
     command: command.manifestCommand,
     ...("manifestUsage" in command && command.manifestUsage !== undefined ? { usage: command.manifestUsage } : {}),
     purpose: command.purpose,
@@ -117,11 +129,11 @@ export function manifestCliCommands(): ManifestCliCommand[] {
 }
 
 export function expectedGeminiCommandFiles(): GeminiCommandFile[] {
-  return Array.from(new Set(CLI_COMMAND_REGISTRY.flatMap((command) => command.geminiFiles))).sort();
+  return Array.from(new Set(implementedCliCommands().flatMap((command) => command.geminiFiles))).sort();
 }
 
 export function geminiCommandsForFile(file: GeminiCommandFile): readonly CliCommandDescriptor[] {
-  return CLI_COMMAND_REGISTRY.filter((command) => command.geminiFiles.includes(file)).sort(
+  return implementedCliCommands().filter((command) => command.geminiFiles.includes(file)).sort(
     (left, right) => (left.geminiOrder ?? Number.MAX_SAFE_INTEGER) - (right.geminiOrder ?? Number.MAX_SAFE_INTEGER)
   );
 }

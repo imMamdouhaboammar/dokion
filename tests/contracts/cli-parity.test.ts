@@ -14,6 +14,14 @@ import {
 import { parseCliInvocation } from "../../src/cli/parser.ts";
 
 const root = process.cwd();
+const EXPECTED_IMPLEMENTED_IDS = [
+  "approve", "audit", "auto-runner", "autopilot", "compare", "configure",
+  "create", "doctor", "findings", "goal", "goals-list", "hooks", "init",
+  "inspect", "loop", "loops-list", "memory", "plan", "playbooks",
+  "plugins-list", "registry", "reject", "report", "reset-state", "resume", "run",
+  "skills-list", "skip", "status", "step", "tools-list", "validate", "verify"
+] as const;
+const EXPECTED_PLANNED_IDS = ["accept", "autoresearch", "hub", "trace", "try"] as const;
 
 interface ManifestCommand {
   command: string;
@@ -74,37 +82,33 @@ function sorted(values: Iterable<string>): string[] {
 }
 
 describe("canonical CLI command registry", () => {
-  test("records the complete manifest command inventory in registry order", async () => {
-    const observed: string[] = [];
-    for (const descriptor of CLI_COMMAND_REGISTRY) {
-      const entry = await commandEntry(descriptor.id, descriptor.manifestCommand);
-      expect(entry).toBeDefined();
-      observed.push(entry!.command);
-    }
-
-    expect(observed).toEqual(CLI_COMMAND_REGISTRY.map((command) => command.manifestCommand));
+  test("records exact implemented and planned identities", () => {
     expect(new Set(CLI_COMMAND_REGISTRY.map((command) => command.id)).size).toBe(CLI_COMMAND_REGISTRY.length);
-    expect(implementedCliCommands()).toHaveLength(implementedCliCommands().length);
-    expect(plannedCliCommands()).toHaveLength(plannedCliCommands().length);
+    expect(sorted(implementedCliCommands().map((command) => command.id))).toEqual([...EXPECTED_IMPLEMENTED_IDS]);
+    expect(sorted(plannedCliCommands().map((command) => command.id))).toEqual([...EXPECTED_PLANNED_IDS]);
   });
 
-  test("records source-specific manifest usage without hiding current differences", async () => {
-    for (const descriptor of CLI_COMMAND_REGISTRY) {
+  test("publishes implemented commands only in static manifests", async () => {
+    for (const descriptor of implementedCliCommands()) {
       const entry = await commandEntry(descriptor.id, descriptor.manifestCommand);
       const expectedUsage = "manifestUsage" in descriptor ? descriptor.manifestUsage : undefined;
       expect(entry).toBeDefined();
       expect(entry?.usage).toBe(expectedUsage);
     }
+
+    for (const descriptor of plannedCliCommands()) {
+      expect(await commandEntry(descriptor.id, descriptor.manifestCommand)).toBeUndefined();
+    }
   });
 
-  test("keeps the specification aware of every declared command", async () => {
+  test("publishes implemented commands only in executable specifications", async () => {
     const baseSpecification = await read("SPEC.md");
 
     expect(baseSpecification).toContain("| `dokion tools list` · `skills list` · `plugins list` · `loops list` · `goals list` |");
     expect(baseSpecification).toContain("`dokion approve`");
 
     const specifications = new Map<string, string>();
-    for (const descriptor of CLI_COMMAND_REGISTRY) {
+    for (const descriptor of implementedCliCommands()) {
       const path = specificationFileForCommand(descriptor.id);
       let specification = specifications.get(path);
       if (!specification) {
@@ -112,6 +116,10 @@ describe("canonical CLI command registry", () => {
         specifications.set(path, specification);
       }
       expect(specification).toContain(descriptor.specMarker);
+    }
+
+    for (const descriptor of plannedCliCommands()) {
+      expect(baseSpecification).not.toContain(descriptor.specMarker);
     }
   });
 
@@ -147,13 +155,13 @@ describe("canonical CLI command registry", () => {
     }
   });
 
-  test("keeps Gemini command files and their invocations registered", async () => {
+  test("keeps Gemini command files aligned with implemented commands only", async () => {
     const commandDirectory = join(root, "commands/dokion");
     const observedFiles = (await readdir(commandDirectory)).filter((path) => path.endsWith(".toml")).sort();
 
     expect(observedFiles).toEqual([...expectedGeminiCommandFiles()]);
 
-    for (const command of CLI_COMMAND_REGISTRY) {
+    for (const command of implementedCliCommands()) {
       for (const file of command.geminiFiles) {
         const content = await read(`commands/dokion/${file}`);
         expect(content).toContain(`\`${command.manifestCommand}\``);

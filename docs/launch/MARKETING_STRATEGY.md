@@ -1,110 +1,77 @@
-# Dokion Launch & Community Marketing Playbook
+# Dokion Launch and Community Strategy
 
-This document contains copy-paste ready marketing copy, launch posts, social media threads, and community outreach strategies to drive viral adoption and developer awareness for Dokion.
+This document is a pre-launch control document, not approved public campaign copy
 
----
+Dokion must not launch from broad category language alone. Public wording must be tied to the exact release candidate, generated product surface, reproducible fixtures, and completed review evidence
 
-## 1. Core Positioning Matrix
+## Current positioning
 
-| Element | Specification |
+| Element | Current decision |
 | :--- | :--- |
-| **Product Name** | Dokion |
-| **Headline** | The Playbook Engine for AI Coding Agents |
-| **Core Tagline** | Skills execute single tasks. Dokion Playbooks orchestrate autonomous multi-agent workflows. |
-| **Primary Target Audience** | AI Developers, Vibe Coders, Senior Engineers using Claude Code, Gemini CLI, Cursor, or Codex |
-| **Secondary Target Audience** | DevOps Leads, Open-Source Maintainers, Security Engineers |
-| **Key Differentiator** | Empirical verification + Git snapshot auto-rollback + Multi-agent swarm governance |
+| Product | Dokion |
+| Category | Agent Execution Control |
+| Initial wedge | Software hardening and release assurance |
+| Current supported story | User-authored Playbooks executed with declared order, permissions, approvals, state, findings, and evidence |
+| First planned guided journey | Secure Release for supported Bun and Node TypeScript repositories |
+| Primary audience | Engineers and maintainers who need a governed execution contract around coding-agent work |
 
----
+## Approved current description
 
-## 2. Hacker News (Show HN) Launch Post
+Dokion is an execution control layer for user-authored engineering Playbooks
 
-**Title**: Show HN: Dokion – The Playbook engine that stops AI coding agents from breaking production
+It preserves declared order, permissions, approvals, state, evidence, verification boundaries, and repair decisions without selecting capabilities for the user
 
-**Post Body**:
-```markdown
-Hey HN! I'm Mamdouh, creator of Dokion (https://github.com/imMamdouhaboammar/dokion).
+## Claims that require release evidence
 
-Over the past year, AI coding agents (Claude Code, Gemini CLI, Cursor, Codex) have completely transformed how we write software. But anyone who uses them heavily encounters the exact same pain points:
-1. Agents get stuck in infinite prompt loops or edit files completely out of scope.
-2. Agents claim "tests pass!" without actually running them or by secretly deleting broken assertions.
-3. Single-purpose "Skills" work great for quick tasks, but fail when trying to run complex 3-hour engineering workflows.
+Do not publish any of the following until the exact claim is present in the generated product surface and proven by maintained acceptance fixtures:
 
-We built Dokion to solve this. Dokion is an explicit, user-directed Playbook Engine for AI coding agents.
+- Universal subagent isolation
+- General parallel-agent coordination
+- Independent test and build re-verification through `dokion verify`
+- Reversal of every command or external side effect
+- Secure Release guided first run
+- Exact proposal acceptance and activation
+- Versioned Run Trace exports
+- Registry installation, activation, publishing, ratings, or usage metrics
+- Support for an agent platform based only on generic instruction-file compatibility
 
-### How it works:
-Instead of giving an AI agent unrestricted access to your repository, you define (or select) an immutable Playbook (`.dokion/playbook.json`).
+## Launch gate
 
-1. **Governance & Scope**: You declare write scopes, permitted shell commands, approval boundaries, and sub-agent orchestration rules.
-2. **Empirical Evidence**: Dokion requires real build/test execution logs. An agent cannot claim success just because its LLM response says "Done!".
-3. **Auto-Rollback**: Before any remediation step, Dokion takes a clean Git snapshot. If verification commands fail or the agent produces tainted output, Dokion automatically restores the snapshot.
-4. **Skills -> Playbooks**: Dokion connects individual skills (brainstorming, TDD, security scans, refactoring) into structured, multi-stage pipelines that can run autonomously for hours.
+Public launch copy is approved only when all of these are true for the same commit:
 
-### Quick Start:
-You can run our bundled reference workflow in seconds with Bun:
+1. The product surface is generated and has no uncommitted diff
+2. Every documented command parses and runs through the packaged CLI
+3. The supported first journey passes clean-install positive and negative fixtures
+4. Required test, typecheck, contract, build, distribution, and package-smoke checks pass
+5. The GitHub Action passes against the canonical `.dokion/playbook.json` authority path
+6. CodeRabbit has completed and every valid critical or major finding is resolved
+7. Security-sensitive command, activation, archive, HTML, and workflow changes have a completed security review
+8. Documentation labels implemented, planned, experimental, unavailable, and unproven behavior explicitly
+9. External adoption results are real, consented, and reproducible from sanitized records
 
-```bash
-bun add --global dokion
-dokion init
-dokion plan
-dokion run
-```
+## Launch narrative after the gate
 
-Dokion is 100% open-source (MIT licensed) and written in Bun/TypeScript.
+The first release narrative should demonstrate one repository journey rather than describe a general orchestration platform
 
-I'd love your feedback on the architecture, authority model, and how you currently manage AI agent safety in your codebase!
+Recommended structure:
 
-GitHub: https://github.com/imMamdouhaboammar/dokion
-```
+1. Show the active Playbook and exact authority
+2. Show the proposed stages, commands, permissions, and approvals
+3. Execute one passing or accurately blocked run
+4. Show findings and evidence produced by actual commands
+5. Show the qualified readiness decision and limitations
+6. Link the result to the exact commit and release artifact
 
----
+## Channel policy
 
-## 3. Twitter / X Viral Thread Blueprint
+Hacker News, Reddit, X, Product Hunt, and community posts must use the same generated status source
 
-**Tweet 1 (Hook)**:
-> 🧵 AI coding agents are incredible, but left unsupervised, they break tests, edit files out of scope, and hallucinate fixes.
->
-> That's why we built Dokion: The Playbook Engine for AI Coding Agents.
->
-> Here's how it keeps AI agents safe, verified, and bounded 👇
-> [Attach 15-second terminal GIF showing Dokion auto-rollback]
+No channel receives stronger wording than the README or release truth report
 
-**Tweet 2 (The Problem with Skills)**:
-> Single-task "Skills" are everywhere, but they only handle 1 step. When you need an AI agent to run a 4-hour feature build or security audit across sub-agents, Skills fall short.
->
-> Dokion introduces **Playbooks**: the natural evolution of Skills.
+Screenshots and terminal recordings must come from a reproducible fixture. Do not use mocked success screens, fabricated repository counts, placeholder metrics, or manually edited evidence
 
-**Tweet 3 (The 4 Pillars)**:
-> What Dokion does under the hood:
-> 🛡️ **Explicit Write Scopes**: Constrain write scope & shell execution
-> 🧪 **Empirical Proof**: Verifies actual test logs, blocks fake successes
-> 🔄 **Git Snapshots**: Auto-rolls back rogue edits if verification fails
-> 🤖 **Swarm Governance**: Coordinates parallel sub-agents safely
+## Current launch state
 
-**Tweet 4 (CTA)**:
-> 100% Open Source (MIT) built with Bun & TypeScript.
->
-> Check out the repo & give it a star ⭐
-> 🔗 https://github.com/imMamdouhaboammar/dokion
+The broad public launch is on hold while Issue #54 completes the truthful first journey, independent verification contract, Run Trace, safe authoring boundary, deployed documentation, and external validation
 
----
-
-## 4. Reddit Posts (r/programming, r/LocalLLaMA, r/DevOps)
-
-**Title**: Why we built a deterministic runtime to govern Claude Code, Gemini CLI & Cursor agents
-
-**Subreddit Focus**:
-- **r/LocalLLaMA**: Focus on autonomous agent swarms, local tool execution, and local Bun runtime.
-- **r/DevOps**: Focus on PR release gates, verification proof, and CI/CD security controls.
-- **r/programming**: Focus on architecture, execution contracts, and Git snapshot safety.
-
----
-
-## 5. ProductHunt Launch Kit
-
-- **Tagline**: The Playbook Engine for AI Coding Agents
-- **Short Description**: Turn single-task skills into autonomous, verified, multi-agent workflows with automatic Git rollback and explicit governance.
-- **Maker Comment Highlights**:
-  - Why Skills aren't enough for long-running workflows.
-  - How Dokion's pre-repair snapshot prevents repository corruption.
-  - Integration with Bun, Gemini CLI, Claude Code, and Cursor.
+Until those gates pass, communication should focus on engineering progress, authority invariants, validated Registry infrastructure, and exact current limitations

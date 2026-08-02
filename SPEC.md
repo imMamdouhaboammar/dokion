@@ -843,7 +843,6 @@ observe cannot mutate, and the commands that mutate cannot run unapproved.
 | `dokion hooks` | Manage lifecycle hook follow-ups and background automation: run and status. |
 | `dokion audit` | Independent audit verifying evidence manifests and repository state. |
 | `dokion compare` | Compare two Dokion run records deterministically without mutating state. |
-| `dokion trace` | Export deterministic execution lineage, step evidence hashes, and shareable reports. |
 
 ### 15.2 Configure — writes only Dokion's own files
 
@@ -855,10 +854,7 @@ observe cannot mutate, and the commands that mutate cannot run unapproved.
 | `dokion validate` | Validate the playbook; resolve and verify every declared capability. |
 | `dokion playbooks` | Manage playbooks and skills ecosystem: import, validate, sync, and list. |
 | `dokion create` | Synthesize a new Playbook from memory, transcripts, and workflow optimization logs. |
-| `dokion hub` | Interact with GitHub Native Decentralized Community Playbook Hub, Registry, and Leaderboard. |
 | `dokion reset --state-only` | Clear run state. Never touches the playbook. |
-| `dokion try` | Generate an inert, digest-signed proposal without JSON editing. |
-| `dokion accept` | Promote a signed proposal to active playbook authority after verifying digest and signature. |
 
 `dokion plan` is the only command that authors a playbook, and it can only write the
 `.proposed` path. Activation is a human copying that file. There is no `--activate` flag, and
@@ -875,7 +871,6 @@ adding one would break the model.
 | `dokion verify` | Re-run verification against the current commit. |
 | `dokion autopilot` | Run deterministic bounded autopilot execution. |
 | `dokion auto-runner` | Run continuous autonomous playbook execution loop to 100% completion with circuit breaker and self-healing. |
-| `dokion autoresearch` | Run autonomous goal-directed iteration loop with Modify-Verify-Guard and orchestrator routing. |
 
 `dokion resume` is the command that makes [principle 2](#the-principles) real: it reads
 `.dokion/state.json` and `HARDENING.md`, and needs nothing from the previous session's

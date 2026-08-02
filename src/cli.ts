@@ -8,7 +8,6 @@ import { builtinCatalog } from "./catalog/builtin-catalog.ts";
 import { renderCliHelp } from "./cli/command-registry.ts";
 import { handleAuditCommand } from "./cli/handlers/audit.ts";
 import { handleAutoRunnerCommand } from "./cli/handlers/auto-runner.ts";
-import { handleAutoresearchCommand } from "./cli/handlers/autoresearch.ts";
 import { handleAutopilotCommand } from "./cli/handlers/autopilot.ts";
 import { handleCompareCommand } from "./cli/handlers/compare.ts";
 import { handleConfigureCommand } from "./cli/handlers/configure.ts";
@@ -23,11 +22,9 @@ import { handlePlaybooksCommand } from "./cli/handlers/playbooks.ts";
 import { handleResetCommand } from "./cli/handlers/reset.ts";
 import { handleSkipCommand } from "./cli/handlers/skip.ts";
 import { handleStepCommand } from "./cli/handlers/step.ts";
-import { handleTryCommand } from "./cli/handlers/try.ts";
-import { handleAcceptCommand } from "./cli/handlers/accept.ts";
-import { handleTraceCommand } from "./cli/handlers/trace.ts";
 import { writeCliDiagnostic, writeCliResult } from "./cli/output.ts";
 import { parseCliInvocation, requestedCliOutputFormat } from "./cli/parser.ts";
+import { exitCodeForRunStatus } from "./cli/run-exit.ts";
 import type { CliInvocation, CliOutputFormat } from "./cli/types.ts";
 import { validateRepositoryContracts } from "./contracts/schema-validator.ts";
 import { recoverAtomicWrites } from "./core/atomic-file.ts";
@@ -249,9 +246,12 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
         invocation.format
       );
       return;
-    case "run":
-      print(await new ExecutionEngine(root).run(), invocation.format);
+    case "run": {
+      const state = await new ExecutionEngine(root).run();
+      print(state, invocation.format);
+      process.exitCode = exitCodeForRunStatus(state.run.status);
       return;
+    }
     case "step": {
       const store = new StateStore(root);
       const state = (await store.exists()) ? await store.load() : null;
@@ -260,9 +260,12 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
       }
       return;
     }
-    case "resume":
-      print(await new ExecutionEngine(root).resume(), invocation.format);
+    case "resume": {
+      const state = await new ExecutionEngine(root).resume();
+      print(state, invocation.format);
+      process.exitCode = exitCodeForRunStatus(state.run.status);
       return;
+    }
     case "verify":
       await withProjectRunLock("verify", async () => validate(false, invocation.format));
       return;
@@ -312,12 +315,6 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
       if (invocation.command === "auto-runner") {
         const runnerReport = await handleAutoRunnerCommand(root, invocation);
         if (!runnerReport.completed) process.exitCode = 1;
-      }
-      return;
-    }
-    case "autoresearch": {
-      if (invocation.command === "autoresearch") {
-        await handleAutoresearchCommand(root, invocation);
       }
       return;
     }
@@ -386,24 +383,6 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
     case "hooks": {
       const exitCode = await handleHooksCommand([invocation.subcommand], root);
       if (exitCode !== 0) process.exitCode = exitCode;
-      return;
-    }
-    case "try": {
-      if (invocation.command === "try") {
-        print(await handleTryCommand(invocation.pack, root), invocation.format);
-      }
-      return;
-    }
-    case "accept": {
-      if (invocation.command === "accept") {
-        print(await handleAcceptCommand(invocation.digest, root), invocation.format);
-      }
-      return;
-    }
-    case "trace": {
-      if (invocation.command === "trace") {
-        print(await handleTraceCommand(root, invocation.format), invocation.format);
-      }
       return;
     }
   }

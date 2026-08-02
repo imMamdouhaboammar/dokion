@@ -1,0 +1,97 @@
+import { describe, expect, test } from "bun:test";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import { writeProductSurfaceSnapshot } from "../../scripts/generate-product-surface.ts";
+import {
+  CLI_COMMAND_REGISTRY,
+  implementedCliCommands,
+  plannedCliCommands
+} from "../../src/cli/command-registry.ts";
+import { buildProductSurface, serializeProductSurface } from "../../src/product/product-surface.ts";
+
+const repositoryRoot = process.cwd();
+
+describe("canonical product surface", () => {
+  test("derives command status and evidence from the canonical registry", () => {
+    const surface = buildProductSurface();
+
+    expect(surface.schema_version).toBe("dokion.product-surface.v1");
+    expect(surface.commands.map((entry) => entry.id)).toEqual(
+      [...CLI_COMMAND_REGISTRY].map((entry) => entry.id).sort()
+    );
+
+    for (const command of surface.commands) {
+      const descriptor = CLI_COMMAND_REGISTRY.find((entry) => entry.id === command.id);
+      expect(descriptor).toBeDefined();
+      expect(command.status).toBe(descriptor!.status);
+      expect(command.evidence).toContain("src/cli/command-registry.ts");
+    }
+  });
+
+  test("requires every product claim to reference existing repository evidence", async () => {
+    const surface = buildProductSurface();
+    const entries = [
+      ...surface.commands,
+      ...surface.integrations,
+      ...surface.packs,
+      ...surface.registry
+    ];
+
+    for (const entry of entries) {
+      expect(entry.evidence.length).toBeGreaterThan(0);
+      for (const evidence of entry.evidence) {
+        expect(await Bun.file(join(repositoryRoot, evidence)).exists()).toBe(true);
+      }
+    }
+  });
+
+  test("keeps the current command inventory explicit", () => {
+    expect(implementedCliCommands()).toHaveLength(33);
+    expect(plannedCliCommands()).toHaveLength(5);
+    expect(plannedCliCommands().map((command) => command.id).sort()).toEqual([
+      "accept",
+      "autoresearch",
+      "hub",
+      "trace",
+      "try"
+    ]);
+  });
+
+  test("keeps incomplete execution paths planned", () => {
+    const surface = buildProductSurface();
+    expect(surface.commands).toContainEqual(expect.objectContaining({
+      id: "autoresearch",
+      status: "PLANNED"
+    }));
+    expect(surface.packs).toContainEqual(expect.objectContaining({
+      id: "secure-release",
+      status: "PLANNED"
+    }));
+  });
+
+  test("serializes deterministically", () => {
+    const first = serializeProductSurface(buildProductSurface());
+    const second = serializeProductSurface(buildProductSurface());
+    expect(second).toBe(first);
+    expect(first.endsWith("\n")).toBe(true);
+  });
+
+  test("keeps the committed snapshot byte-for-byte current", async () => {
+    const committed = await Bun.file(join(repositoryRoot, "generated", "product-surface.json")).text();
+    expect(committed).toBe(serializeProductSurface(buildProductSurface()));
+  });
+
+  test("writes a snapshot from a clean root", async () => {
+    const root = await mkdtemp(join(tmpdir(), "dokion-product-surface-"));
+    try {
+      const path = await writeProductSurfaceSnapshot(root);
+      expect(path).toBe(join(root, "generated", "product-surface.json"));
+      const written = await Bun.file(path).text();
+      expect(written).toBe(serializeProductSurface(buildProductSurface()));
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+});

@@ -59,6 +59,7 @@
   },
   "scripts": {
     "test": "bun test",
+    "generate:product-surface": "bun run scripts/generate-product-surface.ts",
     "typecheck": "tsc --noEmit",
     "build": "bun build src/cli.ts --compile --outfile dist/dokion",
     "validate:contracts": "python3 schemas/conformance_test.py && bun run src/cli.ts validate --catalog-only",

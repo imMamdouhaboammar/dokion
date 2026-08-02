@@ -49,6 +49,13 @@ describe("typed CLI argument parser", () => {
     });
   });
 
+  test("fails closed for every planned command", () => {
+    for (const command of ["accept", "autoresearch", "hub", "trace", "try"]) {
+      const error = expectDokionError(() => parseCliInvocation([command]), "CLI_PLANNED_COMMAND");
+      expect(error.details).toMatchObject({ command });
+    }
+  });
+
   test("rejects unknown options with a stable error code", () => {
     const error = expectDokionError(
       () => parseCliInvocation(["status", "--verbose"]),

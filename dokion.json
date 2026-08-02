@@ -210,12 +210,6 @@
         "approval": "BEFORE_WRITE"
       },
       {
-        "command": "dokion hub",
-        "usage": "dokion hub",
-        "purpose": "Federated Playbook Registry is unavailable while the replacement protocol is implemented under #47.",
-        "mode": "READ_ONLY"
-      },
-      {
         "command": "dokion doctor",
         "purpose": "Check agent adapters, CLIs, MCP servers, credentials, runtimes, and local prerequisites.",
         "mode": "READ_ONLY"
@@ -353,32 +347,6 @@
         "command": "dokion auto-runner",
         "purpose": "Run continuous autonomous playbook execution loop to 100% completion with circuit breaker and self-healing.",
         "approval": "FROM_PLAYBOOK"
-      },
-      {
-        "command": "dokion autoresearch",
-        "purpose": "Run autonomous goal-directed iteration loop with Modify-Verify-Guard and orchestrator routing.",
-        "approval": "FROM_PLAYBOOK"
-      },
-      {
-        "command": "dokion try",
-        "purpose": "Generate an inert, digest-signed proposal without JSON editing.",
-        "writes": [
-          ".dokion/proposals/**"
-        ],
-        "approval": "BEFORE_WRITE"
-      },
-      {
-        "command": "dokion accept",
-        "purpose": "Promote a signed proposal to active playbook authority after verifying digest and signature.",
-        "writes": [
-          ".dokion/playbooks/**"
-        ],
-        "approval": "ALWAYS"
-      },
-      {
-        "command": "dokion trace",
-        "purpose": "Export deterministic execution lineage, step evidence hashes, and shareable reports.",
-        "mode": "REPORT_ONLY"
       }
     ]
   },

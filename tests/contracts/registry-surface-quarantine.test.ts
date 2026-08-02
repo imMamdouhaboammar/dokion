@@ -25,23 +25,31 @@ describe("Registry command and documentation quarantine", () => {
     );
   });
 
-  test("removes executable-looking Hub commands from shipped adapters", async () => {
+  test("keeps shipped Hub adapters explicitly unavailable", async () => {
     expect(await Bun.file(`${root}/commands/dokion/hub.toml`).exists()).toBe(false);
 
-    const surfaces = await Promise.all([
+    const adapters = await Promise.all([
       read(".agents/skills/dokion-playbook-hub/SKILL.md"),
       read(".claude/skills/dokion-playbook-hub/SKILL.md"),
-      read("skills/dokion-playbook-hub/SKILL.md"),
-      read("dokion.json")
+      read("skills/dokion-playbook-hub/SKILL.md")
     ]);
 
-    for (const surface of surfaces) {
-      expect(surface).toContain("unavailable");
-      expect(surface).toContain("#47");
-      expect(surface).not.toContain("pull verified playbooks");
-      expect(surface).not.toContain("Community Leaderboard");
-      expect(surface).not.toContain("GitHub Native Decentralized Community Playbook Hub");
+    for (const adapter of adapters) {
+      expect(adapter).toContain("unavailable");
+      expect(adapter).toContain("#47");
+      expect(adapter).not.toContain("pull verified playbooks");
+      expect(adapter).not.toContain("Community Leaderboard");
+      expect(adapter).not.toContain("GitHub Native Decentralized Community Playbook Hub");
     }
+  });
+
+  test("removes the planned Hub command from the static executable manifest", async () => {
+    const manifest = await read("dokion.json");
+
+    expect(manifest).not.toContain('"command": "dokion hub"');
+    expect(manifest).not.toContain("pull verified playbooks");
+    expect(manifest).not.toContain("Community Leaderboard");
+    expect(manifest).not.toContain("GitHub Native Decentralized Community Playbook Hub");
   });
 
   test("README describes the Registry as protocol work in progress", async () => {

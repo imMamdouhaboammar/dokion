@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   test-action:
     runs-on: ubuntu-latest
@@ -13,9 +16,42 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Test Local Dokion Action
+      - name: Prepare active Playbook fixture
+        shell: bash
+        run: |
+          mkdir -p .dokion
+          cp playbooks/architecture-mapping.playbook.json .dokion/playbook.json
+
+      - name: Run blocked Playbook through the local Action
+        id: dokion
         uses: ./
         with:
           dokion-version: 'local'
-          playbook: 'playbooks/architecture-mapping.playbook.json'
           fail-on-findings: 'false'
+
+      - name: Assert blocked-run negative control
+        shell: bash
+        env:
+          DOKION_STATUS: ${{ steps.dokion.outputs.status }}
+          DOKION_EXIT_CODE: ${{ steps.dokion.outputs['exit-code'] }}
+        run: |
+          set -euo pipefail
+          test "$DOKION_STATUS" = "FAILED"
+          test "$DOKION_EXIT_CODE" -ne 0
+
+      - name: Reject malicious version input
+        id: malicious-version
+        continue-on-error: true
+        uses: ./
+        with:
+          dokion-version: '0.3.0; touch /tmp/dokion-action-injected'
+          fail-on-findings: 'false'
+
+      - name: Assert version input cannot execute shell syntax
+        shell: bash
+        env:
+          MALICIOUS_OUTCOME: ${{ steps.malicious-version.outcome }}
+        run: |
+          set -euo pipefail
+          test "$MALICIOUS_OUTCOME" = "failure"
+          test ! -e /tmp/dokion-action-injected

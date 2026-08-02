@@ -1,5 +1,5 @@
 name: 'Dokion Action'
-description: 'Run Dokion software hardening playbooks and record verification evidence in GitHub Actions'
+description: 'Run the active Dokion Playbook and publish its recorded report in GitHub Actions'
 author: 'Mamdouh Aboammar'
 branding:
   icon: 'shield'
@@ -7,35 +7,35 @@ branding:
 
 inputs:
   playbook:
-    description: 'Path to active playbook file'
+    description: 'Canonical active Playbook path. Dokion currently accepts only .dokion/playbook.json as execution authority'
     required: false
     default: '.dokion/playbook.json'
   dokion-version:
-    description: 'Version of dokion package to install/run'
+    description: 'Exact Dokion package version, or local when testing this checkout'
     required: false
-    default: 'latest'
+    default: '0.3.0'
   working-directory:
-    description: 'Working directory path'
+    description: 'Repository working directory'
     required: false
     default: '.'
   fail-on-findings:
-    description: 'Exit with failure status if findings or verification errors are detected'
+    description: 'Fail the action when dokion run exits non-zero'
     required: false
     default: 'true'
   create-summary:
-    description: 'Write HARDENING.md and findings report to GitHub Step Summary'
+    description: 'Append an existing HARDENING.md report to GitHub Step Summary'
     required: false
     default: 'true'
 
 outputs:
   status:
-    description: 'Execution status'
+    description: 'Dokion execution status'
     value: ${{ steps.dokion-run.outputs.status }}
   exit-code:
     description: 'Exit code from dokion run'
     value: ${{ steps.dokion-run.outputs.exit-code }}
   report-path:
-    description: 'Path to generated HARDENING.md report'
+    description: 'Absolute path to HARDENING.md when present, otherwise empty'
     value: ${{ steps.dokion-run.outputs.report-path }}
 
 runs:
@@ -44,88 +44,146 @@ runs:
     - name: Setup Bun
       uses: oven-sh/setup-bun@v2
       with:
-        bun-version: latest
+        bun-version: 1.3.14
 
-    - name: Install Dokion
+    - name: Validate inputs and install Dokion
       shell: bash
       working-directory: ${{ inputs.working-directory }}
+      env:
+        DOKION_VERSION_INPUT: ${{ inputs.dokion-version }}
+        PLAYBOOK_INPUT: ${{ inputs.playbook }}
+        FAIL_ON_FINDINGS_INPUT: ${{ inputs.fail-on-findings }}
+        CREATE_SUMMARY_INPUT: ${{ inputs.create-summary }}
       run: |
-        if [ "${{ inputs.dokion-version }}" = "local" ]; then
-          echo "Using pre-built local Dokion distribution"
-        else
-          echo "Installing dokion@${{ inputs.dokion-version }}"
-          bun add --global "dokion@${{ inputs.dokion-version }}"
+        set -euo pipefail
+
+        if [ "$PLAYBOOK_INPUT" != ".dokion/playbook.json" ]; then
+          echo "::error::Dokion execution authority must be .dokion/playbook.json"
+          exit 1
         fi
 
-    - name: Validate Playbook
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: |
-        echo "Validating Playbook..."
-        if [ -f "${{ inputs.playbook }}" ]; then
-          bunx dokion validate --playbook "${{ inputs.playbook }}" || {
-            echo "::error::Dokion Playbook validation failed"
+        case "$FAIL_ON_FINDINGS_INPUT" in
+          true|false) ;;
+          *)
+            echo "::error::fail-on-findings must be true or false"
+            exit 1
+            ;;
+        esac
+
+        case "$CREATE_SUMMARY_INPUT" in
+          true|false) ;;
+          *)
+            echo "::error::create-summary must be true or false"
+            exit 1
+            ;;
+        esac
+
+        if [ "$DOKION_VERSION_INPUT" = "local" ]; then
+          test -f "$GITHUB_ACTION_PATH/src/cli.ts" || {
+            echo "::error::Local Dokion source was not found at the action path"
             exit 1
           }
+          test -f "$GITHUB_ACTION_PATH/bun.lock" || {
+            echo "::error::Local Dokion lockfile was not found at the action path"
+            exit 1
+          }
+          (
+            cd "$GITHUB_ACTION_PATH"
+            bun install --frozen-lockfile
+          )
         else
-          echo "::warning::Specified playbook '${{ inputs.playbook }}' not found. Validating runtime catalog..."
-          bunx dokion validate --catalog-only
+          if ! [[ "$DOKION_VERSION_INPUT" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
+            echo "::error::dokion-version must be local or an exact semantic version"
+            exit 1
+          fi
+          bun add --global "dokion@$DOKION_VERSION_INPUT"
+          command -v dokion >/dev/null || {
+            echo "::error::The Dokion executable was not installed"
+            exit 1
+          }
         fi
 
-    - name: Run Dokion Hardening
+    - name: Validate active Playbook
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        DOKION_VERSION_INPUT: ${{ inputs.dokion-version }}
+      run: |
+        set -euo pipefail
+        if [ ! -f ".dokion/playbook.json" ]; then
+          echo "::error::No active Playbook found at .dokion/playbook.json"
+          exit 1
+        fi
+        if [ "$DOKION_VERSION_INPUT" = "local" ]; then
+          bun run "$GITHUB_ACTION_PATH/src/cli.ts" validate
+        else
+          dokion validate
+        fi
+
+    - name: Run Dokion
       id: dokion-run
       shell: bash
       working-directory: ${{ inputs.working-directory }}
+      env:
+        DOKION_VERSION_INPUT: ${{ inputs.dokion-version }}
+        FAIL_ON_FINDINGS_INPUT: ${{ inputs.fail-on-findings }}
       run: |
-        RUN_ARGS=""
-        if [ -f "${{ inputs.playbook }}" ]; then
-          RUN_ARGS="--playbook ${{ inputs.playbook }}"
-        fi
-
         set +e
-        bunx dokion run $RUN_ARGS
+        if [ "$DOKION_VERSION_INPUT" = "local" ]; then
+          bun run "$GITHUB_ACTION_PATH/src/cli.ts" run
+        else
+          dokion run
+        fi
         EXIT_CODE=$?
         set -e
 
-        echo "exit-code=$EXIT_CODE" >> $GITHUB_OUTPUT
-        echo "report-path=HARDENING.md" >> $GITHUB_OUTPUT
-
-        if [ "$EXIT_CODE" -eq 0 ]; then
-          echo "status=SUCCEEDED" >> $GITHUB_OUTPUT
-          echo "failed=false" >> $GITHUB_OUTPUT
+        echo "exit-code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
+        if [ -f "HARDENING.md" ]; then
+          echo "report-path=$PWD/HARDENING.md" >> "$GITHUB_OUTPUT"
         else
-          echo "status=FAILED" >> $GITHUB_OUTPUT
-          if [ "${{ inputs.fail-on-findings }}" = "true" ]; then
-            echo "failed=true" >> $GITHUB_OUTPUT
+          echo "report-path=" >> "$GITHUB_OUTPUT"
+        fi
+        if [ "$EXIT_CODE" -eq 0 ]; then
+          echo "status=SUCCEEDED" >> "$GITHUB_OUTPUT"
+          echo "failed=false" >> "$GITHUB_OUTPUT"
+        else
+          echo "status=FAILED" >> "$GITHUB_OUTPUT"
+          if [ "$FAIL_ON_FINDINGS_INPUT" = "true" ]; then
+            echo "failed=true" >> "$GITHUB_OUTPUT"
           else
-            echo "failed=false" >> $GITHUB_OUTPUT
+            echo "failed=false" >> "$GITHUB_OUTPUT"
           fi
         fi
 
-    - name: Generate Findings & Job Summary
+    - name: Publish recorded status
       if: always()
       shell: bash
       working-directory: ${{ inputs.working-directory }}
+      env:
+        DOKION_VERSION_INPUT: ${{ inputs.dokion-version }}
+        CREATE_SUMMARY_INPUT: ${{ inputs.create-summary }}
       run: |
-        echo "::group::Dokion Status"
-        bunx dokion status || true
-        echo "::endgroup::"
+        if [ "$DOKION_VERSION_INPUT" = "local" ]; then
+          bun run "$GITHUB_ACTION_PATH/src/cli.ts" status || true
+          bun run "$GITHUB_ACTION_PATH/src/cli.ts" findings || true
+        else
+          dokion status || true
+          dokion findings || true
+        fi
 
-        echo "::group::Dokion Findings"
-        bunx dokion findings || true
-        echo "::endgroup::"
-
-        if [ "${{ inputs.create-summary }}" = "true" ] && [ -f "HARDENING.md" ] && [ -n "$GITHUB_STEP_SUMMARY" ]; then
-          echo "### 🛡️ Dokion Hardening Report" >> "$GITHUB_STEP_SUMMARY"
+        if [ "$CREATE_SUMMARY_INPUT" = "true" ] && [ -f "HARDENING.md" ] && [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+          echo "### Dokion Hardening Report" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           cat HARDENING.md >> "$GITHUB_STEP_SUMMARY"
         fi
 
-    - name: Enforce Exit Status
+    - name: Enforce exit status
       shell: bash
       working-directory: ${{ inputs.working-directory }}
+      env:
+        DOKION_FAILED: ${{ steps.dokion-run.outputs.failed }}
       run: |
-        if [ "${{ steps.dokion-run.outputs.failed }}" = "true" ]; then
-          echo "::error::Dokion step failed. Check job summary and logs for details."
+        if [ "$DOKION_FAILED" = "true" ]; then
+          echo "::error::Dokion execution failed. Review the recorded status and evidence"
           exit 1
         fi
