@@ -82,13 +82,22 @@ Python is used by repository maintainers for schema conformance checks. It is no
 
 ## Current quickstart
 
-Initialize Dokion-owned state and the active Playbook path:
+Initialize Dokion-owned state:
 
 ```bash
 dokion init
 ```
 
-Review `.dokion/playbook.json` before execution. The file is authority, not a generated recommendation
+`dokion init` creates Dokion-owned state and `HARDENING.md`. It does not create or activate `.dokion/playbook.json`
+
+Choose and review a Playbook yourself, then copy the exact approved file to the sole execution-authority path:
+
+```bash
+mkdir -p .dokion
+cp /path/to/reviewed-playbook.json .dokion/playbook.json
+```
+
+The source path is intentionally user-controlled. Review the Playbook's capabilities, commands, permissions, approvals, and verification gates before copying it
 
 Inspect the project and local prerequisites:
 
