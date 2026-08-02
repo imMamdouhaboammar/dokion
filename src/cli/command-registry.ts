@@ -20,7 +20,7 @@ export {
 
 const HUB_PURPOSE =
   "Federated Playbook Registry is unavailable while the replacement protocol is implemented under #47.";
-const ADOPTION_PLANNED_IDS = new Set(["try", "accept", "trace"]);
+const ADOPTION_PLANNED_IDS = new Set(["autoresearch", "try", "accept", "trace"]);
 
 const REGISTRY_PACKAGE_COMMAND: CliCommandDescriptor = {
   id: "registry",
