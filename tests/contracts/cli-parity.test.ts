@@ -15,13 +15,13 @@ import { parseCliInvocation } from "../../src/cli/parser.ts";
 
 const root = process.cwd();
 const EXPECTED_IMPLEMENTED_IDS = [
-  "approve", "audit", "auto-runner", "autopilot", "autoresearch", "compare",
-  "configure", "create", "doctor", "findings", "goal", "goals-list", "hooks",
-  "init", "inspect", "loop", "loops-list", "memory", "plan", "playbooks",
+  "approve", "audit", "auto-runner", "autopilot", "compare", "configure",
+  "create", "doctor", "findings", "goal", "goals-list", "hooks", "init",
+  "inspect", "loop", "loops-list", "memory", "plan", "playbooks",
   "plugins-list", "registry", "reject", "report", "reset-state", "resume", "run",
   "skills-list", "skip", "status", "step", "tools-list", "validate", "verify"
 ] as const;
-const EXPECTED_PLANNED_IDS = ["accept", "hub", "trace", "try"] as const;
+const EXPECTED_PLANNED_IDS = ["accept", "autoresearch", "hub", "trace", "try"] as const;
 
 interface ManifestCommand {
   command: string;
