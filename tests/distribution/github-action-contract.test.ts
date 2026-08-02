@@ -2,31 +2,60 @@ import { describe, expect, test } from "bun:test";
 
 const root = process.cwd();
 
+function indentationOf(line: string): number {
+  return line.length - line.trimStart().length;
+}
+
 function compositeRunSource(source: string): string {
-  const blocks: string[] = [];
+  const commands: string[] = [];
   const lines = source.split(/\r?\n/);
-  let runIndent: number | null = null;
 
-  for (const line of lines) {
-    const start = line.match(/^(\s*)run:\s*\|\s*$/);
-    if (start) {
-      runIndent = start[1]!.length;
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index]!;
+    const match = line.match(/^(\s*)run:\s*(.*?)\s*$/);
+    if (!match) continue;
+
+    const keyIndent = match[1]!.length;
+    const value = match[2]!;
+    const blockScalar = value.match(/^([|>][+-]?)(?:\s+#.*)?$/);
+
+    if (!blockScalar) {
+      if (value.length > 0) commands.push(value);
       continue;
     }
 
-    if (runIndent === null) continue;
-    const indentation = line.length - line.trimStart().length;
-    if (line.trim().length > 0 && indentation <= runIndent) {
-      runIndent = null;
-      continue;
+    const block: string[] = [];
+    for (index += 1; index < lines.length; index += 1) {
+      const blockLine = lines[index]!;
+      if (blockLine.trim().length > 0 && indentationOf(blockLine) <= keyIndent) {
+        index -= 1;
+        break;
+      }
+      block.push(blockLine);
     }
-    blocks.push(line);
+    commands.push(block.join("\n"));
   }
 
-  return blocks.join("\n");
+  return commands.join("\n");
 }
 
 describe("official GitHub Action contract", () => {
+  test("extracts every valid YAML run scalar form", () => {
+    const fixtures = [
+      'steps:\n  - run: echo "${{ inputs.inline }}"',
+      'steps:\n  - run: |\n      echo "${{ inputs.literal }}"',
+      'steps:\n  - run: |-\n      echo "${{ inputs.literal-strip }}"',
+      'steps:\n  - run: |+\n      echo "${{ inputs.literal-keep }}"',
+      'steps:\n  - run: >\n      echo "${{ inputs.folded }}"',
+      'steps:\n  - run: >-\n      echo "${{ inputs.folded-strip }}"',
+      'steps:\n  - run: >+\n      echo "${{ inputs.folded-keep }}"'
+    ];
+
+    for (const fixture of fixtures) {
+      expect(compositeRunSource(fixture)).toContain("${{ inputs.");
+    }
+  });
+
   test("invokes only supported CLI syntax through the installed binary", async () => {
     const source = await Bun.file(`${root}/action.yml`).text();
 
