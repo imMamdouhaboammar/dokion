@@ -12,7 +12,7 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   verify:
@@ -23,92 +23,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Apply bounded Registry path hardening
-        if: github.ref == 'refs/heads/feat/registry-pull-immutable-cache' && github.actor != 'github-actions[bot]'
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-
-          def replace_once(path: str, old: str, new: str) -> None:
-              file = Path(path)
-              text = file.read_text()
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f"{path}: expected one match, found {count}")
-              file.write_text(text.replace(old, new, 1))
-
-          replace_once(
-              "src/registry/artifact-fetcher.ts",
-              'import { DokionError, type DokionErrorCode } from "../core/errors.ts";\nimport {',
-              'import { DokionError, type DokionErrorCode } from "../core/errors.ts";\nimport { assertSafeRegularFilePath } from "./filesystem-safety.ts";\nimport {'
-          )
-          replace_once(
-              "src/registry/artifact-fetcher.ts",
-              '  const expectedSize = positiveExpectedSize(options.expectedSize);\n  let handle;',
-              '  const expectedSize = positiveExpectedSize(options.expectedSize);\n  await assertSafeRegularFilePath(options.path);\n  let handle;'
-          )
-
-          replace_once(
-              "src/registry/artifact-cache.ts",
-              'import { chmod, link, lstat, mkdir, open, unlink } from "node:fs/promises";',
-              'import { chmod, link, lstat, open, unlink } from "node:fs/promises";'
-          )
-          replace_once(
-              "src/registry/artifact-cache.ts",
-              'import { readVerifiedLocalBytes } from "./artifact-fetcher.ts";\nimport { REGISTRY_PACKAGE_LIMITS }',
-              'import { readVerifiedLocalBytes } from "./artifact-fetcher.ts";\nimport { ensureSafeDirectoryPath } from "./filesystem-safety.ts";\nimport { REGISTRY_PACKAGE_LIMITS }'
-          )
-          replace_once(
-              "src/registry/artifact-cache.ts",
-              '    await cleanupStaleRegistryArtifactTemps(options.cacheRoot);\n    await mkdir(temporaryDirectory, { recursive: true });\n    await mkdir(directory, { recursive: true });',
-              '    await cleanupStaleRegistryArtifactTemps(options.cacheRoot);\n    await ensureSafeDirectoryPath(temporaryDirectory);\n    await ensureSafeDirectoryPath(directory);'
-          )
-          replace_once(
-              "src/registry/artifact-cache.ts",
-              '''        if ((error as NodeJS.ErrnoException).code === "EEXIST") {
-          await unlinkIfPresent(evidencePath);
-          evidencePublished = false;
-          await unlinkIfPresent(temporaryArtifactPath);
-          return verifyExisting(options, artifactPath, evidencePath);
-        }''',
-              '''        if ((error as NodeJS.ErrnoException).code === "EEXIST") {
-          await unlinkIfPresent(temporaryArtifactPath);
-          return verifyExisting(options, artifactPath, evidencePath);
-        }'''
-          )
-
-          replace_once(
-              "src/registry/source-client.ts",
-              '["-c", "credential.helper=", "fetch", "--quiet", "--depth=1", "--filter=blob:none", source.url, source.immutable_revision],',
-              '''[
-          "-c", "credential.helper=",
-          "-c", "http.followRedirects=false",
-          "-c", "protocol.allow=never",
-          "-c", "protocol.https.allow=always",
-          "-c", "protocol.file.allow=never",
-          "fetch", "--quiet", "--depth=1", "--filter=blob:none", source.url, source.immutable_revision
-        ],'''
-          )
-
-          test = Path("tests/registry/filesystem-safety.test.ts")
-          text = test.read_text()
-          text = text.replace(
-              'import { DokionError } from "../../src/core/errors.ts";',
-              'import { DokionError, type DokionErrorCode } from "../../src/core/errors.ts";'
-          )
-          text = text.replace('code: string', 'code: DokionErrorCode')
-          test.write_text(text)
-          PY
-          git fetch origin main --depth=1
-          git show FETCH_HEAD:.github/workflows/ci.yml > .github/workflows/ci.yml
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/registry/artifact-fetcher.ts src/registry/artifact-cache.ts src/registry/source-client.ts tests/registry/filesystem-safety.test.ts .github/workflows/ci.yml
-          git commit -m "fix(registry): harden source and cache path boundaries"
-          git push origin HEAD:feat/registry-pull-immutable-cache
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
@@ -164,6 +78,9 @@ jobs:
 
       - name: Build
         run: bun run build
+
+      - name: Validate release truth
+        run: bun run validate:release-truth --output release-truth-report.json
 
       - name: Build and smoke-test release binaries
         shell: bash
@@ -241,6 +158,7 @@ jobs:
             typecheck.log
             distribution.log
             package-smoke.log
+            release-truth-report.json
             gemini-extension.log
             bun.lock
             schemas/dokion-playbook.schema.json

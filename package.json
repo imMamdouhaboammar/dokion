@@ -1,7 +1,7 @@
 {
   "name": "dokion",
   "version": "0.3.0",
-  "description": "User-directed cross-agent software hardening runtime",
+  "description": "Execution control for user-authored engineering Playbooks across coding agents and local tools",
   "type": "module",
   "private": false,
   "license": "MIT",
@@ -41,7 +41,12 @@
     "hooks",
     "scripts/claude-playbook-guard.ts",
     "scripts/validate-distribution.ts",
+    "scripts/validate-release-truth.ts",
     "scripts/smoke-test-package.ts",
+    "generated/product-surface.json",
+    "docs/getting-started/ONBOARDING.md",
+    "docs/launch/MARKETING_STRATEGY.md",
+    "docs/launch/public-beta-checklist.md",
     "dokion.json",
     "action.yml",
     "SPEC.md",
@@ -60,13 +65,14 @@
   "scripts": {
     "test": "bun run scripts/run-runtime-tests.ts",
     "generate:product-surface": "bun run scripts/generate-product-surface.ts",
+    "validate:release-truth": "bun run scripts/validate-release-truth.ts",
     "typecheck": "tsc --noEmit",
     "build": "bun build src/cli.ts --compile --outfile dist/dokion",
     "validate:contracts": "python3 schemas/conformance_test.py && bun run src/cli.ts validate --catalog-only",
     "validate:registry-protocol": "python3 schemas/registry/conformance_test.py",
     "validate:distribution": "bun run scripts/validate-distribution.ts",
     "smoke:package": "bun run scripts/smoke-test-package.ts",
-    "prepack": "bun run validate:distribution && bun run test && bun run typecheck"
+    "prepack": "bun run validate:release-truth && bun run validate:distribution && bun run test && bun run typecheck"
   },
   "dependencies": {
     "ajv": "8.20.0",
