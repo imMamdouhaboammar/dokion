@@ -29,7 +29,7 @@ jobs:
           dokion-version: 'local'
           fail-on-findings: 'false'
 
-      - name: Assert negative-control outcome
+      - name: Assert blocked-run negative control
         shell: bash
         env:
           DOKION_STATUS: ${{ steps.dokion.outputs.status }}
@@ -38,3 +38,20 @@ jobs:
           set -euo pipefail
           test "$DOKION_STATUS" = "FAILED"
           test "$DOKION_EXIT_CODE" -ne 0
+
+      - name: Reject malicious version input
+        id: malicious-version
+        continue-on-error: true
+        uses: ./
+        with:
+          dokion-version: '0.3.0; touch /tmp/dokion-action-injected'
+          fail-on-findings: 'false'
+
+      - name: Assert version input cannot execute shell syntax
+        shell: bash
+        env:
+          MALICIOUS_OUTCOME: ${{ steps.malicious-version.outcome }}
+        run: |
+          set -euo pipefail
+          test "$MALICIOUS_OUTCOME" = "failure"
+          test ! -e /tmp/dokion-action-injected
