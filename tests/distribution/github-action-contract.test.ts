@@ -74,6 +74,15 @@ describe("official GitHub Action contract", () => {
     expect(source).not.toContain("default: 'latest'");
   });
 
+  test("installs local checkout dependencies from the pinned lockfile", async () => {
+    const source = await Bun.file(`${root}/action.yml`).text();
+
+    expect(source).toContain('test -f "$GITHUB_ACTION_PATH/bun.lock"');
+    expect(source).toContain('cd "$GITHUB_ACTION_PATH"');
+    expect(source).toContain("bun install --frozen-lockfile");
+    expect(source).not.toContain("bun install\n");
+  });
+
   test("passes caller inputs through environment variables and validates allowlists", async () => {
     const source = await Bun.file(`${root}/action.yml`).text();
     const shellSource = compositeRunSource(source);
