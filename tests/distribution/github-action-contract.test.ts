@@ -20,4 +20,14 @@ describe("official GitHub Action contract", () => {
     expect(source).toContain(".dokion/playbook.json");
     expect(source).not.toContain("default: 'latest'");
   });
+
+  test("makes the Action workflow assert the recorded run outcome", async () => {
+    const source = await Bun.file(`${root}/.github/workflows/test-action.yml`).text();
+
+    expect(source).toContain("id: dokion");
+    expect(source).toContain("steps.dokion.outputs.status");
+    expect(source).toContain("steps.dokion.outputs['exit-code']");
+    expect(source).toContain('test "$DOKION_STATUS" = "FAILED"');
+    expect(source).toContain('test "$DOKION_EXIT_CODE" -ne 0');
+  });
 });
