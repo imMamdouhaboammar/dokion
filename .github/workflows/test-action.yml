@@ -13,9 +13,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Prepare active Playbook fixture
+        shell: bash
+        run: |
+          mkdir -p .dokion
+          cp playbooks/architecture-mapping.playbook.json .dokion/playbook.json
+
       - name: Test Local Dokion Action
         uses: ./
         with:
           dokion-version: 'local'
-          playbook: 'playbooks/architecture-mapping.playbook.json'
           fail-on-findings: 'false'
