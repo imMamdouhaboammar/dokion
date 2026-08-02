@@ -54,8 +54,8 @@ jobs:
       - name: Validate contracts
         run: bun run validate:contracts
 
-      - name: Run tests
-        run: bun test
+      - name: Run runtime tests
+        run: bun run test
 
       - name: Typecheck
         run: bun run typecheck

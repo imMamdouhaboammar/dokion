@@ -58,7 +58,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
-    "test": "bun test",
+    "test": "bun run scripts/run-runtime-tests.ts",
     "generate:product-surface": "bun run scripts/generate-product-surface.ts",
     "typecheck": "tsc --noEmit",
     "build": "bun build src/cli.ts --compile --outfile dist/dokion",
@@ -66,7 +66,7 @@
     "validate:registry-protocol": "python3 schemas/registry/conformance_test.py",
     "validate:distribution": "bun run scripts/validate-distribution.ts",
     "smoke:package": "bun run scripts/smoke-test-package.ts",
-    "prepack": "bun run validate:distribution && bun test && bun run typecheck"
+    "prepack": "bun run validate:distribution && bun run test && bun run typecheck"
   },
   "dependencies": {
     "ajv": "8.20.0",

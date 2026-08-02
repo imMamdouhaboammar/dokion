@@ -48,7 +48,7 @@ Never push a release tag from a commit that has not passed the normal branch CI.
 The tag workflow repeats these checks from the tagged commit:
 
 ```bash
-bun test
+bun run test
 bun run typecheck
 bun run validate:contracts
 bun run build

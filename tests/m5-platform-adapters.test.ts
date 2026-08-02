@@ -112,7 +112,7 @@ describe("M5 canonical skill and packaging adapters", () => {
     const agents = await text("AGENTS.md");
     expect(agents).toContain("skills/dokion-hardening/SKILL.md");
     expect(agents).toContain(".dokion/playbook.json is the only execution authority");
-    expect(agents).toContain("bun test");
+    expect(agents).toContain("bun run test");
   });
 
   test("ships a Gemini CLI extension with context and namespaced commands", async () => {

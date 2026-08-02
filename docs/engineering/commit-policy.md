@@ -109,10 +109,21 @@ Run tests for neighboring contracts and modules that consume the changed interfa
 Every final head must pass:
 
 ```bash
-bun test
+bun run test
 bun run typecheck
 bun run validate:contracts
 bun run build
+```
+
+Frontend changes also require:
+
+```bash
+cd frontend
+bun install --frozen-lockfile
+bun run test
+bun run lint
+bun run build
+cd ..
 ```
 
 Distribution, adapter, package, binary, or release changes also require:

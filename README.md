@@ -227,11 +227,18 @@ Do not describe the Action as release-proven until the corresponding workflow an
 ```bash
 bun install --frozen-lockfile
 bun run validate:contracts
-bun test
+bun run test
 bun run typecheck
 bun run build
 bun run validate:distribution
 bun run smoke:package
+
+cd frontend
+bun install --frozen-lockfile
+bun run test
+bun run lint
+bun run build
+cd ..
 ```
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md), [`SECURITY.md`](SECURITY.md), and the accepted architecture decisions under [`docs/adr/`](docs/adr/)
