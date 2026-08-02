@@ -2,6 +2,9 @@ import { CLI_COMMAND_REGISTRY } from "../cli/command-registry.ts";
 import { DOKION_VERSION } from "../runtime/package-metadata.ts";
 import type { ProductSurface, ProductSurfaceEntry } from "./types.ts";
 
+/**
+ * Returns entries in a deterministic order and rejects duplicate public IDs
+ */
 function sortedUnique(entries: ProductSurfaceEntry[]): ProductSurfaceEntry[] {
   const ids = new Set<string>();
   for (const entry of entries) {
@@ -73,6 +76,10 @@ const REGISTRY: ProductSurfaceEntry[] = [
   }
 ];
 
+/**
+ * Builds the public product-status contract from canonical runtime registries
+ * and explicit repository evidence rather than marketing copy
+ */
 export function buildProductSurface(): ProductSurface {
   return {
     schema_version: "dokion.product-surface.v1",
@@ -88,6 +95,9 @@ export function buildProductSurface(): ProductSurface {
   };
 }
 
+/**
+ * Serializes the product surface as stable, newline-terminated JSON
+ */
 export function serializeProductSurface(surface: ProductSurface): string {
   return `${JSON.stringify(surface, null, 2)}\n`;
 }
