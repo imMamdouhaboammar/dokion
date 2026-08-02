@@ -23,6 +23,17 @@ bun run validate:contracts
 bun run build
 ```
 
+For frontend changes also run:
+
+```bash
+cd frontend
+bun install --frozen-lockfile
+bun run test
+bun run lint
+bun run build
+cd ..
+```
+
 Use tests first for runtime behavior changes. Preserve immutable playbook checks, append-only evidence, exact repair rollback, and explicit approval records.
 
 ## Repository boundaries
