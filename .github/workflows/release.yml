@@ -37,7 +37,7 @@ jobs:
 
       - name: Run complete verification
         run: |
-          bun test
+          bun run test
           bun run typecheck
           bun run validate:contracts
           bun run build
