@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 
 import { createHash } from "node:crypto";
-import { mkdir } from "node:fs/promises";
-import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { lstat, mkdir, realpath } from "node:fs/promises";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
 import {
   implementedCliCommands,
@@ -487,18 +487,63 @@ function outputPath(argv: readonly string[]): string | undefined {
   return value;
 }
 
+function insideRoot(root: string, candidate: string): boolean {
+  const path = relative(root, candidate);
+  return path === "" || (path !== ".." && !path.startsWith(`..${sep}`) && !isAbsolute(path));
+}
+
+async function metadata(path: string): Promise<Awaited<ReturnType<typeof lstat>> | null> {
+  try {
+    return await lstat(path);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+async function safeReportPath(root: string, requested: string): Promise<string> {
+  if (!requested || isAbsolute(requested) || requested.includes("\u0000")) {
+    throw new Error("Release truth report output must be a relative path inside the repository root");
+  }
+
+  const repositoryRoot = await realpath(resolve(root));
+  const absolutePath = resolve(repositoryRoot, requested);
+  if (!insideRoot(repositoryRoot, absolutePath) || absolutePath === repositoryRoot) {
+    throw new Error("Release truth report output must remain inside the repository root");
+  }
+
+  const parentPath = dirname(absolutePath);
+  const relativeParent = relative(repositoryRoot, parentPath);
+  let current = repositoryRoot;
+  for (const segment of relativeParent === "" ? [] : relativeParent.split(sep)) {
+    current = join(current, segment);
+    let currentMetadata = await metadata(current);
+    if (!currentMetadata) {
+      await mkdir(current, { mode: 0o700 });
+      currentMetadata = await metadata(current);
+    }
+    if (!currentMetadata || currentMetadata.isSymbolicLink() || !currentMetadata.isDirectory()) {
+      throw new Error("Release truth report output path may contain only real directories");
+    }
+    const canonical = await realpath(current);
+    if (!insideRoot(repositoryRoot, canonical)) {
+      throw new Error("Release truth report output path may not escape through symbolic links");
+    }
+  }
+
+  const existing = await metadata(absolutePath);
+  if (existing && (existing.isSymbolicLink() || !existing.isFile())) {
+    throw new Error("Release truth report output must be a regular file path without symbolic links");
+  }
+  return absolutePath;
+}
+
 export async function writeReleaseTruthReport(
   root: string,
   path: string,
   report: ReleaseTruthReport
 ): Promise<void> {
-  const repositoryRoot = resolve(root);
-  const absolutePath = resolve(repositoryRoot, path);
-  const repositoryPath = relative(repositoryRoot, absolutePath);
-  if (!repositoryPath || repositoryPath === ".." || repositoryPath.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`) || isAbsolute(repositoryPath)) {
-    throw new Error("Release truth report output must remain inside the repository root");
-  }
-  await mkdir(dirname(absolutePath), { recursive: true });
+  const absolutePath = await safeReportPath(root, path);
   await writeTextAtomic(absolutePath, `${JSON.stringify(report, null, 2)}\n`, "json");
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -134,6 +134,24 @@ describe("release truth gate", () => {
       ).rejects.toThrow("inside the repository root");
     } finally {
       await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  test("refuses report output through a directory symlink", async () => {
+    const root = await mkdtemp(join(tmpdir(), "dokion-release-truth-root-"));
+    const outside = await mkdtemp(join(tmpdir(), "dokion-release-truth-outside-"));
+    try {
+      await symlink(outside, join(root, "linked-output"), "dir");
+      const report = evaluateReleaseTruth(await loadReleaseTruthSources(repositoryRoot));
+      await expect(
+        writeReleaseTruthReport(root, "linked-output/report.json", report)
+      ).rejects.toThrow("real directories");
+      expect(await Bun.file(join(outside, "report.json")).exists()).toBe(false);
+    } finally {
+      await Promise.all([
+        rm(root, { recursive: true, force: true }),
+        rm(outside, { recursive: true, force: true })
+      ]);
     }
   });
 
