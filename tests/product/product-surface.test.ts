@@ -11,6 +11,8 @@ import {
 } from "../../src/cli/command-registry.ts";
 import { buildProductSurface, serializeProductSurface } from "../../src/product/product-surface.ts";
 
+const repositoryRoot = process.cwd();
+
 describe("canonical product surface", () => {
   test("derives command status and evidence from the canonical registry", () => {
     const surface = buildProductSurface();
@@ -25,6 +27,23 @@ describe("canonical product surface", () => {
       expect(descriptor).toBeDefined();
       expect(command.status).toBe(descriptor!.status);
       expect(command.evidence).toContain("src/cli/command-registry.ts");
+    }
+  });
+
+  test("requires every product claim to reference existing repository evidence", async () => {
+    const surface = buildProductSurface();
+    const entries = [
+      ...surface.commands,
+      ...surface.integrations,
+      ...surface.packs,
+      ...surface.registry
+    ];
+
+    for (const entry of entries) {
+      expect(entry.evidence.length).toBeGreaterThan(0);
+      for (const evidence of entry.evidence) {
+        expect(await Bun.file(join(repositoryRoot, evidence)).exists()).toBe(true);
+      }
     }
   });
 
