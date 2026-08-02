@@ -8,7 +8,6 @@ import { builtinCatalog } from "./catalog/builtin-catalog.ts";
 import { renderCliHelp } from "./cli/command-registry.ts";
 import { handleAuditCommand } from "./cli/handlers/audit.ts";
 import { handleAutoRunnerCommand } from "./cli/handlers/auto-runner.ts";
-import { handleAutoresearchCommand } from "./cli/handlers/autoresearch.ts";
 import { handleAutopilotCommand } from "./cli/handlers/autopilot.ts";
 import { handleCompareCommand } from "./cli/handlers/compare.ts";
 import { handleConfigureCommand } from "./cli/handlers/configure.ts";
@@ -316,12 +315,6 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
       if (invocation.command === "auto-runner") {
         const runnerReport = await handleAutoRunnerCommand(root, invocation);
         if (!runnerReport.completed) process.exitCode = 1;
-      }
-      return;
-    }
-    case "autoresearch": {
-      if (invocation.command === "autoresearch") {
-        await handleAutoresearchCommand(root, invocation);
       }
       return;
     }

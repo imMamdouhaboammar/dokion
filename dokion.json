@@ -347,11 +347,6 @@
         "command": "dokion auto-runner",
         "purpose": "Run continuous autonomous playbook execution loop to 100% completion with circuit breaker and self-healing.",
         "approval": "FROM_PLAYBOOK"
-      },
-      {
-        "command": "dokion autoresearch",
-        "purpose": "Run autonomous goal-directed iteration loop with Modify-Verify-Guard and orchestrator routing.",
-        "approval": "FROM_PLAYBOOK"
       }
     ]
   },

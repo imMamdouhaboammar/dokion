@@ -39,7 +39,7 @@
     },
     {
       "id": "autoresearch",
-      "status": "IMPLEMENTED",
+      "status": "PLANNED",
       "evidence": [
         "src/cli/command-registry.ts"
       ]

@@ -871,7 +871,6 @@ adding one would break the model.
 | `dokion verify` | Re-run verification against the current commit. |
 | `dokion autopilot` | Run deterministic bounded autopilot execution. |
 | `dokion auto-runner` | Run continuous autonomous playbook execution loop to 100% completion with circuit breaker and self-healing. |
-| `dokion autoresearch` | Run autonomous goal-directed iteration loop with Modify-Verify-Guard and orchestrator routing. |
 
 `dokion resume` is the command that makes [principle 2](#the-principles) real: it reads
 `.dokion/state.json` and `HARDENING.md`, and needs nothing from the previous session's
