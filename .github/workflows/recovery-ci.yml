@@ -38,16 +38,18 @@ jobs:
       - name: Install Bun dependencies
         run: bun install --frozen-lockfile
 
-      - name: Verify deterministic product surface
+      - name: Verify committed product surface
         shell: bash
         run: |
           set -euo pipefail
+          test -s generated/product-surface.json
           bun run generate:product-surface
+          git diff --exit-code -- generated/product-surface.json
           first="$(sha256sum generated/product-surface.json | cut -d' ' -f1)"
           bun run generate:product-surface
           second="$(sha256sum generated/product-surface.json | cut -d' ' -f1)"
           test "$first" = "$second"
-          test -s generated/product-surface.json
+          git diff --exit-code -- generated/product-surface.json
 
       - name: Validate contracts
         run: bun run validate:contracts
