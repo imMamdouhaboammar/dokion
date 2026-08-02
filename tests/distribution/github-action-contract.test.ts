@@ -21,6 +21,15 @@ describe("official GitHub Action contract", () => {
     expect(source).not.toContain("default: 'latest'");
   });
 
+  test("publishes a report path only when the report exists", async () => {
+    const source = await Bun.file(`${root}/action.yml`).text();
+
+    expect(source).toContain('if [ -f "HARDENING.md" ]; then');
+    expect(source).toContain('echo "report-path=$PWD/HARDENING.md" >> "$GITHUB_OUTPUT"');
+    expect(source).toContain('echo "report-path=" >> "$GITHUB_OUTPUT"');
+    expect(source).not.toContain('echo "report-path=HARDENING.md" >> "$GITHUB_OUTPUT"');
+  });
+
   test("makes the Action workflow assert the recorded run outcome", async () => {
     const source = await Bun.file(`${root}/.github/workflows/test-action.yml`).text();
 
