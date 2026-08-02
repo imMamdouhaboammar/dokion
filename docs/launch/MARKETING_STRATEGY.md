@@ -21,13 +21,14 @@ Dokion is an execution control layer for user-authored engineering Playbooks
 
 It preserves declared order, permissions, approvals, state, evidence, verification boundaries, and repair decisions without selecting capabilities for the user
 
+Current implemented behavior includes independent re-verification of supported Playbook-declared step verification commands and release gates through `dokion verify`
+
 ## Claims that require release evidence
 
 Do not publish any of the following until the exact claim is present in the generated product surface and proven by maintained acceptance fixtures:
 
 - Universal subagent isolation
 - General parallel-agent coordination
-- Independent test and build re-verification through `dokion verify`
 - Reversal of every command or external side effect
 - Secure Release guided first run
 - Exact proposal acceptance and activation

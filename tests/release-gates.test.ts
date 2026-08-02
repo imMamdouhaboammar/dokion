@@ -141,6 +141,30 @@ describe("release gate evaluation", () => {
     expect(results.find((gate) => gate.id === "unsupported")?.evaluated).toContain("unsupported condition");
   });
 
+  test("writes fresh evidence for condition gates during independent verification", async () => {
+    const projectRoot = await root();
+    const configured = playbook();
+    configured.release_gates = configured.release_gates?.slice(0, 1);
+    const results = await evaluateReleaseGates({
+      root: projectRoot,
+      playbook: configured,
+      state: state(),
+      findings: [],
+      forceRerun: true,
+      evidenceAttempt: "verify-condition-evidence",
+      evidenceCommitSha: "current-commit"
+    });
+
+    const gate = results[0]!;
+    expect(gate.status).toBe("PASS");
+    expect(gate.artifact).toBe(
+      ".dokion/evidence/run-gates/verify/verify-condition-evidence/release-gates/no-critical.json"
+    );
+    const artifact = Bun.file(join(projectRoot, gate.artifact!));
+    expect(await artifact.exists()).toBe(true);
+    expect((await artifact.json() as { commit_sha: string }).commit_sha).toBe("current-commit");
+  });
+
   test("fails blocking conditions for active critical findings, incomplete required steps, taint, and uncovered blocking lanes", async () => {
     const projectRoot = await root();
     const current = state();

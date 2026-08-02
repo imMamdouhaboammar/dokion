@@ -264,8 +264,12 @@
       },
       {
         "command": "dokion verify",
-        "purpose": "Run configured verification gates without applying fixes.",
-        "mode": "VERIFY_ONLY"
+        "purpose": "Re-run supported declared step verification commands and all release gates against the current repository identity without applying repairs.",
+        "mode": "VERIFY_ONLY",
+        "writes": [
+          "PLAYBOOK_DECLARED",
+          ".dokion/**"
+        ]
       },
       {
         "command": "dokion report",

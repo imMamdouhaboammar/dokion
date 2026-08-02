@@ -56,11 +56,13 @@ describe("public claim truth boundary", () => {
     }
   });
 
-  test("describes the current verify command as contract validation", async () => {
+  test("describes the current verify command as independent declared-gate execution", async () => {
     const readme = await Bun.file(join(root, "README.md")).text();
     expect(readme).toContain(
+      "`dokion verify` independently re-runs every supported declared `step.verification` command and every release gate against the current repository identity"
+    );
+    expect(readme).not.toContain(
       "`dokion verify` currently validates repository and Playbook contracts"
     );
-    expect(readme).not.toContain("Verify test/build proof (`dokion verify`)");
   });
 });

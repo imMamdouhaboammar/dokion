@@ -22,6 +22,7 @@ import { handlePlaybooksCommand } from "./cli/handlers/playbooks.ts";
 import { handleResetCommand } from "./cli/handlers/reset.ts";
 import { handleSkipCommand } from "./cli/handlers/skip.ts";
 import { handleStepCommand } from "./cli/handlers/step.ts";
+import { handleVerifyCommand } from "./cli/handlers/verify.ts";
 import { writeCliDiagnostic, writeCliResult } from "./cli/output.ts";
 import { parseCliInvocation, requestedCliOutputFormat } from "./cli/parser.ts";
 import { exitCodeForRunStatus } from "./cli/run-exit.ts";
@@ -266,9 +267,12 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
       process.exitCode = exitCodeForRunStatus(state.run.status);
       return;
     }
-    case "verify":
-      await withProjectRunLock("verify", async () => validate(false, invocation.format));
+    case "verify": {
+      const result = await withProjectRunLock("verify", async () => handleVerifyCommand(root));
+      print(result, invocation.format);
+      if (!result.passed) process.exitCode = 1;
       return;
+    }
     case "approve":
     case "reject":
       await decide(invocation);

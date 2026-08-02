@@ -82,7 +82,21 @@ Use bounded autopilot only when the active Playbook already contains the intende
 dokion autopilot
 ```
 
-## 8. Inspect the result
+## 8. Re-run declared verification gates
+
+```bash
+dokion verify
+```
+
+`dokion verify` runs only supported verification commands and release gates explicitly declared by the active Playbook
+
+It binds the result to the current repository identity, writes fresh evidence, updates persisted verification results, and exits nonzero when a required gate fails or no gate is declared
+
+It does not execute capability commands, apply repairs, install dependencies, or expand permissions
+
+Declared verification commands may still create build, test, cache, or report artifacts within the Playbook's approved write scope
+
+## 9. Inspect the result
 
 ```bash
 dokion status
@@ -94,7 +108,7 @@ dokion report
 
 ## Current limitations
 
-- `dokion verify` currently validates repository and Playbook contracts rather than independently re-running declared build and test gates
+- `dokion verify` cannot prove checks that the active Playbook does not explicitly declare
 - The Secure Release guided first run is planned, not implemented
 - The versioned Run Trace export is planned, not implemented
 - Registry pull verifies and caches packages but does not install or activate them

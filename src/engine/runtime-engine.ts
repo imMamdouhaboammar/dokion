@@ -1,7 +1,6 @@
 import { evaluateApplicability, detectPlatform } from "../applicability/evaluate-applicability.ts";
 import { isApproved, latestDecision } from "../approvals/approval-store.ts";
 import { DokionError } from "../core/errors.ts";
-import { writeCommandEvidence } from "../evidence/evidence-store.ts";
 import { compareRepositoryIdentities, captureRepositoryIdentity, type RepositoryIdentityDifference } from "../git/repository-identity.ts";
 import { enforceWorktreePolicy } from "../git/worktree-policy.ts";
 import { inspectProject } from "../inspect/project-inspector.ts";
@@ -11,8 +10,11 @@ import { writeHardeningReport } from "../report/render-hardening.ts";
 import { appendEvent } from "../state/event-log.ts";
 import { createRunId, StateStore } from "../state/state-store.ts";
 import type { DokionState, StageState, StepState, VerificationResult } from "../state/types.ts";
+import {
+  executeStepVerification,
+  stepVerificationEvidenceRoot
+} from "../verification/step-verification.ts";
 import { runAnalyzeCapability, runRemediationCapability, type CapabilityRunResult } from "./capability-runner.ts";
-import { runCommand } from "./command-runner.ts";
 import { assertSequentialExecution, assertStageDependencies, assertStepDependencies } from "./dependencies.ts";
 
 interface GitContext {
@@ -382,38 +384,30 @@ export class ExecutionEngine {
   }
 
   private async runVerificationOnly(stage: PlaybookStage, step: PlaybookStep, state: DokionState): Promise<CapabilityRunResult> {
-    const commands = step.verification ?? [];
-    if (commands.length === 0) {
-      return { status: "FAILED", reason: "No verification command is declared", findingIds: [], evidence: [], verificationResults: [] };
+    const verification = await executeStepVerification({
+      root: this.root,
+      stage,
+      step,
+      runId: state.run.id,
+      ...(state.baseline?.commit ? { commitSha: state.baseline.commit } : {}),
+      evidenceRoot: stepVerificationEvidenceRoot(".dokion/evidence", stage.id, step.id),
+      stopOnFailure: true
+    });
+    if (!verification.passed) {
+      return {
+        status: "FAILED",
+        reason: verification.reason ?? "Verification failed",
+        findingIds: [],
+        evidence: verification.evidence,
+        verificationResults: verification.verificationResults
+      };
     }
-    const evidence: string[] = [];
-    const verificationResults: VerificationResult[] = [];
-    for (const [index, command] of commands.entries()) {
-      if (!(step.permissions?.shell ?? []).includes(command)) {
-        return { status: "FAILED", reason: "Verification command is outside permissions.shell", findingIds: [], evidence, verificationResults };
-      }
-      const result = await runCommand(this.root, command, step.timeout_seconds ?? 300);
-      const artifact = await writeCommandEvidence(this.root, {
-        run_id: state.run.id,
-        stage_id: stage.id,
-        step_id: step.id,
-        command_index: index + 1,
-        command,
-        stdout: result.stdout,
-        stderr: result.stderr,
-        exit_code: result.exitCode,
-        started_at: result.startedAt,
-        ended_at: result.endedAt,
-        duration_ms: result.durationMs,
-        ...(state.baseline?.commit ? { commit_sha: state.baseline.commit } : {})
-      });
-      evidence.push(artifact);
-      verificationResults.push({ command, exit_code: result.exitCode, artifact, ran_at: result.endedAt });
-      if (result.exitCode !== 0) {
-        return { status: "FAILED", reason: `Verification command exited ${result.exitCode}`, findingIds: [], evidence, verificationResults };
-      }
-    }
-    return { status: "SUCCEEDED", findingIds: [], evidence, verificationResults };
+    return {
+      status: "SUCCEEDED",
+      findingIds: [],
+      evidence: verification.evidence,
+      verificationResults: verification.verificationResults
+    };
   }
 
   private async awaitApproval(

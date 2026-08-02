@@ -32,7 +32,7 @@ The replacement Registry is being built as a federated, content-addressed protoc
 
 The guided Secure Release Pack, exact proposal activation flow, and versioned Run Trace are planned under [Issue #54](https://github.com/imMamdouhaboammar/dokion/issues/54). They are not current release features
 
-`dokion verify` currently validates repository and Playbook contracts. It does not yet re-run the active Playbook's declared test and build gates as an independent verification operation
+`dokion verify` independently re-runs every supported declared `step.verification` command and every release gate against the current repository identity. It writes fresh bounded evidence and updates verification results in `.dokion/state.json` without executing capability commands or applying repairs
 
 ## What Dokion controls
 
@@ -124,6 +124,12 @@ Execute through the production engine:
 dokion run
 ```
 
+Re-run the active Playbook's declared verification commands and release gates without applying repairs:
+
+```bash
+dokion verify
+```
+
 Inspect recorded state and evidence:
 
 ```bash
@@ -140,13 +146,17 @@ dokion resume
 
 ## Verification and rollback scope
 
-Verification commands run as part of the declared execution path and repair transaction checks
+Verification commands run as part of the declared execution path and can be re-run independently with `dokion verify`
+
+Each independent verification attempt executes the active Playbook's supported declared `step.verification` commands in stage and step order, evaluates declared release gates, binds the result to the current repository identity, and stores fresh evidence under `.dokion/evidence/`
 
 A repair is accepted only when its declared command succeeds, its delta remains in scope, suppression and test-deletion checks pass, required regression evidence exists, and declared verification commands succeed
 
 Rollback applies to supported repair transactions with a captured pre-repair snapshot. Dokion does not claim that every command, every Playbook step, or every external side effect is automatically reversible
 
-The independent `dokion verify` correction remains part of Issue #54 and must not be used as proof of fresh build or test execution in the current release
+`dokion verify` does not infer missing gates, execute capability commands, apply repairs, install dependencies, or widen Playbook permissions
+
+Declared verification commands may create build, test, cache, or report artifacts allowed by the Playbook. Dokion records its own state and evidence but does not classify those declared command effects as repairs
 
 ## CLI status
 
@@ -177,6 +187,7 @@ Execute and decide
   dokion run
   dokion step
   dokion resume
+  dokion verify
   dokion approve
   dokion reject
   dokion skip
