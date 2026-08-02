@@ -12,21 +12,36 @@ bun add --global dokion@0.3.0
 
 Dokion currently requires Bun `1.3.14` or later
 
-## 2. Initialize the repository
+## 2. Initialize Dokion-owned state
 
 ```bash
 dokion init
 ```
 
-Initialization creates Dokion-owned state and the canonical active authority path
+Initialization creates Dokion-owned state directories and `HARDENING.md`. It does not create or activate `.dokion/playbook.json`
 
-```text
-.dokion/playbook.json
+## 3. Create or copy the active Playbook
+
+Choose and review a Playbook yourself, then copy the exact approved file to the sole execution-authority path
+
+```bash
+mkdir -p .dokion
+cp /path/to/reviewed-playbook.json .dokion/playbook.json
 ```
 
-Review this file before proceeding. Dokion does not select or activate a different Playbook automatically
+The source path above is intentionally user-controlled. Do not copy a Playbook that you have not reviewed for capabilities, commands, permissions, approvals, and verification gates
 
-## 3. Inspect prerequisites
+A source checkout can list its included reference Playbooks with:
+
+```bash
+dokion playbooks list
+```
+
+`playbooks import --from` currently expects a filesystem source path. Do not pass a built-in name such as `superpowers` unless a real directory with that name exists
+
+Dokion does not select or activate a different Playbook automatically
+
+## 4. Inspect prerequisites
 
 ```bash
 dokion inspect
@@ -35,23 +50,15 @@ dokion doctor
 
 These commands inspect the repository and report local capability availability without granting execution authority
 
-## 4. Validate the active Playbook
+## 5. Validate the active Playbook
 
 ```bash
 dokion validate
 ```
 
-Validation checks the Playbook, repository contracts, capability references, permissions, and dependencies
+Validation checks the active Playbook, repository contracts, capability references, permissions, and dependencies
 
-Reference Playbooks can be listed with:
-
-```bash
-dokion playbooks list
-```
-
-`playbooks import --from` currently expects a filesystem source path. Do not pass a built-in name such as `superpowers` unless a real directory with that name exists
-
-## 5. Preview declared execution
+## 6. Preview declared execution
 
 ```bash
 dokion plan
@@ -59,7 +66,7 @@ dokion plan
 
 The plan shows declared stages, step order, permissions, approvals, and gates. It does not execute commands
 
-## 6. Execute
+## 7. Execute
 
 ```bash
 dokion run
@@ -75,7 +82,7 @@ Use bounded autopilot only when the active Playbook already contains the intende
 dokion autopilot
 ```
 
-## 7. Inspect the result
+## 8. Inspect the result
 
 ```bash
 dokion status
