@@ -73,6 +73,11 @@ describe("canonical product surface", () => {
     expect(first.endsWith("\n")).toBe(true);
   });
 
+  test("keeps the committed snapshot byte-for-byte current", async () => {
+    const committed = await Bun.file(join(repositoryRoot, "generated", "product-surface.json")).text();
+    expect(committed).toBe(serializeProductSurface(buildProductSurface()));
+  });
+
   test("writes a snapshot from a clean root", async () => {
     const root = await mkdtemp(join(tmpdir(), "dokion-product-surface-"));
     try {
