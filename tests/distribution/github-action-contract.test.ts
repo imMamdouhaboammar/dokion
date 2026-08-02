@@ -2,40 +2,26 @@ import { describe, expect, test } from "bun:test";
 
 const root = process.cwd();
 
-function indentationOf(line: string): number {
-  return line.length - line.trimStart().length;
-}
-
 function compositeRunSource(source: string): string {
   const commands: string[] = [];
-  const lines = source.split(/\r?\n/);
+  const document = Bun.YAML.parse(source) as unknown;
 
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index]!;
-    const match = line.match(/^(\s*)(?:-\s+)?run:\s*(.*?)\s*$/);
-    if (!match) continue;
-
-    const keyIndent = match[1]!.length;
-    const value = match[2]!;
-    const blockScalar = value.match(/^([|>][+-]?)(?:\s+#.*)?$/);
-
-    if (!blockScalar) {
-      if (value.length > 0) commands.push(value);
-      continue;
+  function visit(value: unknown): void {
+    if (Array.isArray(value)) {
+      for (const item of value) visit(item);
+      return;
     }
+    if (value === null || typeof value !== "object") return;
 
-    const block: string[] = [];
-    for (index += 1; index < lines.length; index += 1) {
-      const blockLine = lines[index]!;
-      if (blockLine.trim().length > 0 && indentationOf(blockLine) <= keyIndent) {
-        index -= 1;
-        break;
+    for (const [key, child] of Object.entries(value)) {
+      if (key === "run" && typeof child === "string") {
+        commands.push(child);
       }
-      block.push(blockLine);
+      visit(child);
     }
-    commands.push(block.join("\n"));
   }
 
+  visit(document);
   return commands.join("\n");
 }
 
@@ -49,7 +35,9 @@ describe("official GitHub Action contract", () => {
       'steps:\n  - run: >\n      echo "${{ inputs.folded }}"',
       'steps:\n  - run: >-\n      echo "${{ inputs.folded-strip }}"',
       'steps:\n  - run: >+\n      echo "${{ inputs.folded-keep }}"',
-      'steps:\n  - name: Expanded\n    run: |\n      echo "${{ inputs.expanded }}"'
+      'steps:\n  - name: Expanded\n    run: |\n      echo "${{ inputs.expanded }}"',
+      'steps:\n  - "run": echo "${{ inputs.quoted-key }}"',
+      'steps: [{ run: "echo ${{ inputs.flow-mapping }}" }]'
     ];
 
     for (const fixture of fixtures) {
