@@ -1,34 +1,75 @@
-# Dokion Getting Started & Onboarding Guide
+# Dokion Onboarding Guide: "Skills to Playbooks"
 
-Welcome to Dokion! Dokion is an explicit, bounded software-hardening runtime.
+Welcome to Dokion! Dokion is **The Playbook Engine for AI Coding Agents**.
 
-## 1. Quick Start
-Select and activate a playbook for your project:
+While single-task **Skills** handle immediate individual prompts, **Dokion Playbooks** connect skills into autonomous, multi-hour engineering pipelines with explicit write scopes, empirical test verification, and automatic Git rollback.
+
+---
+
+## 1. Quick Start in 60 Seconds
+
+Install Dokion globally with Bun:
+
+```bash
+bun add --global dokion
+```
+
+In any software repository, initialize Dokion state:
+
+```bash
+dokion init
+```
+
+List available reference playbooks:
 
 ```bash
 dokion playbooks list
-dokion playbook proposal web-fullstack
-dokion playbook activate .dokion/playbook.json
 ```
 
-## 2. Dry-Run & Planning
-Inspect the execution plan before writing any files:
+Import a reference playbook (e.g. `superpowers` or `web-fullstack`):
+
+```bash
+dokion playbooks import --from superpowers
+```
+
+---
+
+## 2. Preview the Execution Plan (Dry-Run)
+
+Before writing any files or executing shell commands, preview the exact execution stages, sub-agent swarms, write permissions, and release gates:
 
 ```bash
 dokion plan
 ```
 
-## 3. Run Autopilot
-Execute bounded hardening with deterministic approval boundaries:
+---
+
+## 3. Run Autopilot Execution
+
+Run the active playbook with explicit user approval boundaries:
 
 ```bash
+dokion run
+# Or run in autonomous autopilot mode:
 dokion autopilot
 ```
 
-## 4. Audit & Verification
-Verify state journals, evidence checksums, and promotion readiness:
+Dokion will:
+1. Execute steps sequentially or in parallel swarms as specified in the playbook.
+2. Capture pre-repair Git snapshots before write operations.
+3. Record empirical build/test evidence logs.
+4. Automatically restore the pre-repair snapshot if verification fails or output is tainted.
+
+---
+
+## 4. Audit, Status & Reports
+
+Inspect execution state, normalized findings, and generated audit journals at any time:
 
 ```bash
-dokion verify
-dokion audit
+dokion status
+dokion findings
+dokion report
 ```
+
+Check the generated `HARDENING.md` for a complete, cryptographic journal of executed stages, findings, and evidence checksums.
