@@ -104,6 +104,42 @@ export const PUBLIC_CLAIM_DOCUMENTS: readonly PublicClaimDocument[] = [
         productSurfaceSection: "registry"
       }
     ]
+  },
+  {
+    path: "docs/launch/public-beta-checklist.md",
+    claims: [
+      {
+        id: "public-beta-readiness",
+        status: "PLANNED",
+        requiredMarker: "Current launch status: **NOT READY**"
+      },
+      {
+        id: "active-authority",
+        status: "IMPLEMENTED",
+        requiredMarker: "`.dokion/playbook.json` is the sole execution authority"
+      },
+      {
+        id: "registry-package-build",
+        status: "IMPLEMENTED",
+        requiredMarker: "Registry package build, read-only verification, and immutable artifact pull are implemented",
+        productSurfaceId: "package-build",
+        productSurfaceSection: "registry"
+      },
+      {
+        id: "secure-release",
+        status: "PLANNED",
+        requiredMarker: "Secure Release passes clean-install positive and negative fixtures",
+        productSurfaceId: "secure-release",
+        productSurfaceSection: "packs"
+      },
+      {
+        id: "trace-command",
+        status: "PLANNED",
+        requiredMarker: "Versioned Run Trace exports pass integrity, terminal-state, and unsafe-HTML tests",
+        productSurfaceId: "trace",
+        productSurfaceSection: "commands"
+      }
+    ]
   }
 ];
 
