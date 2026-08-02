@@ -8,15 +8,17 @@ Turn Dokion from a technically capable but difficult-to-understand runtime into 
 
 ### Phase 0: Truth before growth
 
-Plan
+Plans
 
 - [`2026-08-02-truth-and-positioning-reset.md`](2026-08-02-truth-and-positioning-reset.md)
+- [`2026-08-02-reference-playbook-truth-audit.md`](2026-08-02-reference-playbook-truth-audit.md)
 
 Required outcome
 
 - Current product claims match executable behavior
+- Every shipped reference and built-in Playbook resolves real capabilities, bounded authority, evaluators, and fixture evidence or is quarantined truthfully
 - `dokion verify` runs declared verification gates rather than schema validation alone
-- Public docs fail CI when commands, integrations, or outcomes drift from canonical product state
+- Public docs fail CI when commands, integrations, Playbooks, or outcomes drift from canonical product state
 
 No later public launch work may merge before Phase 0 is green
 
@@ -31,7 +33,7 @@ Required outcome
 - A supported Bun or Node TypeScript repository can run `dokion try secure-release`
 - Preview mode creates an inert proposal and exact authority summary
 - Execution requires an exact accepted digest and actor identity
-- Accepted execution routes through the production `ExecutionEngine`
+- Accepted execution routes to the production `ExecutionEngine`
 - Passing and blocked clean-install fixtures prove the journey
 
 ### Phase 2: Evidence that users can inspect and share
@@ -79,18 +81,21 @@ Required outcome
 
 ## Proposed PR sequence
 
-### PR A: Product truth surface
+### PR A: Product and Playbook truth surface
 
 Scope
 
 - Canonical generated product surface
+- Shipped Playbook authority inventory
+- Capability, command, authority, platform guarantee, and success-condition audits
+- Open Code Review reference repair or truthful quarantine
 - Public claim validator
 - README and onboarding correction
 - Release truth gate
 
 Exit gate
 
-- No public command or product claim lacks evidence
+- No public command, Playbook, integration, platform claim, or product outcome lacks evidence
 
 ### PR B: Verification contract
 
@@ -215,7 +220,7 @@ Registry infrastructure can continue in parallel only when all of these conditio
 - It does not introduce marketplace claims before real data contracts exist
 - It uses no more than one concurrent engineering lane while the first journey is incomplete
 
-New general-purpose orchestration features, swarm features, or additional Packs remain paused until PR D and PR F pass their acceptance journeys
+New general-purpose orchestration features, swarm features, integration reference Playbooks, or additional Packs remain paused until PR A, PR D, and PR F pass their acceptance journeys
 
 ## Project leadership rules
 
@@ -238,6 +243,7 @@ Pause the current PR when any of these occurs
 
 - Runtime behavior contradicts the design authority model
 - A public claim cannot be tied to executable evidence
+- A shipped Playbook names a capability, command, guarantee, success condition, or scope that the runtime cannot prove
 - A test passes without proving repository effects or evidence
 - A proposal or package gains execution authority implicitly
 - A new command duplicates an existing production path
