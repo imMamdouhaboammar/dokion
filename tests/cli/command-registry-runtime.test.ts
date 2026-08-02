@@ -16,6 +16,7 @@ interface RuntimeCommandDescriptor {
   executionMode: ExecutionMode;
   writeScope: readonly string[];
   approvalClass: ApprovalClass;
+  geminiFiles: readonly string[];
 }
 
 interface RegistryRuntimeApi {
@@ -27,12 +28,18 @@ interface RegistryRuntimeApi {
 
 const root = process.cwd();
 const registryPath = "../../src/cli/command-registry.ts";
+const plannedManifestCommands = new Set([
+  "dokion hub",
+  "dokion try",
+  "dokion accept",
+  "dokion trace"
+]);
 
 async function registryApi(): Promise<RegistryRuntimeApi> {
   return (await import(registryPath)) as unknown as RegistryRuntimeApi;
 }
 
-async function staticManifestCommands(): Promise<ManifestCliCommand[]> {
+async function staticImplementedManifestCommands(): Promise<ManifestCliCommand[]> {
   const manifest = JSON.parse(await Bun.file(join(root, "dokion.json")).text()) as {
     dokion_cli: { commands: ManifestCliCommand[] };
   };
@@ -41,7 +48,9 @@ async function staticManifestCommands(): Promise<ManifestCliCommand[]> {
   ) as { schema: "dokion.registry-cli.v1"; commands: ManifestCliCommand[] };
 
   expect(registryManifest.schema).toBe("dokion.registry-cli.v1");
-  return [...manifest.dokion_cli.commands, ...registryManifest.commands];
+  return [...manifest.dokion_cli.commands, ...registryManifest.commands].filter(
+    (command) => !plannedManifestCommands.has(command.command)
+  );
 }
 
 async function runCli(...args: string[]): Promise<{ exitCode: number; stdout: string; stderr: string }> {
@@ -107,14 +116,12 @@ Execute:
 
 Dokion never installs, selects, substitutes, reorders, or enables capabilities.`;
 
-    expect(typeof registry.renderCliHelp).toBe("function");
     expect(registry.renderCliHelp("9.9.9")).toBe(expected);
   });
 
   test("resolves implemented commands", async () => {
     const registry = await registryApi();
 
-    expect(typeof registry.resolveCliCommand).toBe("function");
     expect(registry.resolveCliCommand("status")).toMatchObject({
       id: "status",
       status: "IMPLEMENTED",
@@ -138,12 +145,13 @@ Dokion never installs, selects, substitutes, reorders, or enables capabilities.`
     expect(registry.resolveCliCommand("not-a-command")).toBeUndefined();
   });
 
-  test("quarantines planned adoption commands", async () => {
+  test("quarantines every planned command", async () => {
     const registry = await registryApi();
-    for (const command of ["try", "accept", "trace"]) {
+    for (const command of ["hub", "try", "accept", "trace"]) {
       expect(registry.resolveCliCommand(command)).toMatchObject({
         status: "PLANNED",
-        writeScope: []
+        writeScope: [],
+        geminiFiles: []
       });
     }
   });
@@ -172,19 +180,19 @@ Dokion never installs, selects, substitutes, reorders, or enables capabilities.`
     });
   });
 
-  test("generates the built-in manifest command catalog", async () => {
+  test("exports implemented commands only to the built-in manifest", async () => {
     const registry = await registryApi();
-    const expected = await staticManifestCommands();
+    const expected = await staticImplementedManifestCommands();
+    const exported = registry.manifestCliCommands();
 
-    expect(typeof registry.manifestCliCommands).toBe("function");
-    expect(registry.manifestCliCommands()).toEqual(expected);
+    expect(exported).toEqual(expected);
     expect(builtinCatalog.dokion_cli.commands).toEqual(expected);
+    expect(exported.some((command) => plannedManifestCommands.has(command.command))).toBe(false);
   });
 
   test("generates ordered Gemini command bindings", async () => {
     const registry = await registryApi();
 
-    expect(typeof registry.geminiCommandsForFile).toBe("function");
     expect(registry.geminiCommandsForFile("run.toml").map((command) => command.manifestCommand)).toEqual([
       "dokion doctor",
       "dokion validate",
