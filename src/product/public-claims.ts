@@ -23,6 +23,16 @@ export const PUBLIC_CLAIM_DOCUMENTS: readonly PublicClaimDocument[] = [
         requiredMarker: "The runtime can validate and execute the active `.dokion/playbook.json`"
       },
       {
+        id: "explicit-playbook-activation",
+        status: "IMPLEMENTED",
+        requiredMarker: "`dokion init` creates Dokion-owned state and `HARDENING.md`. It does not create or activate `.dokion/playbook.json`"
+      },
+      {
+        id: "user-controlled-playbook-copy",
+        status: "IMPLEMENTED",
+        requiredMarker: "cp /path/to/reviewed-playbook.json .dokion/playbook.json"
+      },
+      {
         id: "secure-release",
         status: "PLANNED",
         requiredMarker: "The guided Secure Release Pack, exact proposal activation flow, and versioned Run Trace are planned",
