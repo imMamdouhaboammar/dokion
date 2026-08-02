@@ -12,6 +12,7 @@ describe("repository test boundaries", () => {
     const recoveryWorkflow = await Bun.file(".github/workflows/recovery-ci.yml").text();
     const releaseWorkflow = await Bun.file(".github/workflows/release.yml").text();
     const currentGuides = await Promise.all([
+      "AGENTS.md",
       "README.md",
       "CONTRIBUTING.md",
       "docs/engineering/commit-policy.md",
@@ -23,7 +24,8 @@ describe("repository test boundaries", () => {
     const runtimeRunner = await Bun.file("scripts/run-runtime-tests.ts").text();
     expect(runtimeRunner).toContain('new Bun.Glob("**/*.test.ts")');
     expect(runtimeRunner).toContain('new Bun.Glob("**/*.test.js")');
-    expect(runtimeRunner).toContain('cwd: "tests"');
+    expect(runtimeRunner).toContain('const testsRoot = resolve(root, "tests")');
+    expect(runtimeRunner).toContain('resolve(testsRoot, path)');
     expect(runtimeRunner).toContain('Bun.spawn([process.execPath, "test", ...testFiles]');
     expect(frontendPackage.scripts?.test).toBe("bun test src/tests");
     expect(frontendPackage.scripts?.lint).toBe("tsc --noEmit");
