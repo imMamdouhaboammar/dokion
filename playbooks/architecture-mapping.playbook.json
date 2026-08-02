@@ -1,0 +1,94 @@
+{
+  "$schema": "../schemas/dokion-playbook.schema.json",
+  "version": "1.0.0",
+  "project": {
+    "name": "architecture-mapping-and-audit",
+    "target": "ARCHITECTURE_VERIFIED",
+    "notes": "Playbook for deep architectural analysis, data-flow mapping, and interactive diagram generation using tt-a1i/archify in Dokion."
+  },
+  "authority": {
+    "capability_selection": "USER_ONLY",
+    "execution_order": "USER_ONLY",
+    "capability_behavior": "USER_ONLY",
+    "automatic_capability_discovery": false,
+    "automatic_installation": false,
+    "automatic_substitution": false,
+    "automatic_reordering": false,
+    "allow_recommendations": true,
+    "recommendations_require_approval": true
+  },
+  "enforcement": {
+    "playbook_immutable": true,
+    "hash_algorithm": "sha256",
+    "verify_before_each_step": true,
+    "on_mutation": "ABORT_TAINTED",
+    "protected_paths": [
+      ".dokion/playbook.json",
+      "schemas/**"
+    ],
+    "worktree_policy": "clean-only"
+  },
+  "registry": {
+    "sources": [
+      "dokion.json"
+    ],
+    "require_verified": true,
+    "require_digest": false,
+    "on_unverified": "WARN"
+  },
+  "defaults": {
+    "approval": "BEFORE_WRITE",
+    "failure_policy": "STOP_STAGE",
+    "retry_count": 1,
+    "maximum_iterations": 1,
+    "parallel_execution": false,
+    "validation": {
+      "suppression_detection": true,
+      "require_evidence_artifact": true,
+      "forbid_test_deletion": true,
+      "forbid_out_of_scope_edits": true
+    }
+  },
+  "stages": [
+    {
+      "id": "inspect-and-map",
+      "name": "Architecture Discovery & Mapping",
+      "execution": "SEQUENTIAL",
+      "steps": [
+        {
+          "id": "architecture-diagram-generation",
+          "capability": {
+            "type": "skill",
+            "id": "archify",
+            "version": "1.0.0",
+            "source": "tt-a1i/archify"
+          },
+          "responsibility": "Analyze codebase architecture, trust boundaries, and data flows to generate an interactive HTML/SVG diagram using archify.",
+          "mode": "READ_WRITE",
+          "required": true,
+          "permissions": {
+            "read": [
+              "**/*"
+            ],
+            "write": [
+              ".dokion/evidence/architecture.html",
+              "docs/architecture.svg",
+              ".dokion/reports/**",
+              "HARDENING.md"
+            ],
+            "network": false
+          },
+          "approval": "NEVER",
+          "verification": [
+            "test -f .dokion/evidence/architecture.html"
+          ],
+          "success_conditions": [
+            "interactive_diagram_generated",
+            "evidence_linked_in_hardening_md"
+          ],
+          "failure_policy": "STOP_PIPELINE"
+        }
+      ]
+    }
+  ]
+}
