@@ -40,7 +40,7 @@ describe("atomic commit and review policy contract", () => {
     const policy = await read("docs/engineering/commit-policy.md");
 
     expect(policy.toLowerCase()).toContain("artificial commit splitting");
-    expect(policy).toContain("bun test");
+    expect(policy).toContain("bun run test");
     expect(policy).toContain("bun run typecheck");
     expect(policy).toContain("bun run validate:contracts");
     expect(policy).toContain("bun run build");
