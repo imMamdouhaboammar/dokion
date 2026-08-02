@@ -136,6 +136,13 @@ export const PUBLIC_CLAIM_DOCUMENTS: readonly PublicClaimDocument[] = [
         productSurfaceSection: "registry"
       },
       {
+        id: "autoresearch-command",
+        status: "PLANNED",
+        requiredMarker: "Non-dry `dokion autoresearch` executes through production callbacks instead of returning `UNSUPPORTED_EXECUTION`",
+        productSurfaceId: "autoresearch",
+        productSurfaceSection: "commands"
+      },
+      {
         id: "secure-release",
         status: "PLANNED",
         requiredMarker: "Secure Release passes clean-install positive and negative fixtures",
