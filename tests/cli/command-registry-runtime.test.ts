@@ -29,6 +29,7 @@ interface RegistryRuntimeApi {
 const root = process.cwd();
 const registryPath = "../../src/cli/command-registry.ts";
 const plannedManifestCommands = new Set([
+  "dokion autoresearch",
   "dokion hub",
   "dokion try",
   "dokion accept",
@@ -112,7 +113,6 @@ Execute:
   skip <step-id> --reason <text>
   autopilot [--dry-run]
   auto-runner [--max-turns 100] [--target 100]
-  autoresearch [<goal>] [--auto] [--dry-run]
 
 Dokion never installs, selects, substitutes, reorders, or enables capabilities.`;
 
@@ -147,7 +147,7 @@ Dokion never installs, selects, substitutes, reorders, or enables capabilities.`
 
   test("quarantines every planned command", async () => {
     const registry = await registryApi();
-    for (const command of ["hub", "try", "accept", "trace"]) {
+    for (const command of ["autoresearch", "hub", "try", "accept", "trace"]) {
       expect(registry.resolveCliCommand(command)).toMatchObject({
         status: "PLANNED",
         writeScope: [],
