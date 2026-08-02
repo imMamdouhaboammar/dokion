@@ -59,6 +59,17 @@ bun run validate:contracts
 bun run build
 ```
 
+For frontend changes also run:
+
+```bash
+cd frontend
+bun install --frozen-lockfile
+bun run test
+bun run lint
+bun run build
+cd ..
+```
+
 For distribution, adapter, package, binary, or release changes also run:
 
 ```bash
