@@ -116,7 +116,7 @@ export function renderCliHelp(version: string): string {
 }
 
 export function manifestCliCommands(): ManifestCliCommand[] {
-  return CLI_COMMAND_REGISTRY.map((command) => ({
+  return implementedCliCommands().map((command) => ({
     command: command.manifestCommand,
     ...("manifestUsage" in command && command.manifestUsage !== undefined ? { usage: command.manifestUsage } : {}),
     purpose: command.purpose,
@@ -129,11 +129,11 @@ export function manifestCliCommands(): ManifestCliCommand[] {
 }
 
 export function expectedGeminiCommandFiles(): GeminiCommandFile[] {
-  return Array.from(new Set(CLI_COMMAND_REGISTRY.flatMap((command) => command.geminiFiles))).sort();
+  return Array.from(new Set(implementedCliCommands().flatMap((command) => command.geminiFiles))).sort();
 }
 
 export function geminiCommandsForFile(file: GeminiCommandFile): readonly CliCommandDescriptor[] {
-  return CLI_COMMAND_REGISTRY.filter((command) => command.geminiFiles.includes(file)).sort(
+  return implementedCliCommands().filter((command) => command.geminiFiles.includes(file)).sort(
     (left, right) => (left.geminiOrder ?? Number.MAX_SAFE_INTEGER) - (right.geminiOrder ?? Number.MAX_SAFE_INTEGER)
   );
 }
