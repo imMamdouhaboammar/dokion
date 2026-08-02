@@ -44,6 +44,11 @@ const requiredPackedPaths = [
   ".claude-plugin/plugin.json",
   "hooks/hooks.json",
   "scripts/claude-playbook-guard.ts",
+  "scripts/validate-release-truth.ts",
+  "generated/product-surface.json",
+  "docs/getting-started/ONBOARDING.md",
+  "docs/launch/MARKETING_STRATEGY.md",
+  "docs/launch/public-beta-checklist.md",
   "AGENTS.md",
   ".agents/skills/dokion-hardening/SKILL.md",
   "GEMINI.md",
@@ -62,6 +67,11 @@ const requiredPackageFiles = [
   "commands",
   "hooks",
   "scripts/claude-playbook-guard.ts",
+  "scripts/validate-release-truth.ts",
+  "generated/product-surface.json",
+  "docs/getting-started/ONBOARDING.md",
+  "docs/launch/MARKETING_STRATEGY.md",
+  "docs/launch/public-beta-checklist.md",
   "dokion.json",
   "SPEC.md",
   "AGENTS.md",
@@ -195,6 +205,12 @@ export async function validateStaticDistribution(root: string): Promise<Distribu
   }
   if (!packageManifest.scripts?.["smoke:package"]?.includes("scripts/smoke-test-package.ts")) {
     errors.push("smoke:package script is missing");
+  }
+  if (!packageManifest.scripts?.["validate:release-truth"]?.includes("scripts/validate-release-truth.ts")) {
+    errors.push("validate:release-truth script is missing");
+  }
+  if (!packageManifest.scripts?.prepack?.includes("validate:release-truth")) {
+    errors.push("prepack must run release truth validation");
   }
   if (!packageManifest.scripts?.prepack?.includes("validate:distribution")) errors.push("prepack must run distribution validation");
 

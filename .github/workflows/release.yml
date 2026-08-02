@@ -41,6 +41,7 @@ jobs:
           bun run typecheck
           bun run validate:contracts
           bun run build
+          bun run validate:release-truth --output release-truth-report.json
           bun run validate:distribution
           bun run smoke:package
 
@@ -61,6 +62,11 @@ jobs:
             "$GITHUB_WORKSPACE/release/dokion-linux-x64" validate --catalog-only | grep -F 'builtin:dokion.json'
           )
 
+      - name: Attach release truth report
+        run: |
+          test -s release-truth-report.json
+          cp release-truth-report.json release/release-truth-report.json
+
       - name: Pack registry tarball
         run: bun pm pack --ignore-scripts --destination release
 
@@ -68,7 +74,7 @@ jobs:
         shell: bash
         run: |
           cd release
-          sha256sum dokion-* > SHA256SUMS
+          sha256sum dokion-* release-truth-report.json > SHA256SUMS
 
       - name: Verify source tree integrity
         shell: bash

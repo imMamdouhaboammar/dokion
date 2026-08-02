@@ -14,8 +14,9 @@ This checklist must be evaluated against one exact release-candidate commit. A c
 ## Required before public beta
 
 - [ ] The committed `generated/product-surface.json` regenerates without drift
+- [ ] `bun run validate:release-truth --output release-truth-report.json` passes on the exact release-candidate commit
 - [ ] Every documented executable command is absent from planned-only surfaces and passes packaged CLI validation
-- [ ] `dokion verify` independently re-runs the active Playbook's declared test and build gates
+- [x] `dokion verify` independently re-runs the active Playbook's declared test and build gates
 - [ ] Non-dry `dokion autoresearch` executes through production callbacks instead of returning `UNSUPPORTED_EXECUTION`
 - [ ] Secure Release passes clean-install positive and negative fixtures on supported Bun and Node TypeScript repositories
 - [ ] Versioned Run Trace exports pass integrity, terminal-state, and unsafe-HTML tests
@@ -24,5 +25,11 @@ This checklist must be evaluated against one exact release-candidate commit. A c
 - [ ] CodeRabbit and security review findings are resolved or explicitly rejected with evidence
 - [ ] External adoption records come from real, consented repositories and contain no fabricated metrics
 - [ ] Promotion sign-off references the exact commit, workflow runs, unresolved risks, and rollback instructions
+
+## Release truth sign-off contract
+
+Promotion requires a signed review of `release-truth-report.json` generated from the exact 40-character release-candidate commit SHA
+
+The review record must include the reviewer identity, decision, review time, workflow run links, unresolved risks, and rollback instructions. A report from another commit, a locally edited report, or a report with `valid: false` cannot support promotion
 
 No public beta, marketplace listing, launch campaign, or release-readiness claim is approved while any required item remains unchecked

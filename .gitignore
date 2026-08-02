@@ -3,3 +3,4 @@ dist/
 *.bun-build
 .dokion/
 HARDENING.md
+release-truth-report.json
