@@ -227,7 +227,7 @@ Do not describe the Action as release-proven until the corresponding workflow an
 ```bash
 bun install --frozen-lockfile
 bun run validate:contracts
-bun test
+bun run test
 bun run typecheck
 bun run build
 bun run validate:distribution
