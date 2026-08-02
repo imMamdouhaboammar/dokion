@@ -1,10 +1,12 @@
-import { join } from "node:path";
+import { mkdir } from "node:fs/promises";
+import { dirname, join } from "node:path";
 
 import { writeTextAtomic } from "../src/core/json.ts";
 import { buildProductSurface, serializeProductSurface } from "../src/product/product-surface.ts";
 
 export async function writeProductSurfaceSnapshot(root: string): Promise<string> {
   const path = join(root, "generated", "product-surface.json");
+  await mkdir(dirname(path), { recursive: true });
   await writeTextAtomic(path, serializeProductSurface(buildProductSurface()), "json");
   return path;
 }
