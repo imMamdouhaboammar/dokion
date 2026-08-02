@@ -11,13 +11,13 @@ describe("repository test boundaries", () => {
     const workflow = await Bun.file(".github/workflows/ci.yml").text();
     const recoveryWorkflow = await Bun.file(".github/workflows/recovery-ci.yml").text();
     const releaseWorkflow = await Bun.file(".github/workflows/release.yml").text();
-    const currentGuides = await Promise.all([
+    const contributorGuides = await Promise.all([
       "AGENTS.md",
       "README.md",
       "CONTRIBUTING.md",
-      "docs/engineering/commit-policy.md",
-      "docs/RELEASING.md"
+      "docs/engineering/commit-policy.md"
     ].map((path) => Bun.file(path).text()));
+    const releaseGuide = await Bun.file("docs/RELEASING.md").text();
 
     expect(rootPackage.scripts?.test).toBe("bun run scripts/run-runtime-tests.ts");
     expect(rootPackage.scripts?.prepack).toContain("bun run test");
@@ -40,8 +40,13 @@ describe("repository test boundaries", () => {
     expect(recoveryWorkflow).not.toContain("run: bun test");
     expect(releaseWorkflow).toContain("bun run test");
     expect(releaseWorkflow).not.toContain("\n          bun test\n");
-    for (const guide of currentGuides) {
+    expect(releaseGuide).toContain("bun run test");
+    for (const guide of contributorGuides) {
       expect(guide).toContain("bun run test");
+      expect(guide).toContain("cd frontend");
+      expect(guide).toContain("bun install --frozen-lockfile");
+      expect(guide).toContain("bun run lint");
+      expect(guide).toContain("bun run build");
     }
   });
 });
