@@ -1,0 +1,116 @@
+{
+  "$schema": "../../schemas/dokion-playbook.schema.json",
+  "version": "1.0.0",
+  "project": {
+    "name": "alibaba-open-code-review-workflow",
+    "target": "READY_FOR_PRODUCTION",
+    "notes": "Alibaba Open Code Review Playbook (alibaba/open-code-review). Executes hybrid deterministic-AI code review, captures structured JSON findings, dispatches bounded sub-agents for targeted repairs, and verifies build/test proof before commit."
+  },
+  "authority": {
+    "capability_selection": "USER_ONLY",
+    "execution_order": "USER_ONLY",
+    "capability_behavior": "USER_ONLY",
+    "automatic_capability_discovery": false,
+    "automatic_installation": false,
+    "automatic_substitution": false,
+    "automatic_reordering": false,
+    "allow_recommendations": true,
+    "recommendations_require_approval": true
+  },
+  "enforcement": {
+    "playbook_immutable": true,
+    "hash_algorithm": "sha256",
+    "verify_before_each_step": true,
+    "on_mutation": "ABORT_TAINTED",
+    "protected_paths": [
+      ".dokion/playbook.json",
+      "schemas/**"
+    ],
+    "worktree_policy": "clean-only"
+  },
+  "registry": {
+    "sources": [
+      "dokion.json"
+    ],
+    "require_verified": true,
+    "require_digest": false,
+    "on_unverified": "STOP_STEP"
+  },
+  "coverage_policy": {
+    "blocking_lanes": [
+      "review-intelligence"
+    ]
+  },
+  "defaults": {
+    "approval": "BEFORE_WRITE",
+    "failure_policy": "STOP_STAGE",
+    "mode": "FIX_WITH_APPROVAL",
+    "retry_count": 1,
+    "maximum_iterations": 1,
+    "parallel_execution": false,
+    "validation": {
+      "suppression_detection": true,
+      "require_evidence_artifact": true,
+      "forbid_test_deletion": true,
+      "forbid_out_of_scope_edits": true
+    }
+  },
+  "stages": [
+    {
+      "id": "stage-open-code-review",
+      "name": "Deterministic Hybrid AI Review",
+      "execution": "SEQUENTIAL",
+      "steps": [
+        {
+          "id": "open-code-review-scan",
+          "name": "Run Alibaba Open Code Review scan & capture findings",
+          "capability": {
+            "type": "tool",
+            "id": "open-code-review",
+            "version": "1.0.0",
+            "source": "dokion.json"
+          },
+          "responsibility": "Execute OCR review against workspace changes to generate high-precision findings for NPE, thread safety, XSS, and SQL injection.",
+          "mode": "READ_ONLY",
+          "required": true,
+          "approval": "NEVER",
+          "permissions": {
+            "read": ["**/*"],
+            "shell": ["ocr review --format json --audience agent", "ocr review --preview"],
+            "network": true
+          },
+          "success_conditions": ["ocr_scan_completed"],
+          "failure_policy": "STOP_PIPELINE"
+        }
+      ]
+    },
+    {
+      "id": "stage-remediation-and-verification",
+      "name": "Targeted Repair & Empirical Verification",
+      "execution": "SEQUENTIAL",
+      "steps": [
+        {
+          "id": "remediate-findings",
+          "name": "Remediate OCR findings with bounded sub-agents",
+          "capability": {
+            "type": "skill",
+            "id": "superpowers",
+            "version": "1.0.0",
+            "source": "dokion.json"
+          },
+          "responsibility": "Apply targeted bug fixes for reported high-confidence findings while taking clean pre-repair git snapshots.",
+          "mode": "FIX_WITH_APPROVAL",
+          "required": true,
+          "approval": "BEFORE_WRITE",
+          "permissions": {
+            "read": ["**/*"],
+            "write": ["**/*"],
+            "shell": ["bun test", "npm test", "bun run build"]
+          },
+          "success_conditions": ["findings_remediated", "tests_passing"],
+          "failure_policy": "STOP_PIPELINE"
+        }
+      ]
+    }
+  ]
+}
