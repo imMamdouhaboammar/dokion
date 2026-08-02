@@ -25,6 +25,7 @@ import { handleSkipCommand } from "./cli/handlers/skip.ts";
 import { handleStepCommand } from "./cli/handlers/step.ts";
 import { writeCliDiagnostic, writeCliResult } from "./cli/output.ts";
 import { parseCliInvocation, requestedCliOutputFormat } from "./cli/parser.ts";
+import { exitCodeForRunStatus } from "./cli/run-exit.ts";
 import type { CliInvocation, CliOutputFormat } from "./cli/types.ts";
 import { validateRepositoryContracts } from "./contracts/schema-validator.ts";
 import { recoverAtomicWrites } from "./core/atomic-file.ts";
@@ -246,9 +247,12 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
         invocation.format
       );
       return;
-    case "run":
-      print(await new ExecutionEngine(root).run(), invocation.format);
+    case "run": {
+      const state = await new ExecutionEngine(root).run();
+      print(state, invocation.format);
+      process.exitCode = exitCodeForRunStatus(state.run.status);
       return;
+    }
     case "step": {
       const store = new StateStore(root);
       const state = (await store.exists()) ? await store.load() : null;
@@ -257,9 +261,12 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
       }
       return;
     }
-    case "resume":
-      print(await new ExecutionEngine(root).resume(), invocation.format);
+    case "resume": {
+      const state = await new ExecutionEngine(root).resume();
+      print(state, invocation.format);
+      process.exitCode = exitCodeForRunStatus(state.run.status);
       return;
+    }
     case "verify":
       await withProjectRunLock("verify", async () => validate(false, invocation.format));
       return;
