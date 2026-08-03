@@ -52,7 +52,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          bun run test 2>&1 | tee test.log
+          bun run test 2>&1 | tee "$RUNNER_TEMP/test.log"
 
       - name: Install frontend dependencies
         working-directory: frontend
@@ -74,7 +74,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          bun run typecheck 2>&1 | tee typecheck.log
+          bun run typecheck 2>&1 | tee "$RUNNER_TEMP/typecheck.log"
 
       - name: Build
         run: bun run build
@@ -100,13 +100,13 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          bun run validate:distribution 2>&1 | tee distribution.log
+          bun run validate:distribution 2>&1 | tee "$RUNNER_TEMP/distribution.log"
 
       - name: Smoke-test clean Bun installation
         shell: bash
         run: |
           set -o pipefail
-          bun run smoke:package 2>&1 | tee package-smoke.log
+          bun run smoke:package 2>&1 | tee "$RUNNER_TEMP/package-smoke.log"
 
       - name: Validate Gemini CLI extension
         shell: bash
@@ -120,7 +120,7 @@ jobs:
           (
             cd "$VALIDATOR_ROOT"
             bunx @google/gemini-cli@0.51.0 extensions validate "$EXTENSION_ROOT"
-          ) 2>&1 | tee "$GITHUB_WORKSPACE/gemini-extension.log"
+          ) 2>&1 | tee "$RUNNER_TEMP/gemini-extension.log"
 
       - name: Verify no tracked mutation or credential residue
         shell: bash
@@ -154,12 +154,12 @@ jobs:
         with:
           name: dokion-ci-diagnostics
           path: |
-            test.log
-            typecheck.log
-            distribution.log
-            package-smoke.log
+            ${{ runner.temp }}/test.log
+            ${{ runner.temp }}/typecheck.log
+            ${{ runner.temp }}/distribution.log
+            ${{ runner.temp }}/package-smoke.log
             release-truth-report.json
-            gemini-extension.log
+            ${{ runner.temp }}/gemini-extension.log
             bun.lock
             schemas/dokion-playbook.schema.json
             schemas/dokion-state.schema.json

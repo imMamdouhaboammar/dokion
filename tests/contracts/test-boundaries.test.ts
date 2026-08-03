@@ -30,7 +30,7 @@ describe("repository test boundaries", () => {
     expect(frontendPackage.scripts?.test).toBe("bun test src/tests");
     expect(frontendPackage.scripts?.lint).toBe("tsc --noEmit");
 
-    expect(workflow).toContain("bun run test 2>&1 | tee test.log");
+    expect(workflow).toContain('bun run test 2>&1 | tee "$RUNNER_TEMP/test.log"');
     expect(workflow).toContain("working-directory: frontend");
     expect(workflow).toContain("run: bun install --frozen-lockfile");
     expect(workflow).toContain("run: bun run test");
