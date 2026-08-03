@@ -558,7 +558,7 @@ async function currentCommit(root: string): Promise<string | null> {
 async function currentWorktreeClean(root: string): Promise<boolean | null> {
   const result = await runTextCommand(
     root,
-    ["git", "status", "--porcelain=v1", "--untracked-files=no"]
+    ["git", "status", "--porcelain=v1", "--untracked-files=all"]
   );
   if (result.exitCode !== 0) return null;
   return result.stdout.trim().length === 0;

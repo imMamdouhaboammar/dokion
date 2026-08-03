@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtemp, rm, symlink } from "node:fs/promises";
+import { mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -124,6 +124,38 @@ describe("release truth gate", () => {
     sources.worktreeClean = false;
 
     expect(issueCodes(sources)).toContain("RELEASE_WORKTREE_DIRTY");
+  });
+
+  test("rejects an untracked file in the release candidate worktree", async () => {
+    const parent = await mkdtemp(join(tmpdir(), "dokion-release-truth-worktree-"));
+    const root = join(parent, "candidate");
+    let worktreeAdded = false;
+
+    try {
+      const added = await runTextCommand(
+        repositoryRoot,
+        ["git", "worktree", "add", "--detach", root, "HEAD"],
+        30_000
+      );
+      expect(added.exitCode, added.stderr).toBe(0);
+      worktreeAdded = true;
+      await symlink(join(repositoryRoot, "node_modules"), join(root, "node_modules"), "dir");
+      await writeFile(join(root, "release-truth-untracked-probe.tmp"), "probe\n");
+
+      const sources = await loadReleaseTruthSources(root);
+
+      expect(sources.worktreeClean).toBe(false);
+      expect(issueCodes(sources)).toContain("RELEASE_WORKTREE_DIRTY");
+    } finally {
+      if (worktreeAdded) {
+        await runTextCommand(
+          repositoryRoot,
+          ["git", "worktree", "remove", "--force", root],
+          30_000
+        );
+      }
+      await rm(parent, { recursive: true, force: true });
+    }
   });
 
   test("rejects a stale README release line", async () => {
