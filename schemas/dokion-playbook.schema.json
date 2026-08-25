@@ -577,14 +577,30 @@
         "inputs": {
           "type": "array",
           "items": {
-            "type": "string"
-          }
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "https://raw.githubusercontent.com/imMamdouhaboammar/dokion/main/schemas/dokion-step-input.schema.json"
+              }
+            ]
+          },
+          "description": "Declared inputs. Legacy string names remain accepted during migration; typed bindings must identify an exact producer step and output and are semantically validated before execution."
         },
         "outputs": {
           "type": "array",
           "items": {
-            "type": "string"
-          }
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "https://raw.githubusercontent.com/imMamdouhaboammar/dokion/main/schemas/dokion-step-output.schema.json"
+              }
+            ]
+          },
+          "description": "Declared outputs. Legacy string names remain accepted during migration; typed declarations define the artifact contract available to later steps."
         },
         "permissions": {
           "$ref": "#/$defs/permissions"

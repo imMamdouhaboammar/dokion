@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/imMamdouhaboammar/dokion/main/schemas/dokion-step-input.schema.json",
+  "title": "Dokion Typed Step Input Binding",
+  "description": "A typed, explicit binding from one declared Playbook step output to another step input. This contract does not grant execution authority.",
+  "type": "object",
+  "required": ["name", "from", "kind"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "from": {
+      "type": "object",
+      "required": ["step", "output"],
+      "additionalProperties": false,
+      "properties": {
+        "step": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "output": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        }
+      }
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["json", "text", "file", "directory", "binary", "sarif", "junit", "patch", "opaque"]
+    },
+    "required": {
+      "type": "boolean",
+      "default": true
+    }
+  }
+}

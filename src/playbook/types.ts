@@ -30,6 +30,42 @@ export type CoverageLaneStatus = "ASSIGNED" | "PARTIAL";
 export type ReadinessCap = "NOT_READY" | "CONDITIONALLY_READY" | "READY_FOR_STAGING";
 export type WorktreePolicy = "clean-only" | "allow-existing-dirty" | "snapshot-existing-dirty";
 
+export type PlaybookArtifactKind =
+  | "json"
+  | "text"
+  | "file"
+  | "directory"
+  | "binary"
+  | "sarif"
+  | "junit"
+  | "patch"
+  | "opaque";
+
+export type PlaybookArtifactSensitivity = "PUBLIC" | "INTERNAL" | "CONFIDENTIAL" | "SECRET";
+export type PlaybookArtifactRetention = "RUN" | "PROJECT" | "RELEASE";
+
+export interface PlaybookOutputDeclaration {
+  name: string;
+  kind: PlaybookArtifactKind;
+  media_type?: string;
+  schema?: string;
+  sensitivity?: PlaybookArtifactSensitivity;
+  retention?: PlaybookArtifactRetention;
+}
+
+export interface PlaybookInputBinding {
+  name: string;
+  from: {
+    step: string;
+    output: string;
+  };
+  kind: PlaybookArtifactKind;
+  required?: boolean;
+}
+
+export type PlaybookStepInput = string | PlaybookInputBinding;
+export type PlaybookStepOutput = string | PlaybookOutputDeclaration;
+
 export interface PlaybookEnforcement {
   playbook_immutable?: boolean;
   hash_algorithm?: "sha256" | "sha512";
@@ -107,6 +143,8 @@ export interface PlaybookStep {
   depends_on?: string[];
   applicability?: Applicability;
   coverage_lanes?: CoverageLaneAssignment[];
+  inputs?: PlaybookStepInput[];
+  outputs?: PlaybookStepOutput[];
   approval?: ApprovalPolicy;
   validation?: ValidationPolicy;
   verification?: string[];
