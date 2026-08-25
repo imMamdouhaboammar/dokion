@@ -1,4 +1,6 @@
 import { evaluateApplicability } from "../applicability/evaluate-applicability.ts";
+import { cloneCommandSpec } from "../execution/command-policy.ts";
+import type { CommandSpecInput } from "../execution/command-spec.ts";
 import { inspectProject, type ProjectProfile } from "../inspect/project-inspector.ts";
 import { detectAgentPlatform } from "../platform/platform-detector.ts";
 import type {
@@ -22,7 +24,7 @@ export interface PlannedPermissions {
   read: string[];
   write: string[];
   network: boolean | string[];
-  shell: string[];
+  shell: CommandSpecInput[];
   env: string[];
 }
 
@@ -42,7 +44,7 @@ export interface PlannedStep {
   timeout_seconds?: number;
   permissions: PlannedPermissions;
   prediction: PlanPrediction;
-  verification: string[];
+  verification: CommandSpecInput[];
   success_conditions: string[];
   stop_conditions: string[];
   coverage_lanes: NonNullable<PlaybookStep["coverage_lanes"]>;
@@ -88,7 +90,7 @@ function permissions(step: PlaybookStep): PlannedPermissions {
     network: Array.isArray(step.permissions?.network)
       ? [...step.permissions.network]
       : step.permissions?.network ?? false,
-    shell: [...(step.permissions?.shell ?? [])],
+    shell: (step.permissions?.shell ?? []).map(cloneCommandSpec),
     env: [...(step.permissions?.env ?? [])]
   };
 }
@@ -140,6 +142,14 @@ async function planStep(input: {
     responsibility: input.step.responsibility,
     capability: {
       ...input.step.capability,
+      ...(input.step.capability.entrypoint
+        ? {
+            entrypoint: {
+              kind: input.step.capability.entrypoint.kind,
+              command: cloneCommandSpec(input.step.capability.entrypoint.command)
+            }
+          }
+        : {}),
       ...(input.step.capability.platforms ? { platforms: { ...input.step.capability.platforms } } : {})
     },
     mode: input.step.mode,
@@ -152,7 +162,7 @@ async function planStep(input: {
     ...(input.step.timeout_seconds !== undefined ? { timeout_seconds: input.step.timeout_seconds } : {}),
     permissions: permissions(input.step),
     prediction,
-    verification: [...(input.step.verification ?? [])],
+    verification: (input.step.verification ?? []).map(cloneCommandSpec),
     success_conditions: [...(input.step.success_conditions ?? [])],
     stop_conditions: [...(input.step.stop_conditions ?? [])],
     coverage_lanes: (input.step.coverage_lanes ?? []).map((lane) => ({ ...lane }))
@@ -237,7 +247,10 @@ export async function renderExecutionPlan(
     platform,
     profile: stableProfile,
     stages,
-    release_gates: (loaded.data.release_gates ?? []).map((gate) => ({ ...gate })),
+    release_gates: (loaded.data.release_gates ?? []).map((gate) => ({
+      ...gate,
+      ...(gate.command === undefined ? {} : { command: cloneCommandSpec(gate.command) })
+    })),
     ...(loaded.data.coverage_policy
       ? {
           coverage_policy: {
