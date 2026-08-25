@@ -26,6 +26,7 @@ export interface SchemaRegistry {
   coverageAssignment: ValidateFunction;
   stepInput: ValidateFunction;
   stepOutput: ValidateFunction;
+  runArtifact: ValidateFunction;
   state: ValidateFunction;
   event: ValidateFunction;
   finding: ValidateFunction;
@@ -50,6 +51,7 @@ async function compileRegistry(): Promise<SchemaRegistry> {
     coverageAssignment: compile(embeddedSchemas.coverageAssignment),
     stepInput: compile(embeddedSchemas.stepInput),
     stepOutput: compile(embeddedSchemas.stepOutput),
+    runArtifact: compile(embeddedSchemas.runArtifact),
     state: compile(embeddedSchemas.state),
     event: compile(embeddedSchemas.event),
     finding: compile(embeddedSchemas.finding),
@@ -205,6 +207,15 @@ export async function validatePlaybookData(
     }
   }
   return issues;
+}
+
+export async function validateRunArtifactData(
+  root: string,
+  data: unknown,
+  file = ".dokion/runs/unknown/artifacts/unknown.json"
+): Promise<ValidationIssue[]> {
+  const registry = await buildRegistry(root);
+  return registry.runArtifact(data) ? [] : normalizeErrors(file, registry.runArtifact.errors);
 }
 
 export async function validateStateData(_root: string, data: unknown, file = ".dokion/state.json"): Promise<ValidationIssue[]> {
