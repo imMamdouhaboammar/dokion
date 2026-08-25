@@ -4,6 +4,7 @@ import { join, relative } from "node:path";
 
 import { builtinCatalog } from "../catalog/builtin-catalog.ts";
 import { readJson } from "../core/json.ts";
+import { validatePlaybookDataflow } from "../playbook/dataflow-contract.ts";
 import { embeddedSchemas } from "./embedded-schemas.ts";
 
 export interface ValidationIssue {
@@ -195,6 +196,12 @@ export async function validatePlaybookData(
         : registry.stepOutput;
     if (!validator(extension.value)) {
       issues.push(...normalizeErrors(file, validator.errors, extension.path));
+    }
+  }
+
+  if (issues.length === 0) {
+    for (const dataflowIssue of validatePlaybookDataflow(data)) {
+      issues.push({ file, ...dataflowIssue });
     }
   }
   return issues;
