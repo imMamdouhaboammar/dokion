@@ -7,6 +7,10 @@ export function commandSpecIdentity(command: CommandSpecInput): string {
   return normalizeCommandSpec(command).identity;
 }
 
+export function commandSpecDisplay(command: CommandSpecInput): string {
+  return normalizeCommandSpec(command).display;
+}
+
 export function commandSpecAllowed(
   allowed: readonly CommandSpecInput[] | undefined,
   command: CommandSpecInput
