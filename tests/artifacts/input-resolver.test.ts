@@ -156,6 +156,7 @@ describe("typed Playbook input resolution", () => {
 
   test("keeps legacy string inputs explicit instead of pretending they are artifact bindings", async () => {
     const root = await temporaryRoot();
+    await produce(root);
     const step = consumer();
     step.inputs = ["legacy-context", ...(step.inputs ?? [])];
 
@@ -167,5 +168,6 @@ describe("typed Playbook input resolution", () => {
     });
 
     expect(resolved.legacy_inputs).toEqual(["legacy-context"]);
+    expect(resolved.inputs).toHaveLength(1);
   });
 });
