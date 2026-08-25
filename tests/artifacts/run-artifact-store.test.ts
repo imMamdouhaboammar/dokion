@@ -165,6 +165,29 @@ describe("run-scoped content-addressed artifacts", () => {
     }), "ARTIFACT_INVALID");
   });
 
+  test("rejects descriptor bytes that are not valid UTF-8", async () => {
+    const root = await temporaryRoot();
+    const descriptor = await materializeRunArtifact(
+      options(root, new TextEncoder().encode("{\"trusted\":true}"))
+    );
+    const descriptorPath = join(root, descriptor.descriptor_path);
+    const tampered = Buffer.from(await readFile(descriptorPath));
+    const commitOffset = tampered.indexOf(Buffer.from("abc1234"));
+    expect(commitOffset).toBeGreaterThanOrEqual(0);
+    tampered[commitOffset + 3] = 0xff;
+
+    await chmod(descriptorPath, 0o600);
+    await writeFile(descriptorPath, tampered);
+    await chmod(descriptorPath, 0o400);
+
+    await expectCode(readRunArtifact({
+      root,
+      runId: "run-test-001",
+      stepId: "inspect",
+      outputName: "analysis"
+    }), "ARTIFACT_INVALID");
+  });
+
   test("rejects an intermediate symlink introduced after materialization before reading bytes", async () => {
     const root = await temporaryRoot();
     await materializeRunArtifact(options(root, new TextEncoder().encode("{\"trusted\":true}")));
