@@ -8,7 +8,9 @@ export function commandSpecIdentity(command: CommandSpecInput): string {
 }
 
 export function commandSpecDisplay(command: CommandSpecInput): string {
-  return normalizeCommandSpec(command).display;
+  const normalized = normalizeCommandSpec(command);
+  if (normalized.kind === "SHELL") return normalized.command;
+  return [normalized.executable, ...normalized.args.map((argument) => JSON.stringify(argument))].join(" ");
 }
 
 export function commandSpecAllowed(
