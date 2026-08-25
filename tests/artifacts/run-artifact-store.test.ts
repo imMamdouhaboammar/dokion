@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, rename, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -155,6 +155,34 @@ describe("run-scoped content-addressed artifacts", () => {
       stepId: "inspect",
       outputName: "analysis"
     }), "ARTIFACT_INVALID");
+  });
+
+  test("rejects an intermediate symlink introduced after materialization before reading bytes", async () => {
+    const root = await temporaryRoot();
+    await materializeRunArtifact(options(root, new TextEncoder().encode("{\"trusted\":true}")));
+    const runRoot = join(root, ".dokion", "runs", "run-test-001");
+    const artifacts = join(runRoot, "artifacts");
+    const displaced = join(runRoot, "artifacts-real");
+    await rename(artifacts, displaced);
+    await symlink("artifacts-real", artifacts, "dir");
+
+    await expectCode(readRunArtifact({
+      root,
+      runId: "run-test-001",
+      stepId: "inspect",
+      outputName: "analysis"
+    }), "ARTIFACT_INVALID");
+  });
+
+  test("validates the descriptor candidate before publishing artifact bytes", async () => {
+    const root = await temporaryRoot();
+    const invalid = {
+      ...options(root, new TextEncoder().encode("{\"trusted\":true}")),
+      createdAt: "not-a-date"
+    };
+
+    await expectCode(materializeRunArtifact(invalid), "ARTIFACT_INVALID");
+    expect(await Bun.file(join(root, ".dokion", "runs", "run-test-001", "artifacts", "by-step", "inspect", "analysis.json")).exists()).toBe(false);
   });
 
   test("rejects a symlinked intermediate artifact directory before publishing bytes", async () => {
