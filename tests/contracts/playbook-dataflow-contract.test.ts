@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
+import Ajv2020 from "ajv/dist/2020.js";
 
+import playbookSchema from "../../schemas/dokion-playbook.schema.json";
+import stepInputSchema from "../../schemas/dokion-step-input.schema.json";
+import stepOutputSchema from "../../schemas/dokion-step-output.schema.json";
 import {
   clearSchemaRegistryCache,
   validatePlaybookData
@@ -67,6 +71,15 @@ async function validationMessages(playbook: unknown): Promise<string[]> {
 describe("Playbook typed dataflow contract", () => {
   test("accepts typed outputs and typed input bindings between declared steps", async () => {
     expect(await validatePlaybookData(process.cwd(), basePlaybook())).toEqual([]);
+  });
+
+  test("canonical public Playbook schema accepts the same typed handoff contract", () => {
+    const ajv = new Ajv2020({ allErrors: true, strict: false });
+    ajv.addSchema(stepInputSchema);
+    ajv.addSchema(stepOutputSchema);
+    const validate = ajv.compile(playbookSchema);
+
+    expect(validate(basePlaybook()), JSON.stringify(validate.errors, null, 2)).toBe(true);
   });
 
   test("keeps legacy string inputs and outputs schema-valid during migration", async () => {
