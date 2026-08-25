@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { constants } from "node:fs";
-import { chmod, link, lstat, open, readFile, rm } from "node:fs/promises";
+import { chmod, link, lstat, open, rm } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 
 import { validateRunArtifactData } from "../contracts/schema-validator.ts";
@@ -12,7 +12,10 @@ import type {
   PlaybookArtifactSensitivity,
   PlaybookOutputDeclaration
 } from "../playbook/types.ts";
-import { ensureSafeDirectoryPath } from "../security/filesystem-safety.ts";
+import {
+  assertSafeRegularFilePath,
+  ensureSafeDirectoryPath
+} from "../security/filesystem-safety.ts";
 
 const MAX_DESCRIPTOR_BYTES = 1024 * 1024;
 const SAFE_PATH_TOKEN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
@@ -175,7 +178,28 @@ async function readBoundedRegularFile(path: string, maximumBytes: number): Promi
       maximumBytes
     });
   }
-  return new Uint8Array(await readFile(path));
+
+  await assertSafeRegularFilePath(path, "ARTIFACT_INVALID");
+  const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    const stat = await handle.stat();
+    if (!stat.isFile() || stat.nlink !== 1) {
+      invalid("Run artifact path changed before it could be read safely.", {
+        path,
+        links: stat.nlink
+      });
+    }
+    if (stat.size > maximumBytes) {
+      throw new DokionError("ARTIFACT_SIZE_MISMATCH", "Run artifact exceeds its configured byte bound.", {
+        path,
+        size: stat.size,
+        maximumBytes
+      });
+    }
+    return new Uint8Array(await handle.readFile());
+  } finally {
+    await handle.close();
+  }
 }
 
 async function publishImmutableFile(path: string, bytes: Uint8Array): Promise<"created" | "exists"> {
@@ -254,6 +278,23 @@ function sameBindingIdentity(left: RunArtifactDescriptor, right: RunArtifactDesc
     && left.repository?.root_digest === right.repository?.root_digest;
 }
 
+async function assertDescriptorSchema(
+  root: string,
+  descriptor: unknown,
+  file: string,
+  message: string
+): Promise<void> {
+  const schemaIssues = await validateRunArtifactData(root, descriptor, file);
+  if (schemaIssues.length > 0) {
+    invalid(message, {
+      issues: schemaIssues.map((issue) => ({
+        instancePath: issue.instancePath,
+        message: issue.message
+      }))
+    });
+  }
+}
+
 async function parseDescriptor(bytes: Uint8Array, expected: ReadRunArtifactOptions): Promise<RunArtifactDescriptor> {
   let parsed: unknown;
   try {
@@ -264,19 +305,12 @@ async function parseDescriptor(bytes: Uint8Array, expected: ReadRunArtifactOptio
     });
   }
 
-  const schemaIssues = await validateRunArtifactData(
+  await assertDescriptorSchema(
     expected.root,
     parsed,
-    descriptorPath(expected.runId, expected.stepId, expected.outputName)
+    descriptorPath(expected.runId, expected.stepId, expected.outputName),
+    "Run artifact descriptor failed schema validation."
   );
-  if (schemaIssues.length > 0) {
-    invalid("Run artifact descriptor failed schema validation.", {
-      issues: schemaIssues.map((issue) => ({
-        instancePath: issue.instancePath,
-        message: issue.message
-      }))
-    });
-  }
 
   const descriptor = parsed as RunArtifactDescriptor;
   if (!SHA256_PATTERN.test(descriptor.digest)
@@ -368,6 +402,13 @@ export async function materializeRunArtifact(options: MaterializeRunArtifactOpti
     },
     ...(options.repository === undefined ? {} : { repository: { ...options.repository } })
   };
+
+  await assertDescriptorSchema(
+    options.root,
+    candidate,
+    bindingPath,
+    "Run artifact descriptor candidate failed schema validation."
+  );
 
   const bindingAbsolute = resolveOwnedPath(options.root, bindingPath);
   if (await regularFileState(bindingAbsolute) !== "missing") {
