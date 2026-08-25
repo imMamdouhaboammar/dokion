@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { constants } from "node:fs";
-import { chmod, link, lstat, mkdir, open, readFile, rm } from "node:fs/promises";
+import { chmod, link, lstat, open, readFile, rm } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 
 import { DokionError } from "../core/errors.ts";
@@ -11,6 +11,7 @@ import type {
   PlaybookArtifactSensitivity,
   PlaybookOutputDeclaration
 } from "../playbook/types.ts";
+import { ensureSafeDirectoryPath } from "../security/filesystem-safety.ts";
 
 const MAX_DESCRIPTOR_BYTES = 1024 * 1024;
 const SAFE_PATH_TOKEN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
@@ -177,7 +178,7 @@ async function readBoundedRegularFile(path: string, maximumBytes: number): Promi
 }
 
 async function publishImmutableFile(path: string, bytes: Uint8Array): Promise<"created" | "exists"> {
-  await mkdir(dirname(path), { recursive: true, mode: 0o700 });
+  await ensureSafeDirectoryPath(dirname(path), "ARTIFACT_INVALID");
   const temporary = `${path}.tmp-${randomUUID()}`;
   let handle: Awaited<ReturnType<typeof open>> | undefined;
 
