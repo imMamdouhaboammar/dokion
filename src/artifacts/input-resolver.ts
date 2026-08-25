@@ -6,7 +6,11 @@ import type {
   PlaybookOutputDeclaration,
   PlaybookStep
 } from "../playbook/types.ts";
-import { readRunArtifact, type RunArtifactDescriptor } from "./run-artifact-store.ts";
+import {
+  readRunArtifact,
+  readRunArtifactDescriptor,
+  type RunArtifactDescriptor
+} from "./run-artifact-store.ts";
 
 export interface ResolvedStepInput {
   name: string;
@@ -157,42 +161,16 @@ export async function resolveStepInputs(options: ResolveStepInputsOptions): Prom
     }
 
     const required = input.required ?? true;
+    const producer = canonicalProducer(options.playbook, input.from.step, input.from.output);
+    const artifactOptions = {
+      root: options.root,
+      runId: options.runId,
+      stepId: input.from.step,
+      outputName: input.from.output
+    };
+
     try {
-      const producer = canonicalProducer(options.playbook, input.from.step, input.from.output);
-      const loaded = await readRunArtifact({
-        root: options.root,
-        runId: options.runId,
-        stepId: input.from.step,
-        outputName: input.from.output
-      });
-
-      if (loaded.descriptor.kind !== input.kind) {
-        throw new DokionError(
-          "ARTIFACT_INVALID",
-          `Resolved artifact kind ${loaded.descriptor.kind} does not match declared input kind ${input.kind}.`,
-          {
-            consumerStep: step.id,
-            inputName: input.name,
-            producerStep: input.from.step,
-            producerOutput: input.from.output,
-            expectedKind: input.kind,
-            observedKind: loaded.descriptor.kind
-          }
-        );
-      }
-      assertCanonicalProvenance(loaded.descriptor, producer, step.id, input.name);
-
-      resolved.push({
-        name: input.name,
-        kind: input.kind,
-        required,
-        producer: {
-          step: input.from.step,
-          output: input.from.output
-        },
-        descriptor: loaded.descriptor,
-        blob_path: loaded.descriptor.blob_path
-      });
+      await readRunArtifactDescriptor(artifactOptions);
     } catch (error) {
       if (!required && error instanceof DokionError && error.code === "ARTIFACT_NOT_FOUND") {
         missingOptional.push(input.name);
@@ -200,6 +178,36 @@ export async function resolveStepInputs(options: ResolveStepInputsOptions): Prom
       }
       throw error;
     }
+
+    const loaded = await readRunArtifact(artifactOptions);
+
+    if (loaded.descriptor.kind !== input.kind) {
+      throw new DokionError(
+        "ARTIFACT_INVALID",
+        `Resolved artifact kind ${loaded.descriptor.kind} does not match declared input kind ${input.kind}.`,
+        {
+          consumerStep: step.id,
+          inputName: input.name,
+          producerStep: input.from.step,
+          producerOutput: input.from.output,
+          expectedKind: input.kind,
+          observedKind: loaded.descriptor.kind
+        }
+      );
+    }
+    assertCanonicalProvenance(loaded.descriptor, producer, step.id, input.name);
+
+    resolved.push({
+      name: input.name,
+      kind: input.kind,
+      required,
+      producer: {
+        step: input.from.step,
+        output: input.from.output
+      },
+      descriptor: loaded.descriptor,
+      blob_path: loaded.descriptor.blob_path
+    });
   }
 
   return {
