@@ -159,6 +159,18 @@ describe("Playbook typed dataflow contract", () => {
     expect(await validationMessages(playbook)).toContain("typed input producer review must be declared before consumer inspect");
   });
 
+  test("rejects duplicate step ids because typed producer references must resolve exactly one step", async () => {
+    const playbook = structuredClone(basePlaybook()) as any;
+    const duplicate = structuredClone(playbook.stages[0].steps[0]);
+    playbook.stages.push({
+      id: "second-stage",
+      execution: "SEQUENTIAL",
+      steps: [duplicate]
+    });
+
+    expect(await validationMessages(playbook)).toContain("step id inspect must be unique across the Playbook");
+  });
+
   test("rejects duplicate typed output names within one producer step", async () => {
     const playbook = structuredClone(basePlaybook()) as any;
     playbook.stages[0].steps[0].outputs.push({ name: "analysis", kind: "json" });

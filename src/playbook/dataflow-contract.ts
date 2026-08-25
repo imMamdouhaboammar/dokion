@@ -28,6 +28,7 @@ function issue(message: string, instancePath: string, schemaPath: string): Dataf
 
 function indexSteps(data: Record<string, unknown>, issues: DataflowContractIssue[]): StepEntry[] {
   const indexed: StepEntry[] = [];
+  const seenStepIds = new Set<string>();
   const stages = Array.isArray(data.stages) ? data.stages : [];
 
   for (const [stageIndex, stageValue] of stages.entries()) {
@@ -37,6 +38,17 @@ function indexSteps(data: Record<string, unknown>, issues: DataflowContractIssue
     for (const [stepIndex, stepValue] of steps.entries()) {
       if (!isRecord(stepValue) || typeof stepValue.id !== "string") continue;
       const stepPath = `/stages/${stageIndex}/steps/${stepIndex}`;
+
+      if (seenStepIds.has(stepValue.id)) {
+        issues.push(issue(
+          `step id ${stepValue.id} must be unique across the Playbook`,
+          `${stepPath}/id`,
+          "#/dataflow/unique-step-id"
+        ));
+        continue;
+      }
+      seenStepIds.add(stepValue.id);
+
       const outputs = new Map<string, TypedOutput>();
       const declaredOutputs = Array.isArray(stepValue.outputs) ? stepValue.outputs : [];
 

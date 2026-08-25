@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/imMamdouhaboammar/dokion/main/schemas/dokion-run-artifact.schema.json",
+  "title": "Dokion Run Artifact Descriptor",
+  "description": "A durable run-scoped descriptor for content-addressed Playbook output bytes and their producer provenance. This contract records evidence and dataflow metadata; it does not grant execution authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "artifact_id",
+    "name",
+    "kind",
+    "sensitivity",
+    "retention",
+    "digest",
+    "size_bytes",
+    "blob_path",
+    "descriptor_path",
+    "created_at",
+    "producer"
+  ],
+  "properties": {
+    "schema": {
+      "const": "dokion.run-artifact.v1"
+    },
+    "artifact_id": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "name": {
+      "$ref": "#/$defs/pathToken"
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["json", "text", "file", "binary", "sarif", "junit", "patch", "opaque"]
+    },
+    "media_type": {
+      "$ref": "#/$defs/metadataString"
+    },
+    "declared_schema": {
+      "$ref": "#/$defs/metadataString"
+    },
+    "sensitivity": {
+      "type": "string",
+      "enum": ["PUBLIC", "INTERNAL", "CONFIDENTIAL", "SECRET"]
+    },
+    "retention": {
+      "type": "string",
+      "enum": ["RUN", "PROJECT", "RELEASE"]
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "size_bytes": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 67108864
+    },
+    "blob_path": {
+      "type": "string",
+      "pattern": "^\\.dokion/runs/[A-Za-z0-9][A-Za-z0-9._-]{0,127}/artifacts/sha256/[a-f0-9]{2}/[a-f0-9]{62}/blob$"
+    },
+    "descriptor_path": {
+      "type": "string",
+      "pattern": "^\\.dokion/runs/[A-Za-z0-9][A-Za-z0-9._-]{0,127}/artifacts/by-step/[A-Za-z0-9][A-Za-z0-9._-]{0,127}/[A-Za-z0-9][A-Za-z0-9._-]{0,127}\\.json$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run_id", "invocation_id", "stage_id", "step_id", "capability"],
+      "properties": {
+        "run_id": { "$ref": "#/$defs/pathToken" },
+        "invocation_id": { "$ref": "#/$defs/pathToken" },
+        "stage_id": { "$ref": "#/$defs/pathToken" },
+        "step_id": { "$ref": "#/$defs/pathToken" },
+        "capability": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "id"],
+          "properties": {
+            "type": { "$ref": "#/$defs/metadataString" },
+            "id": { "$ref": "#/$defs/metadataString" },
+            "immutable_reference": { "$ref": "#/$defs/metadataString" }
+          }
+        }
+      }
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "commit": { "$ref": "#/$defs/metadataString" },
+        "root_digest": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "pathToken": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    },
+    "metadataString": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^[^\\u0000]+$"
+    }
+  }
+}
