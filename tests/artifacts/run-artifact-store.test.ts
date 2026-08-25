@@ -117,6 +117,14 @@ describe("run-scoped content-addressed artifacts", () => {
     expect(error.message).toContain("already materialized with different content");
   });
 
+  test("rejects invalid JSON bytes for a declared json artifact before publication", async () => {
+    const root = await temporaryRoot();
+    const invalidJson = new TextEncoder().encode("{not-json}");
+
+    await expectCode(materializeRunArtifact(options(root, invalidJson)), "ARTIFACT_INVALID");
+    expect(await Bun.file(join(root, ".dokion", "runs", "run-test-001", "artifacts")).exists()).toBe(false);
+  });
+
   test("detects same-size blob tampering before returning bytes to a consumer", async () => {
     const root = await temporaryRoot();
     const bytes = new TextEncoder().encode("{\"trusted\":true}");
@@ -182,7 +190,7 @@ describe("run-scoped content-addressed artifacts", () => {
     };
 
     await expectCode(materializeRunArtifact(invalid), "ARTIFACT_INVALID");
-    expect(await Bun.file(join(root, ".dokion", "runs", "run-test-001", "artifacts", "by-step", "inspect", "analysis.json")).exists()).toBe(false);
+    expect(await Bun.file(join(root, ".dokion", "runs", "run-test-001", "artifacts")).exists()).toBe(false);
   });
 
   test("rejects a symlinked intermediate artifact directory before publishing bytes", async () => {
