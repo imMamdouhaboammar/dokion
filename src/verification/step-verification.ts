@@ -2,6 +2,8 @@ import { join } from "node:path";
 
 import { writeJsonAtomic } from "../core/json.ts";
 import { runCommand } from "../engine/command-runner.ts";
+import { commandSpecAllowed } from "../execution/command-policy.ts";
+import type { CommandSpecInput } from "../execution/command-spec.ts";
 import type { PlaybookStage, PlaybookStep } from "../playbook/types.ts";
 import type { VerificationResult } from "../state/types.ts";
 
@@ -29,12 +31,12 @@ function safeSegment(value: string): string {
   return value.replace(/[^a-zA-Z0-9._-]/g, "-");
 }
 
-function declaredCommands(step: PlaybookStep): string[] {
+function declaredCommands(step: PlaybookStep): CommandSpecInput[] {
   return step.verification ?? [];
 }
 
-function commandAllowed(step: PlaybookStep, command: string): boolean {
-  return (step.permissions?.shell ?? []).includes(command);
+function commandAllowed(step: PlaybookStep, command: CommandSpecInput): boolean {
+  return commandSpecAllowed(step.permissions?.shell, command);
 }
 
 export async function executeStepVerification(input: {
@@ -105,7 +107,7 @@ export async function executeStepVerification(input: {
     const passed = result.exitCode === 0;
     evidence.push(artifact);
     verificationResults.push({
-      command,
+      command: result.command,
       exit_code: result.exitCode,
       artifact,
       ran_at: result.endedAt
@@ -114,7 +116,7 @@ export async function executeStepVerification(input: {
       stageId: input.stage.id,
       stepId: input.step.id,
       commandIndex,
-      command,
+      command: result.command,
       blocking: input.step.required !== false,
       passed,
       exitCode: result.exitCode,
