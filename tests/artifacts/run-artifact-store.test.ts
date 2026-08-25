@@ -6,8 +6,7 @@ import { join } from "node:path";
 import { DokionError } from "../../src/core/errors.ts";
 import {
   materializeRunArtifact,
-  readRunArtifact,
-  type RunArtifactDescriptor
+  readRunArtifact
 } from "../../src/artifacts/run-artifact-store.ts";
 
 const roots: string[] = [];
@@ -118,14 +117,14 @@ describe("run-scoped content-addressed artifacts", () => {
     expect(error.message).toContain("already materialized with different content");
   });
 
-  test("detects blob tampering before returning bytes to a consumer", async () => {
+  test("detects same-size blob tampering before returning bytes to a consumer", async () => {
     const root = await temporaryRoot();
     const bytes = new TextEncoder().encode("{\"trusted\":true}");
     const descriptor = await materializeRunArtifact(options(root, bytes));
     const blobPath = join(root, descriptor.blob_path);
 
     await chmod(blobPath, 0o600);
-    await writeFile(blobPath, "tampered", "utf8");
+    await writeFile(blobPath, "{\"trusted\":fals}", "utf8");
     await chmod(blobPath, 0o400);
 
     await expectCode(readRunArtifact({
