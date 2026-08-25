@@ -120,6 +120,45 @@ describe("Playbook typed dataflow contract", () => {
     expect(await validationMessages(playbook)).toContain("typed input from inspect requires inspect in depends_on");
   });
 
+  test("rejects a typed input that references its own consumer step", async () => {
+    const playbook = structuredClone(basePlaybook()) as any;
+    playbook.stages[0].steps[1].outputs = [{ name: "analysis", kind: "json" }];
+    playbook.stages[0].steps[1].inputs[0].from.step = "review";
+    playbook.stages[0].steps[1].depends_on = ["review"];
+
+    expect(await validationMessages(playbook)).toContain("typed input cannot reference its own consumer step review");
+  });
+
+  test("rejects a typed producer declared after its consumer", async () => {
+    const playbook = structuredClone(basePlaybook()) as any;
+    const [inspect, review] = playbook.stages[0].steps;
+    inspect.inputs = [{
+      name: "review-result",
+      from: { step: "review", output: "review-result" },
+      kind: "json",
+      required: true
+    }];
+    inspect.depends_on = ["review"];
+    review.outputs = [{ name: "review-result", kind: "json" }];
+
+    expect(await validationMessages(playbook)).toContain("typed input producer review must be declared before consumer inspect");
+  });
+
+  test("rejects a typed cycle because at least one producer cannot precede its consumer", async () => {
+    const playbook = structuredClone(basePlaybook()) as any;
+    const [inspect, review] = playbook.stages[0].steps;
+    inspect.inputs = [{
+      name: "review-result",
+      from: { step: "review", output: "review-result" },
+      kind: "json",
+      required: true
+    }];
+    inspect.depends_on = ["review"];
+    review.outputs = [{ name: "review-result", kind: "json" }];
+
+    expect(await validationMessages(playbook)).toContain("typed input producer review must be declared before consumer inspect");
+  });
+
   test("rejects duplicate typed output names within one producer step", async () => {
     const playbook = structuredClone(basePlaybook()) as any;
     playbook.stages[0].steps[0].outputs.push({ name: "analysis", kind: "json" });
