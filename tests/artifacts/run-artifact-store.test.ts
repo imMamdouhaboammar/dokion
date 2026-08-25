@@ -3,7 +3,7 @@ import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { DokionError } from "../../src/core/errors.ts";
+import { DokionError, type DokionErrorCode } from "../../src/core/errors.ts";
 import {
   materializeRunArtifact,
   readRunArtifact
@@ -44,7 +44,7 @@ function options(root: string, bytes: Uint8Array) {
   };
 }
 
-async function expectCode(action: Promise<unknown>, code: string): Promise<DokionError> {
+async function expectCode(action: Promise<unknown>, code: DokionErrorCode): Promise<DokionError> {
   try {
     await action;
     throw new Error(`Expected ${code}`);
