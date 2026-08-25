@@ -3,6 +3,7 @@ import { constants } from "node:fs";
 import { chmod, link, lstat, open, readFile, rm } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 
+import { validateRunArtifactData } from "../contracts/schema-validator.ts";
 import { DokionError } from "../core/errors.ts";
 import { MAX_OUTPUT_ARTIFACT_BYTES } from "../execution/output-spool.ts";
 import type {
@@ -253,7 +254,7 @@ function sameBindingIdentity(left: RunArtifactDescriptor, right: RunArtifactDesc
     && left.repository?.root_digest === right.repository?.root_digest;
 }
 
-function parseDescriptor(bytes: Uint8Array, expected: ReadRunArtifactOptions): RunArtifactDescriptor {
+async function parseDescriptor(bytes: Uint8Array, expected: ReadRunArtifactOptions): Promise<RunArtifactDescriptor> {
   let parsed: unknown;
   try {
     parsed = JSON.parse(new TextDecoder().decode(bytes));
@@ -263,18 +264,25 @@ function parseDescriptor(bytes: Uint8Array, expected: ReadRunArtifactOptions): R
     });
   }
 
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    invalid("Run artifact descriptor must be an object.");
+  const schemaIssues = await validateRunArtifactData(
+    expected.root,
+    parsed,
+    descriptorPath(expected.runId, expected.stepId, expected.outputName)
+  );
+  if (schemaIssues.length > 0) {
+    invalid("Run artifact descriptor failed schema validation.", {
+      issues: schemaIssues.map((issue) => ({
+        instancePath: issue.instancePath,
+        message: issue.message
+      }))
+    });
   }
 
   const descriptor = parsed as RunArtifactDescriptor;
-  if (descriptor.schema !== "dokion.run-artifact.v1"
-      || !SHA256_PATTERN.test(descriptor.digest)
+  if (!SHA256_PATTERN.test(descriptor.digest)
       || descriptor.artifact_id !== descriptor.digest
-      || !Number.isSafeInteger(descriptor.size_bytes)
-      || descriptor.size_bytes < 0
-      || descriptor.producer?.run_id !== expected.runId
-      || descriptor.producer?.step_id !== expected.stepId
+      || descriptor.producer.run_id !== expected.runId
+      || descriptor.producer.step_id !== expected.stepId
       || descriptor.name !== expected.outputName) {
     invalid("Run artifact descriptor failed identity validation.", {
       runId: expected.runId,
