@@ -14,6 +14,7 @@ interface StepEntry {
   id: string;
   value: Record<string, unknown>;
   path: string;
+  order: number;
   outputs: Map<string, TypedOutput>;
 }
 
@@ -61,6 +62,7 @@ function indexSteps(data: Record<string, unknown>, issues: DataflowContractIssue
         id: stepValue.id,
         value: stepValue,
         path: stepPath,
+        order: indexed.length,
         outputs
       });
     }
@@ -98,6 +100,24 @@ export function validatePlaybookDataflow(data: unknown): DataflowContractIssue[]
           `typed input references undeclared producer step ${sourceStepId}`,
           `${inputPath}/from/step`,
           "#/dataflow/declared-producer"
+        ));
+        continue;
+      }
+
+      if (producer.id === step.id) {
+        issues.push(issue(
+          `typed input cannot reference its own consumer step ${step.id}`,
+          `${inputPath}/from/step`,
+          "#/dataflow/producer-precedes-consumer"
+        ));
+        continue;
+      }
+
+      if (producer.order >= step.order) {
+        issues.push(issue(
+          `typed input producer ${sourceStepId} must be declared before consumer ${step.id}`,
+          `${inputPath}/from/step`,
+          "#/dataflow/producer-precedes-consumer"
         ));
         continue;
       }
