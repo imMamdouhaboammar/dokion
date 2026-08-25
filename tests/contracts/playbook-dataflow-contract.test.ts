@@ -68,8 +68,9 @@ describe("Playbook typed dataflow contract", () => {
 
   test("keeps legacy string inputs and outputs schema-valid during migration", async () => {
     const playbook = basePlaybook();
-    playbook.stages[0].steps[0].outputs = ["analysis"] as never;
-    playbook.stages[0].steps[1].inputs = ["analysis"] as never;
+    const stage = playbook.stages[0]!;
+    stage.steps[0]!.outputs = ["analysis"] as never;
+    stage.steps[1]!.inputs = ["analysis"] as never;
     clearSchemaRegistryCache();
 
     expect(await validatePlaybookData(process.cwd(), playbook)).toEqual([]);
