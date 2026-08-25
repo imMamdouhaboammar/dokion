@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -133,6 +133,18 @@ describe("run-scoped content-addressed artifacts", () => {
       stepId: "inspect",
       outputName: "analysis"
     }), "ARTIFACT_DIGEST_MISMATCH");
+  });
+
+  test("rejects a symlinked intermediate artifact directory before publishing bytes", async () => {
+    const root = await temporaryRoot();
+    await mkdir(join(root, ".dokion"));
+    await mkdir(join(root, "redirected-runs"));
+    await symlink("../redirected-runs", join(root, ".dokion", "runs"), "dir");
+
+    await expectCode(
+      materializeRunArtifact(options(root, new TextEncoder().encode("{\"safe\":true}"))),
+      "ARTIFACT_INVALID"
+    );
   });
 
   test("rejects unsafe run and binding identifiers before filesystem access", async () => {
