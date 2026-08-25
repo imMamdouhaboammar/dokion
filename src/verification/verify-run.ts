@@ -1,5 +1,7 @@
 import { detectPlatform, evaluateApplicability } from "../applicability/evaluate-applicability.ts";
 import { DokionError } from "../core/errors.ts";
+import { commandSpecDisplay } from "../execution/command-policy.ts";
+import type { CommandSpecInput } from "../execution/command-spec.ts";
 import { listFindings } from "../findings/finding-store.ts";
 import { captureRepositoryIdentity } from "../git/repository-identity.ts";
 import { inspectProject } from "../inspect/project-inspector.ts";
@@ -53,7 +55,7 @@ interface StepBatchRecord {
   stageId: string;
   stepId: string;
   blocking: boolean;
-  commands: string[];
+  commands: CommandSpecInput[];
   evidence: string[];
   verificationResults: VerificationResult[];
   executions: StepVerificationExecution[];
@@ -107,7 +109,7 @@ function stepResults(records: StepBatchRecord[]): DeclaredVerificationResult[] {
         stageId: record.stageId,
         stepId: record.stepId,
         commandIndex: executed.length + offset + 1,
-        command
+        command: commandSpecDisplay(command)
       }))
     ];
   });
