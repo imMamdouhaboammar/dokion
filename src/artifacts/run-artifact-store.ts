@@ -311,11 +311,10 @@ async function assertDescriptorSchema(
 async function parseDescriptor(bytes: Uint8Array, expected: ReadRunArtifactOptions): Promise<RunArtifactDescriptor> {
   let parsed: unknown;
   try {
-    parsed = JSON.parse(new TextDecoder().decode(bytes));
-  } catch (error) {
-    throw new DokionError("ARTIFACT_INVALID", "Run artifact descriptor is not valid JSON.", {
-      cause: error instanceof Error ? error.message : String(error)
-    });
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    parsed = JSON.parse(text);
+  } catch {
+    throw new DokionError("ARTIFACT_INVALID", "Run artifact descriptor is not valid UTF-8 JSON.");
   }
 
   await assertDescriptorSchema(
