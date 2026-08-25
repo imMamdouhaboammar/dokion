@@ -23,6 +23,8 @@ export interface SchemaRegistry {
   manifest: ValidateFunction;
   playbook: ValidateFunction;
   coverageAssignment: ValidateFunction;
+  stepInput: ValidateFunction;
+  stepOutput: ValidateFunction;
   state: ValidateFunction;
   event: ValidateFunction;
   finding: ValidateFunction;
@@ -45,6 +47,8 @@ async function compileRegistry(): Promise<SchemaRegistry> {
     manifest: compile(embeddedSchemas.manifest),
     playbook: compile(embeddedSchemas.playbook),
     coverageAssignment: compile(embeddedSchemas.coverageAssignment),
+    stepInput: compile(embeddedSchemas.stepInput),
+    stepOutput: compile(embeddedSchemas.stepOutput),
     state: compile(embeddedSchemas.state),
     event: compile(embeddedSchemas.event),
     finding: compile(embeddedSchemas.finding),
@@ -85,42 +89,90 @@ async function collectJsonFiles(root: string, pattern: string): Promise<string[]
 }
 
 interface CoverageExtension {
-  assignment: unknown;
+  kind: "coverage";
+  value: unknown;
   path: string;
 }
 
-function extractCoverageExtensions(data: unknown): { base: unknown; extensions: CoverageExtension[] } {
-  if (typeof data !== "object" || data === null || Array.isArray(data)) {
+interface StepInputExtension {
+  kind: "step-input";
+  value: unknown;
+  path: string;
+}
+
+interface StepOutputExtension {
+  kind: "step-output";
+  value: unknown;
+  path: string;
+}
+
+type PlaybookExtension = CoverageExtension | StepInputExtension | StepOutputExtension;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function typedBindingPlaceholder(value: Record<string, unknown>, fallback: string): string {
+  return typeof value.name === "string" && value.name.length > 0 ? value.name : fallback;
+}
+
+function extractPlaybookExtensions(data: unknown): { base: unknown; extensions: PlaybookExtension[] } {
+  if (!isRecord(data)) {
     return { base: data, extensions: [] };
   }
 
   const base = structuredClone(data) as Record<string, unknown>;
-  const extensions: CoverageExtension[] = [];
+  const extensions: PlaybookExtension[] = [];
   const stages = Array.isArray(base.stages) ? base.stages : [];
   for (const [stageIndex, stageValue] of stages.entries()) {
-    if (typeof stageValue !== "object" || stageValue === null || Array.isArray(stageValue)) continue;
-    const stage = stageValue as Record<string, unknown>;
-    const steps = Array.isArray(stage.steps) ? stage.steps : [];
+    if (!isRecord(stageValue)) continue;
+    const steps = Array.isArray(stageValue.steps) ? stageValue.steps : [];
     for (const [stepIndex, stepValue] of steps.entries()) {
-      if (typeof stepValue !== "object" || stepValue === null || Array.isArray(stepValue)) continue;
-      const step = stepValue as Record<string, unknown>;
-      if (!("coverage_lanes" in step)) continue;
+      if (!isRecord(stepValue)) continue;
 
-      const assignments = step.coverage_lanes;
-      if (Array.isArray(assignments)) {
-        for (const [assignmentIndex, assignment] of assignments.entries()) {
+      if ("coverage_lanes" in stepValue) {
+        const assignments = stepValue.coverage_lanes;
+        if (Array.isArray(assignments)) {
+          for (const [assignmentIndex, assignment] of assignments.entries()) {
+            extensions.push({
+              kind: "coverage",
+              value: assignment,
+              path: `/stages/${stageIndex}/steps/${stepIndex}/coverage_lanes/${assignmentIndex}`
+            });
+          }
+        } else {
           extensions.push({
-            assignment,
-            path: `/stages/${stageIndex}/steps/${stepIndex}/coverage_lanes/${assignmentIndex}`
+            kind: "coverage",
+            value: assignments,
+            path: `/stages/${stageIndex}/steps/${stepIndex}/coverage_lanes`
           });
         }
-      } else {
-        extensions.push({
-          assignment: assignments,
-          path: `/stages/${stageIndex}/steps/${stepIndex}/coverage_lanes`
+        delete stepValue.coverage_lanes;
+      }
+
+      if (Array.isArray(stepValue.inputs)) {
+        stepValue.inputs = stepValue.inputs.map((input, inputIndex) => {
+          if (!isRecord(input)) return input;
+          extensions.push({
+            kind: "step-input",
+            value: input,
+            path: `/stages/${stageIndex}/steps/${stepIndex}/inputs/${inputIndex}`
+          });
+          return typedBindingPlaceholder(input, `typed-input-${inputIndex}`);
         });
       }
-      delete step.coverage_lanes;
+
+      if (Array.isArray(stepValue.outputs)) {
+        stepValue.outputs = stepValue.outputs.map((output, outputIndex) => {
+          if (!isRecord(output)) return output;
+          extensions.push({
+            kind: "step-output",
+            value: output,
+            path: `/stages/${stageIndex}/steps/${stepIndex}/outputs/${outputIndex}`
+          });
+          return typedBindingPlaceholder(output, `typed-output-${outputIndex}`);
+        });
+      }
     }
   }
   return { base, extensions };
@@ -132,12 +184,17 @@ export async function validatePlaybookData(
   file = ".dokion/playbook.json"
 ): Promise<ValidationIssue[]> {
   const registry = await buildRegistry(root);
-  const { base, extensions } = extractCoverageExtensions(data);
+  const { base, extensions } = extractPlaybookExtensions(data);
   const issues = registry.playbook(base) ? [] : normalizeErrors(file, registry.playbook.errors);
 
   for (const extension of extensions) {
-    if (!registry.coverageAssignment(extension.assignment)) {
-      issues.push(...normalizeErrors(file, registry.coverageAssignment.errors, extension.path));
+    const validator = extension.kind === "coverage"
+      ? registry.coverageAssignment
+      : extension.kind === "step-input"
+        ? registry.stepInput
+        : registry.stepOutput;
+    if (!validator(extension.value)) {
+      issues.push(...normalizeErrors(file, validator.errors, extension.path));
     }
   }
   return issues;
