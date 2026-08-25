@@ -3,6 +3,7 @@ import type {
   DokionPlaybook,
   PlaybookArtifactKind,
   PlaybookInputBinding,
+  PlaybookOutputDeclaration,
   PlaybookStep
 } from "../playbook/types.ts";
 import { readRunArtifact, type RunArtifactDescriptor } from "./run-artifact-store.ts";
@@ -32,6 +33,12 @@ export interface ResolveStepInputsOptions {
   step: PlaybookStep;
 }
 
+interface CanonicalProducer {
+  stageId: string;
+  step: PlaybookStep;
+  output: PlaybookOutputDeclaration;
+}
+
 function canonicalStep(playbook: DokionPlaybook, stepId: string): PlaybookStep {
   const matches = playbook.stages
     .flatMap((stage) => stage.steps)
@@ -54,6 +61,88 @@ function isTypedInput(input: string | PlaybookInputBinding): input is PlaybookIn
   return typeof input !== "string";
 }
 
+function isTypedOutput(output: string | PlaybookOutputDeclaration): output is PlaybookOutputDeclaration {
+  return typeof output !== "string";
+}
+
+function canonicalProducer(
+  playbook: DokionPlaybook,
+  stepId: string,
+  outputName: string
+): CanonicalProducer {
+  const matches = playbook.stages.flatMap((stage) => stage.steps
+    .filter((step) => step.id === stepId)
+    .map((step) => ({ stageId: stage.id, step })));
+
+  if (matches.length !== 1) {
+    throw new DokionError("ARTIFACT_INVALID", "Artifact producer must resolve to exactly one Playbook step.", {
+      stepId,
+      matches: matches.length
+    });
+  }
+
+  const producer = matches[0]!;
+  const outputs = (producer.step.outputs ?? [])
+    .filter(isTypedOutput)
+    .filter((output) => output.name === outputName);
+  if (outputs.length !== 1) {
+    throw new DokionError("ARTIFACT_INVALID", "Artifact producer output must resolve to exactly one typed declaration.", {
+      stepId,
+      outputName,
+      matches: outputs.length
+    });
+  }
+
+  return { ...producer, output: outputs[0]! };
+}
+
+function assertCanonicalProvenance(
+  descriptor: RunArtifactDescriptor,
+  producer: CanonicalProducer,
+  consumerStep: string,
+  inputName: string
+): void {
+  const expected = {
+    stageId: producer.stageId,
+    capabilityType: producer.step.capability.type,
+    capabilityId: producer.step.capability.id,
+    immutableReference: producer.step.capability.immutable_reference,
+    kind: producer.output.kind,
+    mediaType: producer.output.media_type,
+    declaredSchema: producer.output.schema,
+    sensitivity: producer.output.sensitivity ?? "INTERNAL",
+    retention: producer.output.retention ?? "RUN"
+  };
+  const observed = {
+    stageId: descriptor.producer.stage_id,
+    capabilityType: descriptor.producer.capability.type,
+    capabilityId: descriptor.producer.capability.id,
+    immutableReference: descriptor.producer.capability.immutable_reference,
+    kind: descriptor.kind,
+    mediaType: descriptor.media_type,
+    declaredSchema: descriptor.declared_schema,
+    sensitivity: descriptor.sensitivity,
+    retention: descriptor.retention
+  };
+
+  const mismatches = Object.keys(expected).filter((key) => (
+    expected[key as keyof typeof expected] !== observed[key as keyof typeof observed]
+  ));
+  if (mismatches.length > 0) {
+    throw new DokionError(
+      "ARTIFACT_INVALID",
+      "Resolved artifact provenance does not match the canonical Playbook declaration.",
+      {
+        consumerStep,
+        inputName,
+        producerStep: producer.step.id,
+        outputName: producer.output.name,
+        mismatches
+      }
+    );
+  }
+}
+
 export async function resolveStepInputs(options: ResolveStepInputsOptions): Promise<ResolvedStepInputs> {
   const step = canonicalStep(options.playbook, options.step.id);
   const declaredInputs = step.inputs ?? [];
@@ -69,6 +158,7 @@ export async function resolveStepInputs(options: ResolveStepInputsOptions): Prom
 
     const required = input.required ?? true;
     try {
+      const producer = canonicalProducer(options.playbook, input.from.step, input.from.output);
       const loaded = await readRunArtifact({
         root: options.root,
         runId: options.runId,
@@ -90,6 +180,7 @@ export async function resolveStepInputs(options: ResolveStepInputsOptions): Prom
           }
         );
       }
+      assertCanonicalProvenance(loaded.descriptor, producer, step.id, input.name);
 
       resolved.push({
         name: input.name,
