@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -152,6 +152,27 @@ describe("typed Playbook input resolution", () => {
       playbook: playbook(step),
       step
     }), "ARTIFACT_DIGEST_MISMATCH");
+  });
+
+  test("rejects schema-valid producer provenance substitution against the canonical Playbook", async () => {
+    const root = await temporaryRoot();
+    const descriptor = await produce(root);
+    const step = consumer();
+    const descriptorPath = join(root, descriptor.descriptor_path);
+    const tampered = JSON.parse(await readFile(descriptorPath, "utf8"));
+    tampered.producer.capability.id = "other-inspector";
+    tampered.sensitivity = "PUBLIC";
+
+    await chmod(descriptorPath, 0o600);
+    await writeFile(descriptorPath, `${JSON.stringify(tampered, null, 2)}\n`, "utf8");
+    await chmod(descriptorPath, 0o400);
+
+    await expectCode(resolveStepInputs({
+      root,
+      runId: "run-resolve-001",
+      playbook: playbook(step),
+      step
+    }), "ARTIFACT_INVALID");
   });
 
   test("keeps legacy string inputs explicit instead of pretending they are artifact bindings", async () => {
