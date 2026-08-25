@@ -254,6 +254,19 @@ function normalizeDeclaration(declaration: PlaybookOutputDeclaration): Normalize
   };
 }
 
+function validateArtifactPayload(declaration: NormalizedOutputDeclaration, bytes: Uint8Array): void {
+  if (declaration.kind !== "json") return;
+
+  try {
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    JSON.parse(text);
+  } catch {
+    invalid("Declared JSON run artifact contains invalid UTF-8 or JSON bytes.", {
+      kind: declaration.kind
+    });
+  }
+}
+
 function descriptorBytes(descriptor: RunArtifactDescriptor): Uint8Array {
   return new TextEncoder().encode(`${JSON.stringify(descriptor, null, 2)}\n`);
 }
@@ -369,6 +382,7 @@ export async function materializeRunArtifact(options: MaterializeRunArtifactOpti
   if (options.repository?.commit !== undefined) {
     requireMetadataString("repository commit", options.repository.commit);
   }
+  validateArtifactPayload(declaration, options.bytes);
 
   const digest = sha256Digest(options.bytes);
   const blobPath = blobPathForDigest(runId, digest);
