@@ -1,3 +1,5 @@
+import type { CommandSpecInput } from "../execution/command-spec.ts";
+
 export type ExecutionMode =
   | "READ_ONLY"
   | "ANALYZE"
@@ -103,7 +105,7 @@ export interface CoveragePolicy {
 
 export interface ReleaseGateDefinition {
   id: string;
-  command?: string;
+  command?: CommandSpecInput;
   condition?: string;
   blocking: boolean;
   notes?: string;
@@ -119,6 +121,11 @@ export interface ValidationPolicy {
   max_diff_lines?: number;
 }
 
+export interface CapabilityEntrypoint {
+  kind: "command";
+  command: CommandSpecInput;
+}
+
 export interface CapabilityReference {
   type: string;
   id: string;
@@ -126,6 +133,7 @@ export interface CapabilityReference {
   version?: string;
   source?: string;
   immutable_reference: string;
+  entrypoint?: CapabilityEntrypoint;
   platforms?: {
     claude_code?: string;
     codex?: string;
@@ -147,7 +155,7 @@ export interface PlaybookStep {
   outputs?: PlaybookStepOutput[];
   approval?: ApprovalPolicy;
   validation?: ValidationPolicy;
-  verification?: string[];
+  verification?: CommandSpecInput[];
   success_conditions?: string[];
   stop_conditions?: string[];
   failure_policy?: FailurePolicy;
@@ -158,7 +166,7 @@ export interface PlaybookStep {
     read?: string[];
     write?: string[];
     network?: boolean | string[];
-    shell?: string[];
+    shell?: CommandSpecInput[];
     env?: string[];
   };
 }
