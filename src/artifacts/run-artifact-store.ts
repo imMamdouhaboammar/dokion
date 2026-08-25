@@ -348,7 +348,7 @@ async function parseDescriptor(bytes: Uint8Array, expected: ReadRunArtifactOptio
   return descriptor;
 }
 
-async function readDescriptor(options: ReadRunArtifactOptions): Promise<RunArtifactDescriptor> {
+export async function readRunArtifactDescriptor(options: ReadRunArtifactOptions): Promise<RunArtifactDescriptor> {
   const runId = requirePathToken("run id", options.runId);
   const stepId = requirePathToken("step id", options.stepId);
   const outputName = requirePathToken("output name", options.outputName);
@@ -425,7 +425,7 @@ export async function materializeRunArtifact(options: MaterializeRunArtifactOpti
 
   const bindingAbsolute = resolveOwnedPath(options.root, bindingPath);
   if (await regularFileState(bindingAbsolute) !== "missing") {
-    const existing = await readDescriptor({ root: options.root, runId, stepId, outputName: declaration.name });
+    const existing = await readRunArtifactDescriptor({ root: options.root, runId, stepId, outputName: declaration.name });
     if (!sameBindingIdentity(existing, candidate)) {
       throw new DokionError("ARTIFACT_CONFLICT", "Run artifact output is already materialized with different content or provenance.", {
         runId,
@@ -456,7 +456,7 @@ export async function materializeRunArtifact(options: MaterializeRunArtifactOpti
   }
 
   if (await publishImmutableFile(bindingAbsolute, descriptorBytes(candidate)) === "exists") {
-    const existing = await readDescriptor({ root: options.root, runId, stepId, outputName: declaration.name });
+    const existing = await readRunArtifactDescriptor({ root: options.root, runId, stepId, outputName: declaration.name });
     if (!sameBindingIdentity(existing, candidate)) {
       throw new DokionError("ARTIFACT_CONFLICT", "Run artifact output was concurrently materialized with different content or provenance.", {
         runId,
@@ -471,7 +471,7 @@ export async function materializeRunArtifact(options: MaterializeRunArtifactOpti
 }
 
 export async function readRunArtifact(options: ReadRunArtifactOptions): Promise<LoadedRunArtifact> {
-  const descriptor = await readDescriptor(options);
+  const descriptor = await readRunArtifactDescriptor(options);
   const blobAbsolute = resolveOwnedPath(options.root, descriptor.blob_path);
   const bytes = await readBoundedRegularFile(blobAbsolute, MAX_OUTPUT_ARTIFACT_BYTES);
 
