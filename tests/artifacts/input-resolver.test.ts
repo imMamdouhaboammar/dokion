@@ -154,6 +154,21 @@ describe("typed Playbook input resolution", () => {
     }), "ARTIFACT_DIGEST_MISMATCH");
   });
 
+  test("does not treat a missing blob as a missing optional producer output", async () => {
+    const root = await temporaryRoot();
+    const descriptor = await produce(root);
+    const step = consumer(false);
+
+    await rm(join(root, descriptor.blob_path));
+
+    await expectCode(resolveStepInputs({
+      root,
+      runId: "run-resolve-001",
+      playbook: playbook(step),
+      step
+    }), "ARTIFACT_NOT_FOUND");
+  });
+
   test("rejects schema-valid producer provenance substitution against the canonical Playbook", async () => {
     const root = await temporaryRoot();
     const descriptor = await produce(root);
