@@ -5,7 +5,7 @@ import { join } from "node:path";
 
 import { materializeRunArtifact } from "../../src/artifacts/run-artifact-store.ts";
 import { resolveStepInputs } from "../../src/artifacts/input-resolver.ts";
-import { DokionError } from "../../src/core/errors.ts";
+import { DokionError, type DokionErrorCode } from "../../src/core/errors.ts";
 import type { DokionPlaybook, PlaybookStep } from "../../src/playbook/types.ts";
 
 const roots: string[] = [];
@@ -71,7 +71,7 @@ async function produce(root: string) {
   });
 }
 
-async function expectCode(action: Promise<unknown>, code: string) {
+async function expectCode(action: Promise<unknown>, code: DokionErrorCode) {
   try {
     await action;
     throw new Error(`Expected ${code}`);
