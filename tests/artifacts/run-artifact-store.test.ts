@@ -135,6 +135,28 @@ describe("run-scoped content-addressed artifacts", () => {
     }), "ARTIFACT_DIGEST_MISMATCH");
   });
 
+  test("rejects tampered descriptor metadata before returning artifact bytes", async () => {
+    const root = await temporaryRoot();
+    const descriptor = await materializeRunArtifact(
+      options(root, new TextEncoder().encode("{\"trusted\":true}"))
+    );
+    const descriptorPath = join(root, descriptor.descriptor_path);
+    const tampered = JSON.parse(await readFile(descriptorPath, "utf8"));
+    tampered.producer.capability.id = "";
+    tampered.sensitivity = "UNTRUSTED";
+
+    await chmod(descriptorPath, 0o600);
+    await writeFile(descriptorPath, `${JSON.stringify(tampered, null, 2)}\n`, "utf8");
+    await chmod(descriptorPath, 0o400);
+
+    await expectCode(readRunArtifact({
+      root,
+      runId: "run-test-001",
+      stepId: "inspect",
+      outputName: "analysis"
+    }), "ARTIFACT_INVALID");
+  });
+
   test("rejects a symlinked intermediate artifact directory before publishing bytes", async () => {
     const root = await temporaryRoot();
     await mkdir(join(root, ".dokion"));
