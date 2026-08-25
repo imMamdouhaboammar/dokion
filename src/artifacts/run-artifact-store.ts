@@ -76,6 +76,15 @@ export interface LoadedRunArtifact {
   bytes: Uint8Array;
 }
 
+interface NormalizedOutputDeclaration {
+  name: string;
+  kind: PlaybookArtifactKind;
+  mediaType: string | undefined;
+  declaredSchema: string | undefined;
+  sensitivity: PlaybookArtifactSensitivity;
+  retention: PlaybookArtifactRetention;
+}
+
 function sha256Digest(bytes: Uint8Array): `sha256:${string}` {
   return `sha256:${createHash("sha256").update(bytes).digest("hex")}`;
 }
@@ -110,6 +119,7 @@ function resolveOwnedPath(rootValue: string, relativePath: string): string {
   if (!relativePath || isAbsolute(relativePath) || relativePath.includes("\\")) {
     invalid("Run artifact path must be repository-relative POSIX text.", { relativePath });
   }
+
   const segments = relativePath.split("/");
   if (segments.some((segment) => segment === "" || segment === "." || segment === "..")) {
     invalid("Run artifact path contains an unsafe segment.", { relativePath });
@@ -117,6 +127,7 @@ function resolveOwnedPath(rootValue: string, relativePath: string): string {
   if (!relativePath.startsWith(".dokion/runs/")) {
     invalid("Run artifact path must stay inside .dokion/runs.", { relativePath });
   }
+
   const absolute = resolve(root, relativePath);
   const fromRoot = relative(root, absolute);
   if (fromRoot === ".." || fromRoot.startsWith("../") || isAbsolute(fromRoot)) {
@@ -134,7 +145,7 @@ function descriptorPath(runId: string, stepId: string, outputName: string): stri
   return `.dokion/runs/${runId}/artifacts/by-step/${stepId}/${outputName}.json`;
 }
 
-async function regularFileState(path: string): Promise<"missing" | { size: number; mode: number }> {
+async function regularFileState(path: string): Promise<"missing" | { size: number }> {
   try {
     const stat = await lstat(path);
     if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1) {
@@ -143,7 +154,7 @@ async function regularFileState(path: string): Promise<"missing" | { size: numbe
         links: stat.nlink
       });
     }
-    return { size: stat.size, mode: stat.mode & 0o777 };
+    return { size: stat.size };
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return "missing";
     throw error;
@@ -168,7 +179,8 @@ async function readBoundedRegularFile(path: string, maximumBytes: number): Promi
 async function publishImmutableFile(path: string, bytes: Uint8Array): Promise<"created" | "exists"> {
   await mkdir(dirname(path), { recursive: true, mode: 0o700 });
   const temporary = `${path}.tmp-${randomUUID()}`;
-  let handle;
+  let handle: Awaited<ReturnType<typeof open>> | undefined;
+
   try {
     handle = await open(
       temporary,
@@ -180,6 +192,7 @@ async function publishImmutableFile(path: string, bytes: Uint8Array): Promise<"c
     await handle.close();
     handle = undefined;
     await chmod(temporary, 0o400);
+
     try {
       await link(temporary, path);
       return "created";
@@ -193,31 +206,23 @@ async function publishImmutableFile(path: string, bytes: Uint8Array): Promise<"c
   }
 }
 
-function normalizeDeclaration(declaration: PlaybookOutputDeclaration): {
-  name: string;
-  kind: PlaybookArtifactKind;
-  mediaType?: string;
-  declaredSchema?: string;
-  sensitivity: PlaybookArtifactSensitivity;
-  retention: PlaybookArtifactRetention;
-} {
+function normalizeDeclaration(declaration: PlaybookOutputDeclaration): NormalizedOutputDeclaration {
   requirePathToken("output name", declaration.name);
   if (declaration.kind === "directory") {
     invalid("Directory outputs require a directory-manifest contract and are not materialized as raw bytes yet.", {
       kind: declaration.kind
     });
   }
-  const mediaType = declaration.media_type === undefined
-    ? undefined
-    : requireMetadataString("media type", declaration.media_type);
-  const declaredSchema = declaration.schema === undefined
-    ? undefined
-    : requireMetadataString("declared schema", declaration.schema);
+
   return {
     name: declaration.name,
     kind: declaration.kind,
-    mediaType,
-    declaredSchema,
+    mediaType: declaration.media_type === undefined
+      ? undefined
+      : requireMetadataString("media type", declaration.media_type),
+    declaredSchema: declaration.schema === undefined
+      ? undefined
+      : requireMetadataString("declared schema", declaration.schema),
     sensitivity: declaration.sensitivity ?? "INTERNAL",
     retention: declaration.retention ?? "RUN"
   };
@@ -256,9 +261,11 @@ function parseDescriptor(bytes: Uint8Array, expected: ReadRunArtifactOptions): R
       cause: error instanceof Error ? error.message : String(error)
     });
   }
+
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
     invalid("Run artifact descriptor must be an object.");
   }
+
   const descriptor = parsed as RunArtifactDescriptor;
   if (descriptor.schema !== "dokion.run-artifact.v1"
       || !SHA256_PATTERN.test(descriptor.digest)
@@ -274,6 +281,7 @@ function parseDescriptor(bytes: Uint8Array, expected: ReadRunArtifactOptions): R
       outputName: expected.outputName
     });
   }
+
   const expectedDescriptorPath = descriptorPath(expected.runId, expected.stepId, expected.outputName);
   const expectedBlobPath = blobPathForDigest(expected.runId, descriptor.digest);
   if (descriptor.descriptor_path !== expectedDescriptorPath || descriptor.blob_path !== expectedBlobPath) {
@@ -300,6 +308,7 @@ export async function materializeRunArtifact(options: MaterializeRunArtifactOpti
   const stageId = requirePathToken("stage id", options.stageId);
   const stepId = requirePathToken("step id", options.stepId);
   const declaration = normalizeDeclaration(options.declaration);
+
   requireMetadataString("capability type", options.capability.type);
   requireMetadataString("capability id", options.capability.id);
   if (options.capability.immutable_reference !== undefined) {
@@ -326,8 +335,8 @@ export async function materializeRunArtifact(options: MaterializeRunArtifactOpti
     artifact_id: digest,
     name: declaration.name,
     kind: declaration.kind,
-    ...(declaration.mediaType ? { media_type: declaration.mediaType } : {}),
-    ...(declaration.declaredSchema ? { declared_schema: declaration.declaredSchema } : {}),
+    ...(declaration.mediaType === undefined ? {} : { media_type: declaration.mediaType }),
+    ...(declaration.declaredSchema === undefined ? {} : { declared_schema: declaration.declaredSchema }),
     sensitivity: declaration.sensitivity,
     retention: declaration.retention,
     digest,
@@ -343,17 +352,16 @@ export async function materializeRunArtifact(options: MaterializeRunArtifactOpti
       capability: {
         type: options.capability.type,
         id: options.capability.id,
-        ...(options.capability.immutable_reference
-          ? { immutable_reference: options.capability.immutable_reference }
-          : {})
+        ...(options.capability.immutable_reference === undefined
+          ? {}
+          : { immutable_reference: options.capability.immutable_reference })
       }
     },
-    ...(options.repository ? { repository: { ...options.repository } } : {})
+    ...(options.repository === undefined ? {} : { repository: { ...options.repository } })
   };
 
   const bindingAbsolute = resolveOwnedPath(options.root, bindingPath);
-  const bindingState = await regularFileState(bindingAbsolute);
-  if (bindingState !== "missing") {
+  if (await regularFileState(bindingAbsolute) !== "missing") {
     const existing = await readDescriptor({ root: options.root, runId, stepId, outputName: declaration.name });
     if (!sameBindingIdentity(existing, candidate)) {
       throw new DokionError("ARTIFACT_CONFLICT", "Run artifact output is already materialized with different content or provenance.", {
@@ -364,16 +372,12 @@ export async function materializeRunArtifact(options: MaterializeRunArtifactOpti
         candidateDigest: candidate.digest
       });
     }
-    const loaded = await readRunArtifact({ root: options.root, runId, stepId, outputName: declaration.name });
-    if (sha256Digest(loaded.bytes) !== candidate.digest) {
-      throw new DokionError("ARTIFACT_DIGEST_MISMATCH", "Existing run artifact bytes no longer match the declared digest.");
-    }
+    await readRunArtifact({ root: options.root, runId, stepId, outputName: declaration.name });
     return existing;
   }
 
   const blobAbsolute = resolveOwnedPath(options.root, blobPath);
-  const blobPublish = await publishImmutableFile(blobAbsolute, options.bytes);
-  if (blobPublish === "exists") {
+  if (await publishImmutableFile(blobAbsolute, options.bytes) === "exists") {
     const existingBytes = await readBoundedRegularFile(blobAbsolute, MAX_OUTPUT_ARTIFACT_BYTES);
     if (existingBytes.byteLength !== options.bytes.byteLength) {
       throw new DokionError("ARTIFACT_SIZE_MISMATCH", "Content-addressed run artifact blob has an unexpected size.", {
@@ -388,8 +392,7 @@ export async function materializeRunArtifact(options: MaterializeRunArtifactOpti
     }
   }
 
-  const descriptorPublish = await publishImmutableFile(bindingAbsolute, descriptorBytes(candidate));
-  if (descriptorPublish === "exists") {
+  if (await publishImmutableFile(bindingAbsolute, descriptorBytes(candidate)) === "exists") {
     const existing = await readDescriptor({ root: options.root, runId, stepId, outputName: declaration.name });
     if (!sameBindingIdentity(existing, candidate)) {
       throw new DokionError("ARTIFACT_CONFLICT", "Run artifact output was concurrently materialized with different content or provenance.", {
@@ -415,6 +418,7 @@ export async function readRunArtifact(options: ReadRunArtifactOptions): Promise<
       observedSize: bytes.byteLength
     });
   }
+
   const observedDigest = sha256Digest(bytes);
   if (observedDigest !== descriptor.digest) {
     throw new DokionError("ARTIFACT_DIGEST_MISMATCH", "Run artifact blob digest does not match its descriptor.", {
@@ -422,5 +426,6 @@ export async function readRunArtifact(options: ReadRunArtifactOptions): Promise<
       observedDigest
     });
   }
+
   return { descriptor, bytes };
 }
