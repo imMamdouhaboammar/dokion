@@ -26,6 +26,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Synchronize canonical Playbook dataflow schema
+        run: bun run scripts/sync-playbook-dataflow-schema.ts --write
+
       - name: Regenerate deterministic product surface
         run: bun run generate:product-surface
 
