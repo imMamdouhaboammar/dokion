@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
 import { readRunArtifact } from "../../src/artifacts/run-artifact-store.ts";
+import { validatePlaybookData } from "../../src/contracts/schema-validator.ts";
 import { ExecutionEngine } from "../../src/engine/execution-engine.ts";
 import { initializeGitFixture } from "../helpers/git-fixture.ts";
 
@@ -24,10 +25,6 @@ function command(code: string): { executable: string; args: string[] } {
 }
 
 async function writeTwoStepPlaybook(root: string): Promise<void> {
-  const raw = await readFile(join(process.cwd(), "playbooks/example.playbook.json"), "utf8");
-  const playbook = JSON.parse(raw.replaceAll("sha256:PLACEHOLDER", `sha256:${"a".repeat(64)}`));
-  const template = playbook.stages[0].steps[0];
-
   const producerCommand = command(`
     import { mkdir, readFile, writeFile } from "node:fs/promises";
     import { dirname } from "node:path";
@@ -54,71 +51,86 @@ async function writeTwoStepPlaybook(root: string): Promise<void> {
     await writeFile(output.path, producerValue.replace("producer", "consumer"));
   `);
 
-  playbook.project.name = "invocation-handoff-fixture";
-  playbook.project.target = "READY_FOR_STAGING";
-  playbook.release_gates = [];
-  playbook.stages = [{
-    id: "runtime",
-    name: "Runtime",
-    execution: "SEQUENTIAL",
-    steps: [
-      {
-        ...structuredClone(template),
-        id: "producer",
-        responsibility: "Produce one declared artifact",
-        mode: "VERIFY_ONLY",
-        approval: "NEVER",
-        capability: {
-          type: "skill",
-          id: "producer-skill",
-          immutable_reference: `sha256:${"1".repeat(64)}`,
-          entrypoint: { kind: "command", command: producerCommand }
+  const playbook = {
+    version: "1.0.0",
+    project: { name: "invocation-handoff-fixture", target: "READY_FOR_STAGING" },
+    authority: {
+      capability_selection: "USER_ONLY",
+      execution_order: "USER_ONLY"
+    },
+    enforcement: {
+      playbook_immutable: true,
+      hash_algorithm: "sha256",
+      verify_before_each_step: true,
+      on_mutation: "ABORT_TAINTED",
+      worktree_policy: "clean-only"
+    },
+    stages: [{
+      id: "runtime",
+      name: "Runtime",
+      execution: "SEQUENTIAL",
+      steps: [
+        {
+          id: "producer",
+          responsibility: "Produce one declared artifact",
+          mode: "VERIFY_ONLY",
+          required: true,
+          approval: "NEVER",
+          capability: {
+            type: "command",
+            id: "producer-command",
+            immutable_reference: `sha256:${"1".repeat(64)}`,
+            entrypoint: { kind: "command", command: producerCommand }
+          },
+          permissions: {
+            read: ["**/*"],
+            write: [".dokion/**"],
+            network: false,
+            shell: [producerCommand]
+          },
+          inputs: [],
+          outputs: [{ name: "message", kind: "text", media_type: "text/plain" }],
+          verification: [],
+          success_conditions: ["declared_output_materialized"],
+          failure_policy: "STOP_PIPELINE"
         },
-        permissions: {
-          read: ["**/*"],
-          write: [".dokion/**", "HARDENING.md"],
-          network: false,
-          shell: [producerCommand]
-        },
-        inputs: [],
-        outputs: [{ name: "message", kind: "text", media_type: "text/plain" }],
-        verification: [],
-        success_conditions: ["declared_output_materialized"],
-        failure_policy: "STOP_PIPELINE"
-      },
-      {
-        ...structuredClone(template),
-        id: "consumer",
-        responsibility: "Consume only the producer's declared artifact",
-        mode: "VERIFY_ONLY",
-        approval: "NEVER",
-        depends_on: ["producer"],
-        capability: {
-          type: "skill",
-          id: "consumer-skill",
-          immutable_reference: `sha256:${"2".repeat(64)}`,
-          entrypoint: { kind: "command", command: consumerCommand }
-        },
-        permissions: {
-          read: ["**/*"],
-          write: [".dokion/**", "HARDENING.md"],
-          network: false,
-          shell: [consumerCommand]
-        },
-        inputs: [{
-          name: "message",
-          from: { step: "producer", output: "message" },
-          kind: "text",
-          required: true
-        }],
-        outputs: [{ name: "final", kind: "text", media_type: "text/plain" }],
-        verification: [],
-        success_conditions: ["declared_output_materialized"],
-        failure_policy: "STOP_PIPELINE"
-      }
-    ]
-  }];
+        {
+          id: "consumer",
+          responsibility: "Consume only the producer's declared artifact",
+          mode: "VERIFY_ONLY",
+          required: true,
+          approval: "NEVER",
+          depends_on: ["producer"],
+          capability: {
+            type: "command",
+            id: "consumer-command",
+            immutable_reference: `sha256:${"2".repeat(64)}`,
+            entrypoint: { kind: "command", command: consumerCommand }
+          },
+          permissions: {
+            read: ["**/*"],
+            write: [".dokion/**"],
+            network: false,
+            shell: [consumerCommand]
+          },
+          inputs: [{
+            name: "message",
+            from: { step: "producer", output: "message" },
+            kind: "text",
+            required: true
+          }],
+          outputs: [{ name: "final", kind: "text", media_type: "text/plain" }],
+          verification: [],
+          success_conditions: ["declared_output_materialized"],
+          failure_policy: "STOP_PIPELINE"
+        }
+      ]
+    }],
+    release_gates: []
+  };
 
+  const issues = await validatePlaybookData(root, playbook);
+  expect(issues).toEqual([]);
   await writeFile(join(root, ".dokion/playbook.json"), `${JSON.stringify(playbook, null, 2)}\n`);
 }
 
@@ -142,11 +154,10 @@ describe("universal capability invocation runtime", () => {
     expect(consumer.descriptor.producer.invocation_id).not.toBe(producer.descriptor.producer.invocation_id);
 
     const invocationRoot = join(root, ".dokion", "runs", state.run.id, "invocations");
-    const invocationDirectories = Array.from(new Bun.Glob("*/receipt.json").scanSync({ cwd: invocationRoot, onlyFiles: true })).sort();
-    expect(invocationDirectories).toHaveLength(2);
+    const receipts = Array.from(new Bun.Glob("*/receipt.json").scanSync({ cwd: invocationRoot, onlyFiles: true })).sort();
+    expect(receipts).toHaveLength(2);
 
-    const consumerReceiptPath = join(invocationRoot, invocationDirectories[1]!);
-    const consumerReceipt = JSON.parse(await readFile(consumerReceiptPath, "utf8"));
+    const consumerReceipt = JSON.parse(await readFile(join(invocationRoot, receipts[1]!), "utf8"));
     expect(consumerReceipt.status).toBe("SUCCEEDED");
     expect(consumerReceipt.inputs[0].artifact.digest).toBe(producer.descriptor.digest);
     expect(consumerReceipt.outputs[0].artifact.digest).toBe(consumer.descriptor.digest);
