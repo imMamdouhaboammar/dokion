@@ -25,31 +25,8 @@ function command(code: string): { executable: string; args: string[] } {
 }
 
 async function writeTwoStepPlaybook(root: string): Promise<void> {
-  const producerCommand = command(`
-    import { mkdir, readFile, writeFile } from "node:fs/promises";
-    import { dirname } from "node:path";
-    const requestPath = process.env.DOKION_INVOCATION_REQUEST;
-    if (!requestPath) process.exit(61);
-    const request = JSON.parse(await readFile(requestPath, "utf8"));
-    const output = request.expected_outputs.find((item) => item.name === "message");
-    if (!output) process.exit(62);
-    await mkdir(dirname(output.path), { recursive: true });
-    await writeFile(output.path, "hello from producer\\n");
-  `);
-
-  const consumerCommand = command(`
-    import { mkdir, readFile, writeFile } from "node:fs/promises";
-    import { dirname } from "node:path";
-    const requestPath = process.env.DOKION_INVOCATION_REQUEST;
-    if (!requestPath) process.exit(71);
-    const request = JSON.parse(await readFile(requestPath, "utf8"));
-    const input = request.inputs.find((item) => item.name === "message");
-    const output = request.expected_outputs.find((item) => item.name === "final");
-    if (!input || !output) process.exit(72);
-    const producerValue = await readFile(input.artifact.blob_path, "utf8");
-    await mkdir(dirname(output.path), { recursive: true });
-    await writeFile(output.path, producerValue.replace("producer", "consumer"));
-  `);
+  const producerCommand = command('import { mkdir, readFile, writeFile } from "node:fs/promises"; import { dirname } from "node:path"; const requestPath = process.env.DOKION_INVOCATION_REQUEST; if (!requestPath) process.exit(61); const request = JSON.parse(await readFile(requestPath, "utf8")); const output = request.expected_outputs.find((item) => item.name === "message"); if (!output) process.exit(62); await mkdir(dirname(output.path), { recursive: true }); await writeFile(output.path, "hello from producer\\n");');
+  const consumerCommand = command('import { mkdir, readFile, writeFile } from "node:fs/promises"; import { dirname } from "node:path"; const requestPath = process.env.DOKION_INVOCATION_REQUEST; if (!requestPath) process.exit(71); const request = JSON.parse(await readFile(requestPath, "utf8")); const input = request.inputs.find((item) => item.name === "message"); const output = request.expected_outputs.find((item) => item.name === "final"); if (!input || !output) process.exit(72); const producerValue = await readFile(input.artifact.blob_path, "utf8"); await mkdir(dirname(output.path), { recursive: true }); await writeFile(output.path, producerValue.replace("producer", "consumer"));');
 
   const playbook = {
     version: "1.0.0",
