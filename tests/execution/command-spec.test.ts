@@ -5,6 +5,7 @@ import {
   validatePlaybookData
 } from "../../src/contracts/schema-validator.ts";
 import { DokionError } from "../../src/core/errors.ts";
+import { commandSpecDisplay } from "../../src/execution/command-policy.ts";
 import { normalizeCommandSpec } from "../../src/execution/command-spec.ts";
 
 const pinned = `sha256:${"a".repeat(64)}`;
@@ -65,6 +66,14 @@ describe("EXEC-002 command specification", () => {
       degradations: ["LEGACY_SHELL_COMMAND"],
       evidence: { legacy_shell_command: "bun test && bun run typecheck" }
     });
+  });
+
+  test("renders stable human evidence for shell and argv command specifications", () => {
+    expect(commandSpecDisplay("bun test && bun run typecheck")).toBe("bun test && bun run typecheck");
+    expect(commandSpecDisplay({
+      executable: "printf",
+      args: ["%s", "a b", "$(touch should-not-run)"]
+    })).toBe('printf "%s" "a b" "$(touch should-not-run)"');
   });
 
   test("produces stable identities that change with executable argument order or kind", () => {

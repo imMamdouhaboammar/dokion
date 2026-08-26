@@ -7,6 +7,7 @@ import { loadActivePlaybook } from "../playbook/load-playbook.ts";
 import { evaluateCoverage, type CoverageManifest } from "../readiness/coverage.ts";
 import { evaluateReleaseGates } from "../readiness/release-gates.ts";
 import { writeHardeningReport } from "../report/render-hardening.ts";
+import { recoverStartedSideEffects } from "../state/checkpoint.ts";
 import { acquireRunLock } from "../state/run-lock.ts";
 import { createRunId, StateStore } from "../state/state-store.ts";
 import type { DokionState } from "../state/types.ts";
@@ -38,6 +39,7 @@ export class ExecutionEngine extends RuntimeExecutionEngine {
     const lease = await acquireRunLock(this.root, { runId, operation: "resume" });
     try {
       await recoverAtomicWrites(this.root);
+      await recoverStartedSideEffects(this.root);
       const state = await this.continueRun(fallbackRunId);
       return this.reconcileState(state);
     } finally {

@@ -14,6 +14,7 @@ import {
   executeStepVerification,
   stepVerificationEvidenceRoot
 } from "../verification/step-verification.ts";
+import { nextExecutionAttempt } from "./attempt-policy.ts";
 import { runAnalyzeCapability, runRemediationCapability, type CapabilityRunResult } from "./capability-runner.ts";
 import { assertSequentialExecution, assertStageDependencies, assertStepDependencies } from "./dependencies.ts";
 
@@ -218,6 +219,7 @@ export class ExecutionEngine {
           continue;
         }
 
+        const executionAttempt = nextExecutionAttempt(stepState);
         state = await this.updateState((current) => {
           current.playbook.last_verified_before_step = step.id;
           current.playbook.verified_at = new Date().toISOString();
@@ -225,7 +227,7 @@ export class ExecutionEngine {
           target.status = "IN_PROGRESS";
           target.started_at ??= new Date().toISOString();
           delete target.ended_at;
-          target.attempts = (target.attempts ?? 0) + 1;
+          target.attempts = executionAttempt;
           delete target.failure_reason;
           delete target.skip_reason;
           return current;
@@ -384,11 +386,13 @@ export class ExecutionEngine {
   }
 
   private async runVerificationOnly(stage: PlaybookStage, step: PlaybookStep, state: DokionState): Promise<CapabilityRunResult> {
+    const attempt = findStepState(state, stage.id, step.id).attempts ?? 1;
     const verification = await executeStepVerification({
       root: this.root,
       stage,
       step,
       runId: state.run.id,
+      attempt,
       ...(state.baseline?.commit ? { commitSha: state.baseline.commit } : {}),
       evidenceRoot: stepVerificationEvidenceRoot(".dokion/evidence", stage.id, step.id),
       stopOnFailure: true

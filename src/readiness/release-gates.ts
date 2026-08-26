@@ -143,7 +143,7 @@ export async function evaluateReleaseGates(input: {
         id: gate.id,
         status: commandResult.exitCode === 0 ? "PASS" : "FAIL",
         blocking: gate.blocking,
-        evaluated: gate.command,
+        evaluated: commandResult.command,
         exit_code: commandResult.exitCode,
         artifact,
         ran_at: commandResult.endedAt

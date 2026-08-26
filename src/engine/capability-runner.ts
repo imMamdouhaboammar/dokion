@@ -5,6 +5,8 @@ import { isApproved } from "../approvals/approval-store.ts";
 import { DokionError } from "../core/errors.ts";
 import { readJson, writeJsonAtomic } from "../core/json.ts";
 import { writeCommandEvidence } from "../evidence/evidence-store.ts";
+import { commandSpecAllowed, commandSpecDisplay, commandSpecIdentity } from "../execution/command-policy.ts";
+import type { CommandSpecInput } from "../execution/command-spec.ts";
 import { listFindings, normalizeFindingEnvelope, updateFinding } from "../findings/finding-store.ts";
 import {
   materializeNativeScannerOutput,
@@ -54,30 +56,37 @@ interface NamedEvidenceMetadata {
   command_index?: number;
 }
 
-function invocationCommands(step: PlaybookStep): string[] {
-  const verification = new Set(step.verification ?? []);
-  return (step.permissions?.shell ?? []).filter((command) => !verification.has(command));
+function invocationCommands(step: PlaybookStep): CommandSpecInput[] {
+  const verification = new Set((step.verification ?? []).map(commandSpecIdentity));
+  return (step.permissions?.shell ?? []).filter(
+    (command) => !verification.has(commandSpecIdentity(command))
+  );
 }
 
-function assertAllowed(step: PlaybookStep, command: string): void {
-  if (!(step.permissions?.shell ?? []).includes(command)) {
+function assertAllowed(step: PlaybookStep, command: CommandSpecInput): void {
+  if (!commandSpecAllowed(step.permissions?.shell, command)) {
     throw new DokionError("COMMAND_FAILED", "Command is outside permissions.shell", {
       stepId: step.id,
-      command,
-      allowed: step.permissions?.shell ?? []
+      command: commandSpecDisplay(command),
+      allowed: (step.permissions?.shell ?? []).map(commandSpecDisplay)
     });
   }
 }
 
 function requireSingleInvocation(step: PlaybookStep): string {
   const commands = invocationCommands(step);
-  if (commands.length !== 1) {
-    throw new DokionError("UNSUPPORTED_EXECUTION", `Step ${step.id} must declare exactly one capability command outside verification`, {
-      stepId: step.id,
-      commands
-    });
+  if (commands.length !== 1 || typeof commands[0] !== "string") {
+    throw new DokionError(
+      "UNSUPPORTED_EXECUTION",
+      `Step ${step.id} must declare exactly one legacy string capability command outside verification`,
+      {
+        stepId: step.id,
+        commands: commands.map(commandSpecDisplay),
+        hint: "Structured command execution requires an explicit capability.entrypoint."
+      }
+    );
   }
-  return commands[0]!;
+  return commands[0];
 }
 
 async function writeNamedCommandEvidence(
@@ -230,7 +239,7 @@ export async function runAnalyzeCapability(input: {
     envelope = await readJson<RawFindingEnvelope>(join(input.root, rawArtifact));
     evidence.push(rawArtifact);
     verificationResults.push({
-      command,
+      command: result.command,
       exit_code: result.exitCode,
       artifact: commandArtifact,
       ran_at: result.endedAt
@@ -312,7 +321,7 @@ export async function runAnalyzeCapability(input: {
   }
 
   for (const [index, verificationCommand] of verificationCommands.entries()) {
-    if (!(input.step.permissions?.shell ?? []).includes(verificationCommand)) {
+    if (!commandSpecAllowed(input.step.permissions?.shell, verificationCommand)) {
       return {
         status: "FAILED",
         reason: "Verification command is outside permissions.shell",
@@ -331,7 +340,7 @@ export async function runAnalyzeCapability(input: {
       command_index: index + 1
     }));
     verificationResults.push({
-      command: verificationCommand,
+      command: verification.command,
       exit_code: verification.exitCode,
       artifact,
       ran_at: verification.endedAt
@@ -476,7 +485,7 @@ export async function runRemediationCapability(input: {
         finding_id: finding.id,
         phase: "VERIFICATION"
       }));
-      verificationResults.push({ command: verificationCommand, exit_code: verification.exitCode, artifact, ran_at: verification.endedAt });
+      verificationResults.push({ command: verification.command, exit_code: verification.exitCode, artifact, ran_at: verification.endedAt });
       evidence.push(artifact);
       if (verification.exitCode !== 0) {
         await restoreCurrentRepair(input.root, before);
@@ -510,7 +519,7 @@ export async function runRemediationCapability(input: {
       resolution: {
         diff_artifact: validation.diffArtifact,
         ...(regressionTest ? { regression_test: regressionTest } : {}),
-        verified_by: (input.step.verification ?? []).slice(),
+        verified_by: (input.step.verification ?? []).map(commandSpecDisplay),
         adversary_verdict: "FIX_HOLDS",
         resolved_at: new Date().toISOString()
       }

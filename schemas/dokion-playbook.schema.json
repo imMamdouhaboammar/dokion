@@ -379,6 +379,10 @@
           "pattern": "^(sha256:[a-fA-F0-9]{64}|sha512:[a-fA-F0-9]{128}|git:[a-fA-F0-9]{40}|sha256:PLACEHOLDER)$",
           "description": "Content digest or 40-char git commit SHA. Required when registry.require_digest is true. The literal 'sha256:PLACEHOLDER' is a template sentinel: it is schema-legal so reference playbooks can be structurally validated in CI, and it MUST be rejected by the runtime loader. Structural validity is not executability — a playbook containing any sentinel cannot run."
         },
+        "entrypoint": {
+          "$ref": "#/$defs/capabilityEntrypoint",
+          "description": "The exact user-declared invocation entrypoint. It selects how the chosen capability is invoked but grants no permissions by itself."
+        },
         "platforms": {
           "type": "object",
           "description": "Per-agent capability mapping. A step is inapplicable on an agent absent from this map.",
@@ -394,6 +398,22 @@
               "type": "string"
             }
           }
+        }
+      }
+    },
+    "capabilityEntrypoint": {
+      "type": "object",
+      "required": [
+        "kind",
+        "command"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "command"
+        },
+        "command": {
+          "$ref": "#/$defs/commandSpec"
         }
       }
     },
@@ -432,9 +452,9 @@
         "shell": {
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/$defs/commandSpec"
           },
-          "description": "Allowed commands. Absent or empty means no shell access."
+          "description": "Allowed command specifications. An explicit entrypoint still requires an exact matching grant. Absent or empty means no command execution."
         },
         "env": {
           "type": "array",
