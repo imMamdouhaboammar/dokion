@@ -131,8 +131,18 @@ export interface CommandCapabilityInvocationResult {
   endedAt: string;
 }
 
-function invocationId(runId: string, stageId: string, stepId: string): string {
-  const digest = sha256(JSON.stringify({ runId, stageId, stepId }));
+function requireAttempt(attempt: number): number {
+  if (!Number.isSafeInteger(attempt) || attempt < 1) {
+    throw new DokionError("INVALID_STATE", "Invocation attempt must be a positive safe integer.", {
+      attempt
+    });
+  }
+  return attempt;
+}
+
+function invocationId(runId: string, stageId: string, stepId: string, attempt: number): string {
+  const verifiedAttempt = requireAttempt(attempt);
+  const digest = sha256(JSON.stringify({ runId, stageId, stepId, attempt: verifiedAttempt }));
   return `invocation-${digest.slice("sha256:".length, "sha256:".length + 32)}`;
 }
 
@@ -425,6 +435,7 @@ async function buildRequest(input: {
   runId: string;
   stage: PlaybookStage;
   step: PlaybookStep;
+  attempt: number;
 }): Promise<InvocationRequest> {
   const entrypoint = input.step.capability.entrypoint;
   if (!entrypoint || entrypoint.kind !== "command") {
@@ -450,7 +461,7 @@ async function buildRequest(input: {
   }
 
   const normalized = normalizeCommandSpec(entrypoint.command);
-  const id = invocationId(input.runId, input.stage.id, input.step.id);
+  const id = invocationId(input.runId, input.stage.id, input.step.id, input.attempt);
   const outputs = supportedOutputs(input.step);
   const request: InvocationRequest = {
     schema: "dokion.invocation-request.v1",
@@ -496,7 +507,9 @@ export async function invokeCommandCapability(input: {
   runId: string;
   stage: PlaybookStage;
   step: PlaybookStep;
+  attempt: number;
 }): Promise<CommandCapabilityInvocationResult> {
+  const attempt = requireAttempt(input.attempt);
   const entrypoint = input.step.capability.entrypoint;
   if (!entrypoint || entrypoint.kind !== "command") {
     throw new DokionError(
@@ -505,7 +518,7 @@ export async function invokeCommandCapability(input: {
     );
   }
   const display = commandSpecDisplay(entrypoint.command);
-  const candidate = await buildRequest(input);
+  const candidate = await buildRequest({ ...input, attempt });
   const requestRelative = requestPath(input.runId, candidate.invocation_id);
   const receiptRelative = receiptPath(input.runId, candidate.invocation_id);
 
@@ -526,7 +539,7 @@ export async function invokeCommandCapability(input: {
     stepId: input.step.id,
     kind: "COMMAND",
     subject: input.step.capability.id,
-    idempotencyKey: `invocation:${input.runId}:${input.stage.id}:${input.step.id}`,
+    idempotencyKey: `invocation:${request.invocation_id}`,
     parametersDigest: checkpointIntentDigest(request)
   });
   assertInvocationReplaySafe(checkpoint);
@@ -540,7 +553,7 @@ export async function invokeCommandCapability(input: {
         ? {}
         : { declaredEnv: input.step.permissions.env }),
       env: { DOKION_INVOCATION_REQUEST: requestRelative },
-      artifactPrefix: `.dokion/evidence/${input.stage.id}/${input.step.id}/invocation-command`
+      artifactPrefix: `.dokion/evidence/${input.stage.id}/${input.step.id}/${request.invocation_id}/command`
     });
     if (commandResult.exitCode === 0) {
       terminalCheckpoint = await completeSideEffect(input.root, checkpoint.id, {

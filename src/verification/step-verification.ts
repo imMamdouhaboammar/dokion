@@ -48,6 +48,7 @@ export async function executeStepVerification(input: {
   stage: PlaybookStage;
   step: PlaybookStep;
   runId: string;
+  attempt?: number;
   commitSha?: string;
   evidenceRoot: string;
   stopOnFailure: boolean;
@@ -62,7 +63,8 @@ export async function executeStepVerification(input: {
       root: input.root,
       runId: input.runId,
       stage: input.stage,
-      step: input.step
+      step: input.step,
+      attempt: input.attempt ?? 1
     });
     evidence.push(invocation.receiptPath);
     verificationResults.push({

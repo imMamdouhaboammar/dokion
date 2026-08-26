@@ -95,12 +95,17 @@ function stepResults(records: StepBatchRecord[]): DeclaredVerificationResult[] {
       artifact: execution.artifact,
       ranAt: execution.ranAt
     }));
-    if (executed.length === record.commands.length) return executed;
-    return [
-      ...executed,
-      ...record.commands.slice(executed.length).map((command, offset) => ({
+    const executedVerificationIndices = new Set(
+      record.executions
+        .filter((execution) => execution.commandIndex > 0)
+        .map((execution) => execution.commandIndex)
+    );
+    const missing = record.commands.flatMap((command, index) => {
+      const commandIndex = index + 1;
+      if (executedVerificationIndices.has(commandIndex)) return [];
+      return [{
         scope: "STEP" as const,
-        gateId: `${record.stageId}/${record.stepId}/verification-${executed.length + offset + 1}`,
+        gateId: `${record.stageId}/${record.stepId}/verification-${commandIndex}`,
         blocking: record.blocking,
         status: "FAIL" as const,
         passed: false,
@@ -108,10 +113,11 @@ function stepResults(records: StepBatchRecord[]): DeclaredVerificationResult[] {
         ...(record.reason ? { reason: record.reason } : {}),
         stageId: record.stageId,
         stepId: record.stepId,
-        commandIndex: executed.length + offset + 1,
+        commandIndex,
         command: commandSpecDisplay(command)
-      }))
-    ];
+      }];
+    });
+    return [...executed, ...missing];
   });
 }
 
