@@ -131,12 +131,18 @@ describe("universal capability invocation runtime", () => {
     expect(consumer.descriptor.producer.invocation_id).not.toBe(producer.descriptor.producer.invocation_id);
 
     const invocationRoot = join(root, ".dokion", "runs", state.run.id, "invocations");
-    const receipts = Array.from(new Bun.Glob("*/receipt.json").scanSync({ cwd: invocationRoot, onlyFiles: true })).sort();
-    expect(receipts).toHaveLength(2);
+    const receiptPaths = Array.from(new Bun.Glob("*/receipt.json").scanSync({ cwd: invocationRoot, onlyFiles: true }));
+    expect(receiptPaths).toHaveLength(2);
 
-    const consumerReceipt = JSON.parse(await readFile(join(invocationRoot, receipts[1]!), "utf8"));
-    expect(consumerReceipt.status).toBe("SUCCEEDED");
-    expect(consumerReceipt.inputs[0].artifact.digest).toBe(producer.descriptor.digest);
-    expect(consumerReceipt.outputs[0].artifact.digest).toBe(consumer.descriptor.digest);
+    const receipts = await Promise.all(receiptPaths.map(async (path) => (
+      JSON.parse(await readFile(join(invocationRoot, path), "utf8"))
+    )));
+    const producerReceipt = receipts.find((receipt) => receipt.step_id === "producer");
+    const consumerReceipt = receipts.find((receipt) => receipt.step_id === "consumer");
+
+    expect(producerReceipt?.status).toBe("SUCCEEDED");
+    expect(consumerReceipt?.status).toBe("SUCCEEDED");
+    expect(consumerReceipt?.inputs[0].artifact.digest).toBe(producer.descriptor.digest);
+    expect(consumerReceipt?.outputs[0].artifact.digest).toBe(consumer.descriptor.digest);
   });
 });
